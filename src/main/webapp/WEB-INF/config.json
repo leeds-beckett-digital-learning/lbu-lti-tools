@@ -1,0 +1,11 @@
+{
+  "issuers":
+  [
+    {
+      "name": "https://blackboard.com",
+      "clients":
+      [
+      ]
+    }
+  ]
+}

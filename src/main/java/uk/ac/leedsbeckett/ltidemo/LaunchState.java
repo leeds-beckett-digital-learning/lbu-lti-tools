@@ -16,41 +16,47 @@
 
 package uk.ac.leedsbeckett.ltidemo;
 
-import uk.ac.leedsbeckett.lti.LtiConfiguration;
-import uk.ac.leedsbeckett.lti.state.LtiState;
+import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 
 /**
  *
  * @author jon
  */
-public class DemoState extends LtiState
+public class LaunchState
 {
-  CourseLaunchState   courseLaunchState = null;
-  LaunchState       platformLaunchState = null;
+  private String personName;
+  private String platformName;
+  private LtiRoleClaims roles;
+
+  public String getPersonName()
+  {
+    return personName;
+  }
+
+  public void setPersonName( String personName )
+  {
+    this.personName = personName;
+  }
+
+  public String getPlatformName()
+  {
+    return platformName;
+  }
+
+  public void setPlatformName( String platformName )
+  {
+    this.platformName = platformName;
+  }
+
+  public LtiRoleClaims getRoles()
+  {
+    return roles;
+  }
+
+  public void setRoles( LtiRoleClaims roles )
+  {
+    this.roles = roles;
+  }
   
-  public DemoState( LtiConfiguration.Client client )
-  {
-    super( client );
-  }
-  
-  public LaunchState getPlatformLaunchState()
-  {
-    return platformLaunchState;
-  }
-
-  public void setPlatformLaunchState( LaunchState platformLaunchState )
-  {
-    this.platformLaunchState = platformLaunchState;
-  }
-
-  public CourseLaunchState getCourseLaunchState()
-  {
-    return courseLaunchState;
-  }
-
-  public void setCourseLaunchState( CourseLaunchState launchState )
-  {
-    this.courseLaunchState = launchState;
-  }  
   
 }

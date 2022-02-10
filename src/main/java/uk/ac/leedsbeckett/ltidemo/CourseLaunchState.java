@@ -17,7 +17,7 @@
 package uk.ac.leedsbeckett.ltidemo;
 
 import uk.ac.leedsbeckett.ltidemo.tool.Resource;
-import uk.ac.leedsbeckett.lti.state.LaunchState;
+
 
 /**
  * State related to the LTI launch of a resource which relates to a specific

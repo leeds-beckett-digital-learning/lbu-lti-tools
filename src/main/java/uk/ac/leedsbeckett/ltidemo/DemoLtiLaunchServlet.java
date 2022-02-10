@@ -29,7 +29,6 @@ import uk.ac.leedsbeckett.ltidemo.tool.Resource;
 import uk.ac.leedsbeckett.ltidemo.tool.ResourceStore;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.servlet.LtiLaunchServlet;
-import uk.ac.leedsbeckett.lti.state.LaunchState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 

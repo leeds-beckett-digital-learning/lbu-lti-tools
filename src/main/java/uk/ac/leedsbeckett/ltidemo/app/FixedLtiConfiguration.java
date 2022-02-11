@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.app;
 
 /**
- *
+ * Some properties that are fixed but may in the future be shifted into
+ * the configuration file.
+ * 
  * @author jon
  */
 public class FixedLtiConfiguration
 {
-  public static final String LAUNCH_PATTERN = "/launch";
+  /**
+   * The URL where the LTI login servlet is accessed.
+   */
   public static final String LOGIN_PATTERN  = "/login";
+  
+  /**
+   * The URL where the LTI launch servlet is accessed.
+   */
+  public static final String LAUNCH_PATTERN = "/launch";
 }

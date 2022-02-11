@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.state;
 
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 
 /**
- *
+ * This contains data that a user of the platform-wide tool might need.
+ * 
  * @author jon
  */
 public class LaunchState

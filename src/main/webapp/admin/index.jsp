@@ -2,13 +2,18 @@
     Document   : index
     Created on : 18 Nov 2021, 08:56:17
     Author     : jon
+
+    The Java web app is configured to only allow access to this page for
+    administrators of the host web server. It provides a form for 
+    configuring the tool.
+
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<jsp:useBean id="outcomes" class="uk.ac.leedsbeckett.ltidemo.AdminOutcomes" scope="request"/>
+<jsp:useBean id="outcomes" class="uk.ac.leedsbeckett.ltidemo.admin.AdminOutcomes" scope="request"/>
 <% outcomes.setRequest( request ); %>
 
 <html>

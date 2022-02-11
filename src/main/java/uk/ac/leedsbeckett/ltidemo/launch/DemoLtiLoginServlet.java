@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.launch;
 
+import uk.ac.leedsbeckett.ltidemo.app.FixedLtiConfiguration;
+import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
 import javax.servlet.ServletContext;
 import javax.servlet.annotation.WebServlet;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
@@ -23,7 +25,8 @@ import uk.ac.leedsbeckett.lti.servlet.LtiLoginServlet;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 
 /**
- * This demo's implementation of the LTI login servlet.
+ * This demo's implementation of the LTI login servlet. The annotation determines
+ * where the servlet appears in the app's URL space.
  * 
  * @author jon
  */
@@ -31,6 +34,13 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 public class DemoLtiLoginServlet extends LtiLoginServlet
 {
 
+  /**
+   * This implementation ensures that the library code knows how to store
+   * LTI state.
+   * 
+   * @param context The servlet context in whose attributes the store can be found.
+   * @return The store.
+   */  
   @Override
   protected LtiStateStore getLtiStateStore( ServletContext context )
   {
@@ -38,6 +48,12 @@ public class DemoLtiLoginServlet extends LtiLoginServlet
     return appcontext.getStateStore();
   }  
   
+  /**
+   * This implementation ensures that the library code knows the configuration.
+   * 
+   * @param context The servlet context in whose attributes the store can be found.
+   * @return The configuration.
+   */  
   protected LtiConfiguration getLtiConfiguration( ServletContext context )
   {
     DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( context );

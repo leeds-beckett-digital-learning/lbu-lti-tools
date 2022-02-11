@@ -22,11 +22,14 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.DemoState;
-import uk.ac.leedsbeckett.ltidemo.LaunchState;
+import uk.ac.leedsbeckett.ltidemo.state.DemoState;
+import uk.ac.leedsbeckett.ltidemo.state.LaunchState;
 
 /**
- *
+ * This servlet simply presents some text to the user. The demo may be 
+ * improved - perhaps by having this tool provide administrators a way to
+ * manage all the course resources that relate to the launching platform.
+ * 
  * @author jon
  */
 @WebServlet( name = "PlatformResourceServlet", urlPatterns =
@@ -37,8 +40,8 @@ public class PlatformResourceServlet extends AbstractDemoToolServlet
 {
 
   /**
-   * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-   * methods.
+   * Just outputs some technical information that relates to LTI launch
+   * process.
    *
    * @param request servlet request
    * @param response servlet response

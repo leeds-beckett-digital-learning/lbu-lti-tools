@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Stack;
 
 /**
- *
+ * An object that represents the resource which the user is accessing after the
+ * LTI launch. A simple stack of log entries.
+ * 
  * @author jon
  */
 public class Resource

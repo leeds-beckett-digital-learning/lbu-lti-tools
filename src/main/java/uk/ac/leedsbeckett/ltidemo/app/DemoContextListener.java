@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.app;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -30,6 +30,12 @@ import org.apache.commons.lang3.StringUtils;
 public class DemoContextListener implements ServletContextListener
 {
 
+  /**
+   * This will be called when the web application is initialised. So some
+   * data objects are created and stored in the ServletContext.
+   * 
+   * @param event The event which tells us about the new ServletContext.
+   */
   @Override
   public void contextInitialized( ServletContextEvent event )
   {
@@ -43,6 +49,12 @@ public class DemoContextListener implements ServletContextListener
       appcontext.getConfig().load( configpath );
   }
 
+  /**
+   * At present out app doesn't need to do any cleaning up, but it could
+   * be done here.
+   * 
+   * @param event 
+   */
   @Override
   public void contextDestroyed( ServletContextEvent event )
   {

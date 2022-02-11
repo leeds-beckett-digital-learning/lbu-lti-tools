@@ -14,18 +14,29 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.state;
 
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 
 /**
- *
+ * A customised subclass of the standard LtiStateStore. The only different
+ * from the base class is that it creates a DemoState which is a subclass
+ * of the standard LtiState. This ensures that we can put customised data
+ * and functionality into the state that suits this tool.
+ * 
  * @author jon
  */
 public class DemoLtiStateStore extends LtiStateStore
 {
+  /**
+   * Makes sure that the state object used throughout the LTI handling
+   * is a customised LtiState.
+   * 
+   * @param client The issuer client configuration.
+   * @return An implementation of LtiState.
+   */
   @Override
   protected LtiState newState( LtiConfiguration.Client client )
   {

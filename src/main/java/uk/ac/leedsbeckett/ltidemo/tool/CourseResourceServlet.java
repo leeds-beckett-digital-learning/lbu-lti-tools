@@ -24,12 +24,15 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.CourseLaunchState;
-import uk.ac.leedsbeckett.ltidemo.DemoState;
+import uk.ac.leedsbeckett.ltidemo.state.CourseLaunchState;
+import uk.ac.leedsbeckett.ltidemo.state.DemoState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
 /**
- *
+ * This is a fairly trivial tool. It presents a single page on which user's
+ * can add log entries. All users enrolled on the course work on a shared
+ * page. User's with the right role can clear the entries.
+ * 
  * @author jon
  */
 @WebServlet( name = "CourseResourceServlet", urlPatterns =
@@ -41,8 +44,9 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
   SimpleDateFormat dateformat = new SimpleDateFormat();
   
   /**
-   * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-   * methods.
+   * Uses state object to find an object that represents a shared object
+   * containing logs entries. Presents the log entries and can add new
+   * entries.
    *
    * @param request servlet request
    * @param response servlet response
@@ -52,6 +56,7 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
   protected void processRequest( HttpServletRequest request, HttpServletResponse response )
           throws ServletException, IOException
   {    
+    // Super class provides this functionality.
     DemoState state = getState( request, response );
     if ( state == null ) return;
     
@@ -62,7 +67,11 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
       return;
     }
     
+    // Find the shared object that contains log entries
     Resource resource = course.getResource();
+    
+    // If an action has been specified in form data take appropriate
+    // action.
     String action = request.getParameter( "action" );
     if ( "add".equals( action ) )
       resource.addEntry( course.getPersonName() );
@@ -72,11 +81,10 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
         resource.clearEntries( course.getPersonName() );
     }
                 
-    
+    // Now send the HTML output to the user
     response.setContentType( "text/html;charset=UTF-8" );
     try (  PrintWriter out = response.getWriter() )
     {
-      /* TODO output your page here. You may use following sample code. */
       out.println( "<!DOCTYPE html>" );
       out.println( "<html>" );
       out.println( "<head>" );

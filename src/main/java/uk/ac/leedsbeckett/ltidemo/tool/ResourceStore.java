@@ -19,13 +19,28 @@ package uk.ac.leedsbeckett.ltidemo.tool;
 import java.util.HashMap;
 
 /**
- *
+ * A store of resources which can be retrieved using keys. At present all
+ * resources stay in the store until the store is garbage collected after the
+ * web application shuts down. All resources are lost entirely at shut down
+ * in this demo. A proper implementation would store data on file or in a 
+ * database and would purge memory of resources that haven't been used for a
+ * while.
+ * 
  * @author jon
  */
 public class ResourceStore
 {
   HashMap<String,HashMap<String,Resource>> map = new HashMap<>();
   
+  /**
+   * Find a resource keyed by platform ID and resource ID with option to
+   * create the resource if it doesn't exist yet.
+   * 
+   * @param platform ID of the platform.
+   * @param resource ID of the resource.
+   * @param create Set true if the resource should be created if it doesn't already exist.
+   * @return The resource or null if it wasn't found and creation wasn't requested.
+   */
   public Resource get( String platform, String resource, boolean create )
   {
     HashMap<String,Resource> platformmap = map.get( platform );
@@ -49,6 +64,11 @@ public class ResourceStore
     return r;
   }
   
+  /**
+   * Fetch a dump of the entire store for debugging.
+   * 
+   * @return Multi-line text containing description of all resources.
+   */
   public synchronized String dump()
   {
     StringBuilder sb = new StringBuilder();

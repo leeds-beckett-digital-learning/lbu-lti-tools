@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.launch;
 
+import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
+import uk.ac.leedsbeckett.ltidemo.app.FixedLtiConfiguration;
+import uk.ac.leedsbeckett.ltidemo.state.LaunchState;
+import uk.ac.leedsbeckett.ltidemo.state.CourseLaunchState;
+import uk.ac.leedsbeckett.ltidemo.state.DemoState;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -41,6 +46,20 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 @WebServlet( name = "DemoLtiLaunchServlet", urlPatterns = { FixedLtiConfiguration.LAUNCH_PATTERN } )
 public class DemoLtiLaunchServlet extends LtiLaunchServlet
 {
+  
+  /**
+   * The parent class calls this method after it has processed and validated 
+   * the launch request. The job here is to look at the claims in the LTI
+   * launch and decide how to prepare state and how to forward the user to
+   * the servlet or JSP page that actually implements the tool.
+   * 
+   * @param lticlaims The validated LTI claims for this launch request.
+   * @param ltistate The LTI state that was created by the preceding login request.
+   * @param request The HTTP request.
+   * @param response The HTTP response.
+   * @throws ServletException If there is an internal problem forwarding the user's browser.
+   * @throws IOException If the network connection is broken while sending the forwarding response.
+   */
   @Override
   protected void processLaunchRequest( LtiClaims lticlaims, LtiState ltistate, HttpServletRequest request, HttpServletResponse response )
           throws ServletException, IOException
@@ -55,6 +74,10 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
     String tooltype = lticlaims.getLtiCustom().getToolType();
     LaunchState platformlaunch = null;
     CourseLaunchState courselaunch = null;
+    
+    // Decide what to do depending on the tool type which was specified
+    // in the LTI custom claim. Can put different data in the state and
+    // can redirect to different servlets or JSP pages.
     
     if ( "system".equals( tooltype ) )
     {
@@ -95,6 +118,9 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
       response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/courseresource?state_id=" + state.getId() ) );
       return;
     }
+    
+    // What if we couldn't work out what to do?
+    // In this demo, send some debugging information in an HTML page.
     
     response.setContentType( "text/html;charset=UTF-8" );
     try (  PrintWriter out = response.getWriter() )
@@ -142,6 +168,13 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
     }
   }
 
+  /**
+   * This implementation ensures that the library code knows how to store
+   * LTI state.
+   * 
+   * @param context The servlet context in whose attributes the store can be found.
+   * @return The store.
+   */
   @Override
   protected LtiStateStore getLtiStateStore( ServletContext context )
   {

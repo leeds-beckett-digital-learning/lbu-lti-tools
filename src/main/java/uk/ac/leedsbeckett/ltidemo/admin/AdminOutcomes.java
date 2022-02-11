@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo;
+package uk.ac.leedsbeckett.ltidemo.admin;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
+import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
 
 /**
  * This class provides logic for use within an admin JSP page.
@@ -35,18 +36,35 @@ public class AdminOutcomes
   String rawconfig;
   String importantmessage="";
 
+  /**
+   * Get the HTTP request associated with the JSP page that uses this object.
+   * @return 
+   */
   public HttpServletRequest getRequest()
   {
     return request;
   }
 
+  /**
+   * The JSP will call this to initiate processing and then call the getter
+   * methods to retrieve outcomes of the processing.
+   * 
+   * @param request The HttpRequest associated with the JSP's servlet.
+   */
   public void setRequest( HttpServletRequest request )
   {
     this.request = request;
+    
+    // Retrieve information about the application
     DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( request.getServletContext() );
     LtiConfiguration config = appcontext.getConfig();
+    
+    // Find out if there was a form field called 'action'
     if ( request != null )
       action = request.getParameter( "action" );
+    
+    // If a saveconfig action was specified take the input from the form and
+    // save it over the config file. Then tell the LTI library to reload it.
     if ( "saveconfig".equals( action ) )
     {
       String name = config.getConfigFileName();
@@ -61,25 +79,48 @@ public class AdminOutcomes
         importantmessage = "Configuration saving failed. " + ioe.getMessage();
       }
     }
+    
+    // Regardless, fetch the current config now.
     rawconfig = config.getRawConfiguration();
   }
 
+  /**
+   * Simply write the text content into a file with the given name.
+   * @param name Name of the file.
+   * @param content The content to put in the file using UTF encoding.
+   * @throws IOException If there is a problem writing to the file.
+   */
   void saveToFile( String name, String content ) throws IOException
   {
     FileUtils.writeStringToFile( new File( name ), content, StandardCharsets.UTF_8 );
   }
   
+  /**
+   * Get the full content of the configuration file as a string.
+   * 
+   * @return The content.
+   */
   public String getRawConfiguration()
   {
     return rawconfig;
   }
 
+  /**
+   * Get the value of the action parameter.
+   * 
+   * @return The value from the request.
+   */
   public String getAction()
   {
     if ( action == null ) return "";
     return action;
   }
   
+  /**
+   * Get the important message.
+   * 
+   * @return An important message or an empty string.
+   */
   public String getImportantMessage()
   {
     return importantmessage;

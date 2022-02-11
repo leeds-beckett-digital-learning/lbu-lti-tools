@@ -17,7 +17,8 @@
 package uk.ac.leedsbeckett.ltidemo.tool;
 
 /**
- *
+ * A log entry for use in a stack of log entries.
+ * 
  * @author jon
  */
 public class ResourceEntry
@@ -26,6 +27,12 @@ public class ResourceEntry
   String person;
   String message;
 
+  /**
+   * Construct a log entry with a given name and message.
+   * 
+   * @param person Name of author of the message.
+   * @param message The message itself.
+   */
   public ResourceEntry( String person, String message )
   {
     this.timestamp = System.currentTimeMillis();
@@ -33,16 +40,31 @@ public class ResourceEntry
     this.message = message;
   }
   
+  /**
+   * When the log entry was created.
+   * 
+   * @return timestamp as a long
+   */
   public long getTimestamp()
   {
     return timestamp;
   }
 
+  /**
+   * Get the name of author of the message.
+   * 
+   * @return Name of author
+   */
   public String getPerson()
   {
     return person;
   }
 
+  /**
+   * Get the text of the log entry.
+   * 
+   * @return The message.
+   */
   public String getMessage()
   {
     return message;

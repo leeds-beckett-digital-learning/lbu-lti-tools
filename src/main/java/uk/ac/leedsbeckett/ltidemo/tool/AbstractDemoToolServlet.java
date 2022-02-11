@@ -22,16 +22,31 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.DemoApplicationContext;
-import uk.ac.leedsbeckett.ltidemo.DemoState;
+import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
+import uk.ac.leedsbeckett.ltidemo.state.DemoState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
 /**
- *
+ * An abstract superclass of the servlets that implement the tool. Provides
+ * common functionality.
+ * 
  * @author jon
  */
 public abstract class AbstractDemoToolServlet extends HttpServlet
 {
+  
+  /**
+   * This provides subclasses with the ability to fetch the user's state
+   * object. This is found by looking for a state ID string as a parameter in
+   * the query string or form data. It finds the state store from the servlet
+   * context and looks up the state.
+   * 
+   * @param request The HTTP servlet request.
+   * @param response The HTTP servlet response.
+   * @return The state, if found or NULL. If NULL an error will have already been sent to browser.
+   * @throws ServletException If problem occurred in processing.
+   * @throws IOException If it wasn't possible to send an error page over the network.
+   */
   protected DemoState getState( HttpServletRequest request, HttpServletResponse response )
           throws ServletException, IOException
   {

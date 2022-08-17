@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.state;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.tool.Resource;
+import uk.ac.leedsbeckett.ltitools.state.LaunchState;
 
 
 /**
@@ -26,7 +26,7 @@ import uk.ac.leedsbeckett.ltitools.tool.Resource;
  * 
  * @author jon
  */
-public class CourseLaunchState extends LaunchState
+public class PeerGroupAssessmentState extends LaunchState
 {
   private String resourceId;
   private String courseId;
@@ -37,7 +37,7 @@ public class CourseLaunchState extends LaunchState
    * session is going to work on. This is all about the specifics of
    * what this demo tool does.
    */
-  private Resource resource;
+  private PeerGroupResource resource;
   
   /**
    * Rights of user with respect to the resource being accessed.
@@ -109,7 +109,7 @@ public class CourseLaunchState extends LaunchState
    * 
    * @return This tool's resource object.
    */
-  public Resource getResource()
+  public PeerGroupResource getResource()
   {
     return resource;
   }
@@ -119,7 +119,7 @@ public class CourseLaunchState extends LaunchState
    * 
    * @param resource This tool's resource object.
    */
-  public void setResource( Resource resource )
+  public void setResource( PeerGroupResource resource )
   {
     this.resource = resource;
   }

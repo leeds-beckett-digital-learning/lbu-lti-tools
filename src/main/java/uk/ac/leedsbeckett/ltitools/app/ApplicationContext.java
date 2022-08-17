@@ -16,8 +16,8 @@
 
 package uk.ac.leedsbeckett.ltitools.app;
 
-import uk.ac.leedsbeckett.ltitools.state.DemoLtiStateStore;
-import uk.ac.leedsbeckett.ltitools.tool.ResourceStore;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiStateStore;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import javax.servlet.ServletContext;
 
@@ -33,8 +33,8 @@ public class ApplicationContext
   
   // Our context data is split into these three objects
   LtiConfiguration config = new LtiConfiguration();
-  ResourceStore store = new ResourceStore();
-  DemoLtiStateStore statestore = new DemoLtiStateStore();
+  PeerGroupResourceStore store = new PeerGroupResourceStore();
+  AppLtiStateStore statestore = new AppLtiStateStore();
   
   /**
    * Get this object to add itself to a ServletContext as an attribute.
@@ -73,7 +73,7 @@ public class ApplicationContext
    * 
    * @return The instance.
    */
-  public ResourceStore getStore()
+  public PeerGroupResourceStore getStore()
   {
     return store;
   }
@@ -83,7 +83,7 @@ public class ApplicationContext
    * 
    * @return 
    */
-  public DemoLtiStateStore getStateStore()
+  public AppLtiStateStore getStateStore()
   {
     return statestore;
   }

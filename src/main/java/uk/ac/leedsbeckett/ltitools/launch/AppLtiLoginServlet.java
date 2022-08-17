@@ -31,7 +31,7 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  * @author jon
  */
 @WebServlet(name = "DemoLtiLoginServlet", urlPatterns = { FixedLtiConfiguration.LOGIN_PATTERN })
-public class DemoLtiLoginServlet extends LtiLoginServlet
+public class AppLtiLoginServlet extends LtiLoginServlet
 {
 
   /**

@@ -16,6 +16,7 @@
 
 package uk.ac.leedsbeckett.ltitools.state;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
@@ -25,12 +26,12 @@ import uk.ac.leedsbeckett.lti.state.LtiState;
  * 
  * @author jon
  */
-public class DemoState extends LtiState
+public class AppState extends LtiState
 {
   /**
    * Data that relates to the course-content servlet.
    */
-  CourseLaunchState   courseLaunchState = null;
+  PeerGroupAssessmentState   peerGroupAssessmentState = null;
   
   /**
    * Data that relates to the platform wide servlet.
@@ -43,7 +44,7 @@ public class DemoState extends LtiState
    * 
    * @param client The LTI issuer client configuration.
    */
-  public DemoState( LtiConfiguration.Client client )
+  public AppState( LtiConfiguration.Client client )
   {
     super( client );
   }
@@ -73,9 +74,9 @@ public class DemoState extends LtiState
    * 
    * @return The course content state.
    */
-  public CourseLaunchState getCourseLaunchState()
+  public PeerGroupAssessmentState getPeerGroupAssessmentState()
   {
-    return courseLaunchState;
+    return peerGroupAssessmentState;
   }
 
   /**
@@ -83,9 +84,9 @@ public class DemoState extends LtiState
    * 
    * @param launchState The course content state.
    */
-  public void setCourseLaunchState( CourseLaunchState launchState )
+  public void setPeerGroupAssessmentState( PeerGroupAssessmentState launchState )
   {
-    this.courseLaunchState = launchState;
+    this.peerGroupAssessmentState = launchState;
   }  
   
 }

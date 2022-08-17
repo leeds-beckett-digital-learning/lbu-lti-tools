@@ -19,8 +19,8 @@ package uk.ac.leedsbeckett.ltitools.launch;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.app.FixedLtiConfiguration;
 import uk.ac.leedsbeckett.ltitools.state.LaunchState;
-import uk.ac.leedsbeckett.ltitools.state.CourseLaunchState;
-import uk.ac.leedsbeckett.ltitools.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
+import uk.ac.leedsbeckett.ltitools.state.AppState;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -30,8 +30,8 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltitools.tool.Resource;
-import uk.ac.leedsbeckett.ltitools.tool.ResourceStore;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.servlet.LtiLaunchServlet;
 import uk.ac.leedsbeckett.lti.state.LtiState;
@@ -44,7 +44,7 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  * @author jon
  */
 @WebServlet( name = "DemoLtiLaunchServlet", urlPatterns = { FixedLtiConfiguration.LAUNCH_PATTERN } )
-public class DemoLtiLaunchServlet extends LtiLaunchServlet
+public class AppLtiLaunchServlet extends LtiLaunchServlet
 {
   
   /**
@@ -65,32 +65,31 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
           throws ServletException, IOException
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
-    ResourceStore resourcestore = appcontext.getStore();
     
-    if ( !(ltistate instanceof DemoState ) )
+    if ( !(ltistate instanceof AppState ) )
       throw new ServletException( "Wrong type of LtiState." );
-    DemoState state = (DemoState)ltistate;
+    AppState state = (AppState)ltistate;
     
     String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
     String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
     
-    LaunchState platformlaunch = null;
-    CourseLaunchState courselaunch = null;
     
     if ( "coursecontent".equals( tooltype ) && "peergrpassess".equals( toolname ) )
     {
-      courselaunch = new CourseLaunchState();
+      PeerGroupAssessmentState courselaunch;
+      PeerGroupResourceStore resourcestore = appcontext.getStore();
+      courselaunch = new PeerGroupAssessmentState();
       courselaunch.setPersonName( lticlaims.get( "name" ).toString() );
       courselaunch.setPlatformName( lticlaims.getLtiToolPlatform().getUrl() );      
       courselaunch.setCourseId( lticlaims.getLtiContext().getId() );
       courselaunch.setCourseTitle( lticlaims.getLtiContext().getLabel() );
       courselaunch.setResourceId( lticlaims.getLtiResource().getId() );
       courselaunch.setRoles( lticlaims.getLtiRoles() );
-      Resource resource = resourcestore.get( courselaunch.getPlatformName(), courselaunch.getResourceId(), true );
+      PeerGroupResource resource = resourcestore.get( courselaunch.getPlatformName(), courselaunch.getResourceId(), true );
       courselaunch.setResource( resource );
       if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
         courselaunch.setAllowedToClearResource( true );
-      state.setCourseLaunchState( courselaunch );
+      state.setPeerGroupAssessmentState( courselaunch );
       response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergrpassess?state_id=" + state.getId() ) );
       return;
     }

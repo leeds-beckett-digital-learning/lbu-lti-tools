@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.tool;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource;
 import java.util.HashMap;
 
 /**
@@ -28,9 +29,9 @@ import java.util.HashMap;
  * 
  * @author jon
  */
-public class ResourceStore
+public class PeerGroupResourceStore
 {
-  HashMap<String,HashMap<String,Resource>> map = new HashMap<>();
+  HashMap<String,HashMap<String,PeerGroupResource>> map = new HashMap<>();
   
   /**
    * Find a resource keyed by platform ID and resource ID with option to
@@ -41,9 +42,9 @@ public class ResourceStore
    * @param create Set true if the resource should be created if it doesn't already exist.
    * @return The resource or null if it wasn't found and creation wasn't requested.
    */
-  public Resource get( String platform, String resource, boolean create )
+  public PeerGroupResource get( String platform, String resource, boolean create )
   {
-    HashMap<String,Resource> platformmap = map.get( platform );
+    HashMap<String,PeerGroupResource> platformmap = map.get( platform );
     if ( platformmap == null )
     {
       if ( create )
@@ -55,10 +56,10 @@ public class ResourceStore
         return null;
     }
     
-    Resource r = platformmap.get( resource );
+    PeerGroupResource r = platformmap.get( resource );
     if ( r == null && create )
     {
-      r = new Resource();
+      r = new PeerGroupResource();
       platformmap.put( resource, r );
     }
     return r;
@@ -77,13 +78,12 @@ public class ResourceStore
     for ( String p : map.keySet() )
     {
       sb.append( "  Platform " + p + "\n" );
-      HashMap<String,Resource> platformmap = map.get( p );
+      HashMap<String,PeerGroupResource> platformmap = map.get( p );
       for ( String rid : platformmap.keySet() )
       {
         sb.append( "    Resource " + rid + "\n" );
-        Resource r = platformmap.get( rid );
-        for ( ResourceEntry entry : r.getEntries() )
-          sb.append( "      Entry " + entry.timestamp + " " + entry.person + " {" + entry.message + "}\n" );
+        PeerGroupResource r = platformmap.get( rid );
+        sb.append( "    Resource exists " + (r!=null) + "\n" );
       }
     }
     return sb.toString();

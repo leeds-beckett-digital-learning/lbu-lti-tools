@@ -28,7 +28,7 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  * 
  * @author jon
  */
-public class DemoLtiStateStore extends LtiStateStore
+public class AppLtiStateStore extends LtiStateStore
 {
   /**
    * Makes sure that the state object used throughout the LTI handling
@@ -40,6 +40,6 @@ public class DemoLtiStateStore extends LtiStateStore
   @Override
   protected LtiState newState( LtiConfiguration.Client client )
   {
-    return new DemoState( client );    
+    return new AppState( client );    
   }  
 }

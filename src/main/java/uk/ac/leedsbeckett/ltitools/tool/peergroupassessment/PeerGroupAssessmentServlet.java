@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.peergroupassessmenttool;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltitools.state.CourseLaunchState;
-import uk.ac.leedsbeckett.ltitools.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.state.AppState;
 import uk.ac.leedsbeckett.ltitools.tool.AbstractToolServlet;
-import uk.ac.leedsbeckett.ltitools.tool.Resource;
-import uk.ac.leedsbeckett.ltitools.tool.ResourceEntry;
 
 /**
  * This is a fairly trivial tool. It presents a single page on which user's
@@ -59,10 +55,10 @@ public class PeerGroupAssessmentServlet extends AbstractToolServlet
           throws ServletException, IOException
   {    
     // Super class provides this functionality.
-    DemoState state = getState( request, response );
+    AppState state = getState( request, response );
     if ( state == null ) return;
     
-    CourseLaunchState course = state.getCourseLaunchState();
+    PeerGroupAssessmentState course = state.getPeerGroupAssessmentState();
     if ( course == null )
     {
       response.sendError( 500, "Could not find data about the requested resource." );
@@ -70,7 +66,7 @@ public class PeerGroupAssessmentServlet extends AbstractToolServlet
     }
     
     // Find the shared object that contains log entries
-    Resource resource = course.getResource();
+    PeerGroupResource resource = course.getResource();
     
     // If an action has been specified in form data take appropriate
     // action.

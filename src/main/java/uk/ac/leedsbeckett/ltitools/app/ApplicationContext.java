@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.app;
+package uk.ac.leedsbeckett.ltitools.app;
 
-import uk.ac.leedsbeckett.ltidemo.state.DemoLtiStateStore;
-import uk.ac.leedsbeckett.ltidemo.tool.ResourceStore;
+import uk.ac.leedsbeckett.ltitools.state.DemoLtiStateStore;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceStore;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import javax.servlet.ServletContext;
 
@@ -27,9 +27,9 @@ import javax.servlet.ServletContext;
  * 
  * @author jon
  */
-public class DemoApplicationContext
+public class ApplicationContext
 {
-  public static final String KEY = DemoApplicationContext.class.getCanonicalName();
+  public static final String KEY = ApplicationContext.class.getCanonicalName();
   
   // Our context data is split into these three objects
   LtiConfiguration config = new LtiConfiguration();
@@ -53,9 +53,9 @@ public class DemoApplicationContext
    * @param context The ServletContext from which to fetch the instance.
    * @return The instance or null if not found.
    */
-  public static DemoApplicationContext getFromServletContext( ServletContext context )
+  public static ApplicationContext getFromServletContext( ServletContext context )
   {
-    return (DemoApplicationContext)context.getAttribute( KEY );
+    return (ApplicationContext)context.getAttribute( KEY );
   }
 
   /**

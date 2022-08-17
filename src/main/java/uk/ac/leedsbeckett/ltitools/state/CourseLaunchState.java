@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.state;
+package uk.ac.leedsbeckett.ltitools.state;
 
-import uk.ac.leedsbeckett.ltidemo.tool.Resource;
+import uk.ac.leedsbeckett.ltitools.tool.Resource;
 
 
 /**

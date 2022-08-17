@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.launch;
+package uk.ac.leedsbeckett.ltitools.launch;
 
-import uk.ac.leedsbeckett.ltidemo.app.FixedLtiConfiguration;
-import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
+import uk.ac.leedsbeckett.ltitools.app.FixedLtiConfiguration;
+import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import javax.servlet.ServletContext;
 import javax.servlet.annotation.WebServlet;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
@@ -44,7 +44,7 @@ public class DemoLtiLoginServlet extends LtiLoginServlet
   @Override
   protected LtiStateStore getLtiStateStore( ServletContext context )
   {
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( context );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getStateStore();
   }  
   
@@ -56,7 +56,7 @@ public class DemoLtiLoginServlet extends LtiLoginServlet
    */  
   protected LtiConfiguration getLtiConfiguration( ServletContext context )
   {
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( context );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getConfig();
   }
 

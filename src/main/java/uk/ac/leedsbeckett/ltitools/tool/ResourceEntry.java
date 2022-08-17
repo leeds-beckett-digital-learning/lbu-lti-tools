@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.tool;
+package uk.ac.leedsbeckett.ltitools.tool;
 
 /**
  * A log entry for use in a stack of log entries.

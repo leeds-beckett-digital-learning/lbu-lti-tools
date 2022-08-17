@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.state;
+package uk.ac.leedsbeckett.ltitools.state;
 
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.state.LtiState;

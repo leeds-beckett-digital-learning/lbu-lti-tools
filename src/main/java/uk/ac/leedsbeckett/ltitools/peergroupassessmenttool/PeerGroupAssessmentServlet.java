@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.tool;
+package uk.ac.leedsbeckett.ltitools.peergroupassessmenttool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,9 +24,11 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.state.CourseLaunchState;
-import uk.ac.leedsbeckett.ltidemo.state.DemoState;
-import uk.ac.leedsbeckett.lti.state.LtiState;
+import uk.ac.leedsbeckett.ltitools.state.CourseLaunchState;
+import uk.ac.leedsbeckett.ltitools.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.tool.AbstractToolServlet;
+import uk.ac.leedsbeckett.ltitools.tool.Resource;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceEntry;
 
 /**
  * This is a fairly trivial tool. It presents a single page on which user's
@@ -35,11 +37,11 @@ import uk.ac.leedsbeckett.lti.state.LtiState;
  * 
  * @author jon
  */
-@WebServlet( name = "CourseResourceServlet", urlPatterns =
+@WebServlet( name = "PeerGroupAssessmentServlet", urlPatterns =
 {
-  "/courseresource"
+  "/peergrpassess"
 } )
-public class CourseResourceServlet extends AbstractDemoToolServlet
+public class PeerGroupAssessmentServlet extends AbstractToolServlet
 {
   SimpleDateFormat dateformat = new SimpleDateFormat();
   
@@ -73,13 +75,13 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
     // If an action has been specified in form data take appropriate
     // action.
     String action = request.getParameter( "action" );
-    if ( "add".equals( action ) )
-      resource.addEntry( course.getPersonName() );
-    else if ( "clear".equals( action ) )
-    {
-      if ( course.isAllowedToClearResource() )
-        resource.clearEntries( course.getPersonName() );
-    }
+//    if ( "add".equals( action ) )
+//      resource.addEntry( course.getPersonName() );
+//    else if ( "clear".equals( action ) )
+//    {
+//      if ( course.isAllowedToClearResource() )
+//        resource.clearEntries( course.getPersonName() );
+//    }
                 
     // Now send the HTML output to the user
     response.setContentType( "text/html;charset=UTF-8" );
@@ -93,12 +95,8 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
       out.println( "<body>" );
       out.println( "<h1>A Course Level Tool On " + request.getServerName() + "</h1>" );
       
-      out.println( "<h2>The Resource</h2>" );
-      out.println( "<p>This is an extremely simple, not very useful web resource "    );
-      out.println( "which serves to demonstrate how to build an LTI 1.3 tool. "       );
-      out.println( "It consists of a simple log of activity. All users can click a "  );
-      out.println( "button and add an entry and users with 'instructor' role in the " );
-      out.println( "course that launched this resource can clear entries.</p>"        );
+      out.println( "<h2>Peer Group Assessment Tool</h2>" );
+      out.println( "<p>This tool has not been implemented yet.</p>"        );
       
       if ( resource == null )
       {
@@ -106,49 +104,11 @@ public class CourseResourceServlet extends AbstractDemoToolServlet
       }
       else
       {
-        out.println( "<ol>" );
-        for ( ResourceEntry entry : resource.getEntries() )
-        {
-          out.print( "<li><em>" );
-          out.print( dateformat.format( new Date( entry.getTimestamp() ) ) );
-          out.print( "</em> <strong>" );
-          out.print( entry.getPerson() );
-          out.print( "</strong> {" );
-          out.print( entry.getMessage() );
-          out.println( "}</li>" );
-        }
-        out.println( "</ol>" );
+        out.println( "Resource loaded." );
       }
       
       String baseurl = request.getContextPath() + "/courseresource";
-      
-      out.print( "<form method=\"get\" action=\"" );
-      out.print( response.encodeURL( baseurl ) );
-      out.println( "\">" );
-      out.println( "<input type=\"hidden\" name=\"state_id\" value=\"" + state.getId() + "\"/>" );
-      out.println( "<input type=\"submit\"                   value=\"Reload\"/>" );
-      out.println( "</form>" );
-      
-      out.print( "<form method=\"get\" action=\"" );
-      out.print( response.encodeURL( baseurl ) );
-      out.println( "\">" );
-      out.println( "<input type=\"hidden\" name=\"state_id\" value=\"" + state.getId() + "\"/>" );
-      out.println( "<input type=\"hidden\" name=\"action\"   value=\"add\"/>" );
-      out.println( "<input type=\"submit\"                   value=\"Add Entry\"/>" );
-      out.println( "</form>" );
-      
-      if ( course.isAllowedToClearResource() )
-      {
-        out.print( "<form method=\"get\" action=\"" );
-        out.print( response.encodeURL( baseurl ) );
-        out.println( "\">" );
-        out.println( "<input type=\"hidden\" name=\"state_id\" value=\"" + state.getId() + "\"/>" );
-        out.println( "<input type=\"hidden\" name=\"action\"   value=\"clear\"/>" );
-        out.println( "<input type=\"submit\"                   value=\"Clear Entries\"/>" );
-        out.println( "</form>" );
-      }
-
-      
+            
       out.println( "<h2>About the Resource</h2>" );
       out.println( "<p>Information of interest to developers.</p>" );
       out.println( "<p>According to <strong>" + course.getPlatformName() + "</strong> " );

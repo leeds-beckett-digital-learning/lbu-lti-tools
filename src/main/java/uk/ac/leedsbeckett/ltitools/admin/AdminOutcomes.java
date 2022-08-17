@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.admin;
+package uk.ac.leedsbeckett.ltitools.admin;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
-import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
+import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 
 /**
  * This class provides logic for use within an admin JSP page.
@@ -56,7 +56,7 @@ public class AdminOutcomes
     this.request = request;
     
     // Retrieve information about the application
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( request.getServletContext() );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     LtiConfiguration config = appcontext.getConfig();
     
     // Find out if there was a form field called 'action'

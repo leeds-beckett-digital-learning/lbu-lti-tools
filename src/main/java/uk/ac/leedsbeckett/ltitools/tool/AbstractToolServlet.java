@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.tool;
+package uk.ac.leedsbeckett.ltitools.tool;
 
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 import java.io.IOException;
@@ -22,8 +22,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
-import uk.ac.leedsbeckett.ltidemo.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
+import uk.ac.leedsbeckett.ltitools.state.DemoState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
 /**
@@ -32,7 +32,7 @@ import uk.ac.leedsbeckett.lti.state.LtiState;
  * 
  * @author jon
  */
-public abstract class AbstractDemoToolServlet extends HttpServlet
+public abstract class AbstractToolServlet extends HttpServlet
 {
   
   /**
@@ -57,7 +57,7 @@ public abstract class AbstractDemoToolServlet extends HttpServlet
       return null;
     }
 
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( request.getServletContext() );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     LtiStateStore statestore = appcontext.getStateStore();
     if ( statestore == null )
     {

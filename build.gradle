@@ -1,9 +1,10 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'war'
+apply plugin: 'maven-publish'
 
 
-description = 'LBU-LTI-Demo'
+description = 'LBU-LTI-Tools'
     group = 'uk.ac.leedsbeckett'
 repositories {
     mavenCentral()
@@ -28,7 +29,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.0'
     
     implementation 'jstl:jstl:1.2'
-    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.1'
+    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.4'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2',
@@ -37,4 +38,22 @@ dependencies {
             'io.jsonwebtoken:jjwt-jackson:0.11.2'
 
     testImplementation     'junit:junit:4.13'
+}
+
+publishing {
+  publications {
+    mavenWeb(MavenPublication) {
+      from components.web
+    }
+  }
+  repositories {
+    maven {
+      name = "GitHubPackages"
+      url "https://maven.pkg.github.com/leeds-beckett-digital-learning/lbu-lti-tools"
+      credentials {
+        username = gitHubUserName
+        password = gitHubPrivateToken
+      }
+    }
+  }
 }

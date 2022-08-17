@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.app;
+package uk.ac.leedsbeckett.ltitools.app;
 
 /**
  * Some properties that are fixed but may in the future be shifted into

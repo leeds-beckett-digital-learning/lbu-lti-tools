@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.launch;
+package uk.ac.leedsbeckett.ltitools.launch;
 
-import uk.ac.leedsbeckett.ltidemo.app.DemoApplicationContext;
-import uk.ac.leedsbeckett.ltidemo.app.FixedLtiConfiguration;
-import uk.ac.leedsbeckett.ltidemo.state.LaunchState;
-import uk.ac.leedsbeckett.ltidemo.state.CourseLaunchState;
-import uk.ac.leedsbeckett.ltidemo.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
+import uk.ac.leedsbeckett.ltitools.app.FixedLtiConfiguration;
+import uk.ac.leedsbeckett.ltitools.state.LaunchState;
+import uk.ac.leedsbeckett.ltitools.state.CourseLaunchState;
+import uk.ac.leedsbeckett.ltitools.state.DemoState;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -30,8 +30,8 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.tool.Resource;
-import uk.ac.leedsbeckett.ltidemo.tool.ResourceStore;
+import uk.ac.leedsbeckett.ltitools.tool.Resource;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceStore;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.servlet.LtiLaunchServlet;
 import uk.ac.leedsbeckett.lti.state.LtiState;
@@ -64,44 +64,20 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
   protected void processLaunchRequest( LtiClaims lticlaims, LtiState ltistate, HttpServletRequest request, HttpServletResponse response )
           throws ServletException, IOException
   {
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( request.getServletContext() );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     ResourceStore resourcestore = appcontext.getStore();
     
     if ( !(ltistate instanceof DemoState ) )
       throw new ServletException( "Wrong type of LtiState." );
     DemoState state = (DemoState)ltistate;
     
-    String tooltype = lticlaims.getLtiCustom().getToolType();
+    String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
+    String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
+    
     LaunchState platformlaunch = null;
     CourseLaunchState courselaunch = null;
     
-    // Decide what to do depending on the tool type which was specified
-    // in the LTI custom claim. Can put different data in the state and
-    // can redirect to different servlets or JSP pages.
-    
-    if ( "system".equals( tooltype ) )
-    {
-      platformlaunch = new LaunchState();
-      platformlaunch.setPersonName( lticlaims.get( "name" ).toString() );
-      platformlaunch.setPlatformName( lticlaims.getLtiToolPlatform().getUrl() );
-      platformlaunch.setRoles( lticlaims.getLtiRoles() );
-      state.setPlatformLaunchState( platformlaunch );
-      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/platformresource?state_id=" + state.getId() ) );
-      return;
-    } 
-    
-    if ( "course".equals( tooltype ) )
-    {
-      platformlaunch = new LaunchState();
-      platformlaunch.setPersonName( lticlaims.get( "name" ).toString() );
-      platformlaunch.setPlatformName( lticlaims.getLtiToolPlatform().getUrl() );
-      platformlaunch.setRoles( lticlaims.getLtiRoles() );
-      state.setPlatformLaunchState( platformlaunch );
-      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/platformresource?state_id=" + state.getId() ) );
-      return;
-    }
-    
-    if ( "coursecontent".equals( tooltype ) )
+    if ( "coursecontent".equals( tooltype ) && "peergrpassess".equals( toolname ) )
     {
       courselaunch = new CourseLaunchState();
       courselaunch.setPersonName( lticlaims.get( "name" ).toString() );
@@ -115,7 +91,7 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
       if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
         courselaunch.setAllowedToClearResource( true );
       state.setCourseLaunchState( courselaunch );
-      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/courseresource?state_id=" + state.getId() ) );
+      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergrpassess?state_id=" + state.getId() ) );
       return;
     }
     
@@ -152,8 +128,14 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
       
       
       out.println( "<h2>Technical breakdown of launch request</h2>" );
-      out.println( "<pre>" );
+      out.println( "<table>");
+      out.println( "<tr><th>toolname</th><td>" + toolname + "</td></tr>" );
+      out.println( "<tr><th>tooltype</th><td>" + tooltype + "</td></tr>" );
+      out.println( "</table>");
+
+      out.println( "<h3>LTI Claims</h3>" );
       
+      out.println( "<pre>" );
       ArrayList<String> keylist = new ArrayList<>();
       for ( String k :  lticlaims.keySet() )
         keylist.add( k );
@@ -178,7 +160,7 @@ public class DemoLtiLaunchServlet extends LtiLaunchServlet
   @Override
   protected LtiStateStore getLtiStateStore( ServletContext context )
   {
-    DemoApplicationContext appcontext = DemoApplicationContext.getFromServletContext( context );
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getStateStore();
   }
   

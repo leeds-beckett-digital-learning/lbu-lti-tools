@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.tool;
+package uk.ac.leedsbeckett.ltitools.tool;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -22,8 +22,8 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltidemo.state.DemoState;
-import uk.ac.leedsbeckett.ltidemo.state.LaunchState;
+import uk.ac.leedsbeckett.ltitools.state.DemoState;
+import uk.ac.leedsbeckett.ltitools.state.LaunchState;
 
 /**
  * This servlet simply presents some text to the user. The demo may be 
@@ -36,7 +36,7 @@ import uk.ac.leedsbeckett.ltidemo.state.LaunchState;
 {
   "/platformresource"
 } )
-public class PlatformResourceServlet extends AbstractDemoToolServlet
+public class PlatformResourceServlet extends AbstractToolServlet
 {
 
   /**

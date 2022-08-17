@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.app;
+package uk.ac.leedsbeckett.ltitools.app;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  * @author jon
  */
-public class DemoContextListener implements ServletContextListener
+public class ContextListener implements ServletContextListener
 {
 
   /**
@@ -39,14 +39,17 @@ public class DemoContextListener implements ServletContextListener
   @Override
   public void contextInitialized( ServletContextEvent event )
   {
+    System.out.println( "LBU LTI tools - context initialised." );
     ServletContext context =event.getServletContext();
     
-    DemoApplicationContext appcontext = new DemoApplicationContext();
+    ApplicationContext appcontext = new ApplicationContext();
     appcontext.addToServletContext( context );
 
     String configpath = context.getRealPath( "/WEB-INF/config.json" );
     if ( !StringUtils.isEmpty( configpath ) )
       appcontext.getConfig().load( configpath );
+
+    System.out.println( "LBU LTI tools - context initialised success." );
   }
 
   /**

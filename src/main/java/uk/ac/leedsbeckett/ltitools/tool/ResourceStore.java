@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltidemo.tool;
+package uk.ac.leedsbeckett.ltitools.tool;
 
 import java.util.HashMap;
 

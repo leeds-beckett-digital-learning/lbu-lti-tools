@@ -24,12 +24,18 @@
   <body>
     <h1>Admin Page</h1>
     <p>Action = ${outcomes.action}</p>
-    <h2>Configuration File</h2>
     <p>${outcomes.importantMessage}</p>
+    
     <form method="POST" action=".">
       <input type="hidden" name="action" value="saveconfig" />
+      <h2>LTI 1.3 Configuration File</h2>
       <p><textarea name="config">${outcomes.rawConfiguration}</textarea></p>
-      <p><input type="submit" value="Save Config"></input></p>
+      <h2>Logging Configuration File</h2>
+      <p>Note that changes to logging configuration only come into effect when
+        the java web application restarts.</p>
+      <p><textarea name="logconfig">${outcomes.logConfiguration}</textarea></p>
+      <p><input type="submit" value="Save Config"></p>
     </form>
+          
   </body>
 </html>

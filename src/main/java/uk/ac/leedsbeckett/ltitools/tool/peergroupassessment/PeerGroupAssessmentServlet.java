@@ -55,8 +55,7 @@ public class PeerGroupAssessmentServlet extends AbstractToolServlet
           throws ServletException, IOException
   {    
     // Super class provides this functionality.
-    AppState state = getState( request, response );
-    if ( state == null ) return;
+    AppState state = getState( request );
     
     PeerGroupAssessmentState course = state.getPeerGroupAssessmentState();
     if ( course == null )

@@ -31,10 +31,12 @@ public class ApplicationContext
 {
   public static final String KEY = ApplicationContext.class.getCanonicalName();
   
+  ServletContext servletcontext;
+  
   // Our context data is split into these three objects
-  LtiConfiguration config = new LtiConfiguration();
-  PeerGroupResourceStore store = new PeerGroupResourceStore();
-  AppLtiStateStore statestore = new AppLtiStateStore();
+  LtiConfiguration config;
+  PeerGroupResourceStore store;
+  AppLtiStateStore statestore;
   
   /**
    * Get this object to add itself to a ServletContext as an attribute.
@@ -43,7 +45,11 @@ public class ApplicationContext
    */
   public void addToServletContext( ServletContext context )
   {
+    servletcontext = context;
     context.setAttribute( KEY, this );
+    config = new LtiConfiguration();
+    store = new PeerGroupResourceStore();
+    statestore = new AppLtiStateStore();
   }
   
   /**

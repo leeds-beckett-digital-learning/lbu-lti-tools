@@ -19,6 +19,12 @@ package uk.ac.leedsbeckett.ltitools.admin;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.servlet.ServletContext;
 import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
@@ -31,11 +37,16 @@ import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
  */
 public class AdminOutcomes
 {
+  static Logger logger = Logger.getLogger( AdminOutcomes.class.getName() );
+
   HttpServletRequest request;
   String action;
   String rawconfig;
   String importantmessage="";
 
+  Path logconfigpath;
+  String logconfig="";
+          
   /**
    * Get the HTTP request associated with the JSP page that uses this object.
    * @return 
@@ -45,7 +56,7 @@ public class AdminOutcomes
     return request;
   }
 
-  /**
+ /**
    * The JSP will call this to initiate processing and then call the getter
    * methods to retrieve outcomes of the processing.
    * 
@@ -58,6 +69,7 @@ public class AdminOutcomes
     // Retrieve information about the application
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     LtiConfiguration config = appcontext.getConfig();
+    logconfigpath = Paths.get( request.getServletContext().getRealPath( "WEB-INF/classes/logging.properties" ) );
     
     // Find out if there was a form field called 'action'
     if ( request != null )
@@ -70,8 +82,9 @@ public class AdminOutcomes
       String name = config.getConfigFileName();
       try
       {
-        saveToFile( name, request.getParameter( "config" ) );
+        saveLtiConfigToFile( name, request.getParameter( "config" ) );
         config.load( name );
+        saveLoggingConfigToFile( request.getParameter( "logconfig" ) );
         importantmessage = "Configuration successfully saved.";
       }
       catch ( IOException ioe )
@@ -79,9 +92,20 @@ public class AdminOutcomes
         importantmessage = "Configuration saving failed. " + ioe.getMessage();
       }
     }
-    
+
     // Regardless, fetch the current config now.
     rawconfig = config.getRawConfiguration();
+
+    logger.log( Level.FINE, "Path of logging.properties = {0}", logconfigpath );
+    if ( Files.exists( logconfigpath ) )
+      try
+      {
+        logconfig = FileUtils.readFileToString( logconfigpath.toFile(), StandardCharsets.UTF_8 );
+      }
+      catch (IOException ex)
+      {
+        logger.log(Level.SEVERE, "Unable to read logging config.", ex);
+      }
   }
 
   /**
@@ -90,9 +114,15 @@ public class AdminOutcomes
    * @param content The content to put in the file using UTF encoding.
    * @throws IOException If there is a problem writing to the file.
    */
-  void saveToFile( String name, String content ) throws IOException
+  void saveLtiConfigToFile( String name, String content ) throws IOException
   {
     FileUtils.writeStringToFile( new File( name ), content, StandardCharsets.UTF_8 );
+  }
+
+  void saveLoggingConfigToFile( String content ) throws IOException
+  {
+    logconfig = content;
+    FileUtils.writeStringToFile( logconfigpath.toFile(), logconfig, StandardCharsets.UTF_8 );
   }
   
   /**
@@ -105,6 +135,11 @@ public class AdminOutcomes
     return rawconfig;
   }
 
+  public String getLogConfiguration()
+  {
+    return logconfig;
+  }
+  
   /**
    * Get the value of the action parameter.
    * 

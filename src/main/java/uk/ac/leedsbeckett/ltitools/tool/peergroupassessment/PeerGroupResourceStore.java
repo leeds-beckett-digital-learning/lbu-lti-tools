@@ -16,7 +16,6 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource;
 import java.util.HashMap;
 
 /**

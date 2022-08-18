@@ -69,7 +69,7 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet
     if ( !(ltistate instanceof AppState ) )
       throw new ServletException( "Wrong type of LtiState." );
     AppState state = (AppState)ltistate;
-    
+    this.log( "AppLtiLaunchServlet.processLaunchRequest() " + state.getId() );
     String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
     String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
     
@@ -90,6 +90,7 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet
       if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
         courselaunch.setAllowedToClearResource( true );
       state.setPeerGroupAssessmentState( courselaunch );
+      //response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergroupassessment/index.jsp?state_id=" + state.getId() ) );
       response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergrpassess?state_id=" + state.getId() ) );
       return;
     }

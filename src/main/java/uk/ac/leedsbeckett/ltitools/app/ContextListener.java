@@ -16,10 +16,15 @@
 
 package uk.ac.leedsbeckett.ltitools.app;
 
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import org.apache.commons.lang3.StringUtils;
+import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 
 /**
  * Web application life-cycle listener. Used to instantiate our own
@@ -29,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ContextListener implements ServletContextListener
 {
+  static Logger logger = Logger.getLogger( ContextListener.class.getName() );
 
   /**
    * This will be called when the web application is initialised. So some
@@ -39,7 +45,7 @@ public class ContextListener implements ServletContextListener
   @Override
   public void contextInitialized( ServletContextEvent event )
   {
-    System.out.println( "LBU LTI tools - context initialised." );
+    logger.severe( "LBU LTI tools - context initialised." );
     ServletContext context =event.getServletContext();
     
     ApplicationContext appcontext = new ApplicationContext();
@@ -48,8 +54,6 @@ public class ContextListener implements ServletContextListener
     String configpath = context.getRealPath( "/WEB-INF/config.json" );
     if ( !StringUtils.isEmpty( configpath ) )
       appcontext.getConfig().load( configpath );
-
-    System.out.println( "LBU LTI tools - context initialised success." );
   }
 
   /**

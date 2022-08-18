@@ -25,7 +25,36 @@ package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
  */
 public class PeerGroupResource
 {
+  String title;
+  String description;
+  
   public PeerGroupResource()
   {
-  }  
+    title = "Initial Title";
+    description = "Initial Description";
+  }
+
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  } 
+
+  @Override
+  public String toString()
+  {
+    return getTitle();
+  }
+  
+  
 }

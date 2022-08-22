@@ -29,7 +29,7 @@
     <h1>Peer Group Assessment on ${request.getServerName()}</h1>
     <p class="important">${support.importantMessage}</p>
     <p>This tool has not been implemented yet.</p>
-    <h2>${support.pgaResourse}</h2>
-    <p>${support.pgaResourse.description}</p>
+    <h2>${support.pgaResource.title}</h2>
+    <p>${support.pgaResource.description}</p>
   </body>
 </html>

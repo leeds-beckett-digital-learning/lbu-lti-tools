@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  
+  <!-- This is here because ehcache uses SLF4J for logging. -->
+  
+  <appender name="File-Appender" class="ch.qos.logback.core.FileAppender">
+    <file>/var/log/tomcat9/logback-${timestamp-by-second}.log</file>
+    <encoder>
+        <pattern>%msg%n</pattern>
+        <outputPatternAsHeader>true</outputPatternAsHeader>
+    </encoder>
+  </appender>
+
+	<root level="debug">
+		<appender-ref ref="File-Appender" />
+	</root>
+
+</configuration>

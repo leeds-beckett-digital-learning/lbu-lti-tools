@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
-import uk.ac.leedsbeckett.ltitools.state.AppState;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
 /**
@@ -46,7 +46,7 @@ public abstract class AbstractToolServlet extends HttpServlet
    * @throws ServletException If problem occurred in processing.
    * @throws IOException If it wasn't possible to send an error page over the network.
    */
-  protected AppState getState( HttpServletRequest request )
+  protected AppLtiState getState( HttpServletRequest request )
           throws ServletException, IOException
   {
     String stateid = request.getParameter( "state_id" );
@@ -62,9 +62,9 @@ public abstract class AbstractToolServlet extends HttpServlet
     if ( state == null )
       throw new ServletException( "State missing. " + stateid );
     
-    if ( !(state instanceof AppState) )
+    if ( !(state instanceof AppLtiState) )
       throw new ServletException( "Wrong type of state. " + state.getClass().getName() );
     
-    return (AppState)state;
+    return (AppLtiState)state;
   }  
 }

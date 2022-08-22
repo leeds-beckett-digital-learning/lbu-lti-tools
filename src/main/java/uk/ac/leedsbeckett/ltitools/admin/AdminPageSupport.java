@@ -24,56 +24,43 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.servlet.ServletContext;
-import uk.ac.leedsbeckett.lti.LtiConfiguration;
+import javax.servlet.ServletException;
+import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
-import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
+import uk.ac.leedsbeckett.ltitools.tool.PageSupport;
 
 /**
  * This class provides logic for use within an admin JSP page.
  * 
  * @author jon
  */
-public class AdminOutcomes
+public class AdminPageSupport extends PageSupport
 {
-  static Logger logger = Logger.getLogger( AdminOutcomes.class.getName() );
+  static final Logger logger = Logger.getLogger(AdminPageSupport.class.getName() );
 
-  HttpServletRequest request;
   String action;
   String rawconfig;
-  String importantmessage="";
-
   Path logconfigpath;
   String logconfig="";
           
-  /**
-   * Get the HTTP request associated with the JSP page that uses this object.
-   * @return 
-   */
-  public HttpServletRequest getRequest()
-  {
-    return request;
-  }
-
  /**
    * The JSP will call this to initiate processing and then call the getter
    * methods to retrieve outcomes of the processing.
    * 
    * @param request The HttpRequest associated with the JSP's servlet.
    */
-  public void setRequest( HttpServletRequest request )
+  @Override
+  public void setRequest( HttpServletRequest request ) throws ServletException
   {
-    this.request = request;
+    super.setRequest( request );
     
     // Retrieve information about the application
-    ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     LtiConfiguration config = appcontext.getConfig();
     logconfigpath = Paths.get( request.getServletContext().getRealPath( "WEB-INF/classes/logging.properties" ) );
     
     // Find out if there was a form field called 'action'
-    if ( request != null )
-      action = request.getParameter( "action" );
+    action = request.getParameter( "action" );
     
     // If a saveconfig action was specified take the input from the form and
     // save it over the config file. Then tell the LTI library to reload it.
@@ -95,7 +82,6 @@ public class AdminOutcomes
 
     // Regardless, fetch the current config now.
     rawconfig = config.getRawConfiguration();
-
     logger.log( Level.FINE, "Path of logging.properties = {0}", logconfigpath );
     if ( Files.exists( logconfigpath ) )
       try
@@ -149,15 +135,5 @@ public class AdminOutcomes
   {
     if ( action == null ) return "";
     return action;
-  }
-  
-  /**
-   * Get the important message.
-   * 
-   * @return An important message or an empty string.
-   */
-  public String getImportantMessage()
-  {
-    return importantmessage;
   }
 }

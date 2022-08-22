@@ -16,7 +16,25 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
-import java.util.HashMap;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 /**
  * A store of resources which can be retrieved using keys. At present all
@@ -30,61 +48,116 @@ import java.util.HashMap;
  */
 public class PeerGroupResourceStore
 {
-  HashMap<String,HashMap<String,PeerGroupResource>> map = new HashMap<>();
+  static final Logger logger = Logger.getLogger( PeerGroupResourceStore.class.getName() );
+  private static final ObjectMapper objectmapper = new ObjectMapper();
+  static
+  {
+    objectmapper.enable( SerializationFeature.INDENT_OUTPUT );
+    objectmapper.disable( SerializationFeature.FAIL_ON_EMPTY_BEANS );
+  }
+  
+  Path basepath;
+  Cache<ResourceKey,PeerGroupResource> cache;
+  
+  public PeerGroupResourceStore( Path basepath )
+  {
+    this.basepath = basepath;
+    try
+    {
+      Files.createDirectories( basepath );
+    }
+    catch (IOException ex)
+    {
+      logger.log(Level.SEVERE, null, ex);
+    }
+    
+    logger.log(Level.FINE, "Caching provider class {0}", Caching.getCachingProvider().getClass().getName() );
+    CacheManager manager = Caching.getCachingProvider().getCacheManager();
+    MutableConfiguration<ResourceKey, PeerGroupResource> config = 
+            new MutableConfiguration<ResourceKey, PeerGroupResource>()
+                    .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
+    cache = manager.createCache( "peergroupresource", config );
+  }
   
   /**
    * Find a resource keyed by platform ID and resource ID with option to
    * create the resource if it doesn't exist yet.
    * 
-   * @param platform ID of the platform.
-   * @param resource ID of the resource.
+   * @param key
    * @param create Set true if the resource should be created if it doesn't already exist.
    * @return The resource or null if it wasn't found and creation wasn't requested.
    */
-  public PeerGroupResource get( String platform, String resource, boolean create )
+  public synchronized PeerGroupResource get( ResourceKey key, boolean create )
   {
-    HashMap<String,PeerGroupResource> platformmap = map.get( platform );
-    if ( platformmap == null )
+    PeerGroupResource r = cache.get( key );
+    
+    if ( r != null )
     {
-      if ( create )
-      {
-        platformmap = new HashMap<>();
-        map.put( platform, platformmap );
-      }
-      else
-        return null;
+      logger.log( Level.FINE, "From cache - PeerGroupResource {0}", key.toString() );
+      return r;      
     }
     
-    PeerGroupResource r = platformmap.get( resource );
-    if ( r == null && create )
+    logger.log( Level.FINE, "Not in cache - PeerGroupResource {0}", key.toString() );
+    try
     {
-      r = new PeerGroupResource();
-      platformmap.put( resource, r );
+      r = loadResource( key );
+      if ( r == null )
+      {
+        r = new PeerGroupResource();
+        saveResource( key, r );
+      }
     }
+    catch (IOException ex)
+    {
+      logger.log(Level.SEVERE, null, ex);
+      return null;
+    }
+    
+    cache.put( key, r );
+    if ( !cache.containsKey(key) )
+      logger.log( Level.FINE, "Put resource in cache but key is not present {0}", key.toString() );
+
     return r;
   }
-  
-  /**
-   * Fetch a dump of the entire store for debugging.
-   * 
-   * @return Multi-line text containing description of all resources.
-   */
-  public synchronized String dump()
-  {
-    StringBuilder sb = new StringBuilder();
     
-    sb.append( "Resource Store Contents\n" );
-    for ( String p : map.keySet() )
+  Path getResourcePath( ResourceKey key )
+  {
+    Path d = basepath.resolve( URLEncoder.encode( key.getPlatform(), StandardCharsets.UTF_8 ) );
+    return d.resolve( URLEncoder.encode( key.getResource(), StandardCharsets.UTF_8 ) );
+  }
+  
+  PeerGroupResource loadResource( ResourceKey key ) throws IOException
+  {
+    Path filepath = getResourcePath( key );
+    if ( Files.exists( filepath ) )
     {
-      sb.append( "  Platform " + p + "\n" );
-      HashMap<String,PeerGroupResource> platformmap = map.get( p );
-      for ( String rid : platformmap.keySet() )
-      {
-        sb.append( "    Resource " + rid + "\n" );
-        PeerGroupResource r = platformmap.get( rid );
-        sb.append( "    Resource exists " + (r!=null) + "\n" );
-      }
+      logger.log( Level.FINE, "Loading PeerGroupResource {0}", filepath );
+      return objectmapper.readValue( filepath.toFile(), PeerGroupResource.class );
     }
-    return sb.toString();
+    return null;
+  }
+  
+  void saveResource( ResourceKey key, PeerGroupResource r ) throws IOException
+  {
+    Path filepath = getResourcePath( key );
+    Files.createDirectories( filepath.getParent() );
+    logger.log( Level.FINE, "Saving PeerGroupResource {0}", filepath );
+    objectmapper.writeValue( filepath.toFile(), r );
+  }
+  
+  public static void main( String[] args )
+  {
+    ConsoleHandler handler = new ConsoleHandler();
+    handler.setLevel( Level.ALL );
+    handler.setFormatter( new SimpleFormatter() );
+    
+    logger.setUseParentHandlers( false );
+    logger.addHandler( handler );
+    logger.setLevel( Level.ALL );
+    
+    logger.info( "Starting." );
+    PeerGroupResourceStore store = new PeerGroupResourceStore( Paths.get( "~/peerstore/") );
+    ResourceKey rk = new ResourceKey( "platform", "1" );
+    store.get( rk, true );
   }
 }

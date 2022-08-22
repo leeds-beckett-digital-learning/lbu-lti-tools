@@ -16,6 +16,8 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import java.io.Serializable;
+
 
 /**
  * An object that represents the resource which the user is accessing after the
@@ -23,7 +25,7 @@ package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
  * 
  * @author jon
  */
-public class PeerGroupResource
+public class PeerGroupResource implements Serializable
 {
   String title;
   String description;

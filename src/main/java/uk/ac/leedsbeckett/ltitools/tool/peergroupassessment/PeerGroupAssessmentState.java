@@ -16,7 +16,9 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.state.LaunchState;
+import java.io.Serializable;
+import uk.ac.leedsbeckett.ltitools.state.AppSessionState;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 
 /**
@@ -26,42 +28,43 @@ import uk.ac.leedsbeckett.ltitools.state.LaunchState;
  * 
  * @author jon
  */
-public class PeerGroupAssessmentState extends LaunchState
+public class PeerGroupAssessmentState implements Serializable, AppSessionState
 {
-  private String resourceId;
+  /**
+   * Many users (many states) may reference the same resource. It is 
+   * important that it doesn't hold a reference to the resource. So, it 
+   * holds a unique key to the resource. The resources themselves are
+   * put in a different cache.
+   */
+  private ResourceKey resourceKey;
+  
   private String courseId;
   private String courseTitle;
-  
-  /**
-   * The 'resource' that represents the object that this launch
-   * session is going to work on. This is all about the specifics of
-   * what this demo tool does.
-   */
-  private PeerGroupResource resource;
-  
+    
   /**
    * Rights of user with respect to the resource being accessed.
    */
   private boolean allowedToClearResource=false;
 
   /**
-   * Simple getter.
+   * Get the key of the resource that this state relates to.
    * 
-   * @return The ID of the resource.
+   * @return 
    */
-  public String getResourceId()
+  public ResourceKey getResourceKey()
   {
-    return resourceId;
+    return resourceKey;
   }
 
   /**
-   * Simple setter.
+   * This state object relates to a resource on the server. This method
+   * sets the key for that resource.
    * 
-   * @param resourceId The ID of the resource.
+   * @param resourceKey 
    */
-  public void setResourceId( String resourceId )
+  public void setResourceKey(ResourceKey resourceKey)
   {
-    this.resourceId = resourceId;
+    this.resourceKey = resourceKey;
   }
 
   /**
@@ -102,26 +105,6 @@ public class PeerGroupAssessmentState extends LaunchState
   public void setCourseTitle( String courseTitle )
   {
     this.courseTitle = courseTitle;
-  }
-
-  /**
-   * Simple getter.
-   * 
-   * @return This tool's resource object.
-   */
-  public PeerGroupResource getResource()
-  {
-    return resource;
-  }
-
-  /**
-   * Simple setter.
-   * 
-   * @param resource This tool's resource object.
-   */
-  public void setResource( PeerGroupResource resource )
-  {
-    this.resource = resource;
   }
 
   /**

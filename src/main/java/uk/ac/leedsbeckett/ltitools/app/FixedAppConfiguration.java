@@ -22,7 +22,7 @@ package uk.ac.leedsbeckett.ltitools.app;
  * 
  * @author jon
  */
-public class FixedLtiConfiguration
+public class FixedAppConfiguration
 {
   /**
    * The URL where the LTI login servlet is accessed.

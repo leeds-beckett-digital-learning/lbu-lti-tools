@@ -13,7 +13,7 @@
 <!DOCTYPE html>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<jsp:useBean id="outcomes" class="uk.ac.leedsbeckett.ltitools.admin.AdminOutcomes" scope="request"/>
+<jsp:useBean id="outcomes" class="uk.ac.leedsbeckett.ltitools.admin.AdminPageSupport" scope="request"/>
 <% outcomes.setRequest( request ); %>
 
 <html>

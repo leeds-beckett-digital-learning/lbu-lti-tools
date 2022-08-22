@@ -16,10 +16,19 @@
 
 package uk.ac.leedsbeckett.ltitools.app;
 
-import uk.ac.leedsbeckett.ltitools.state.AppLtiStateStore;
+import java.nio.file.Paths;
+import javax.cache.Cache;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
+import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
-import uk.ac.leedsbeckett.lti.LtiConfiguration;
+import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.ServletContext;
+import uk.ac.leedsbeckett.lti.state.LtiStateStore;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
 
 /**
  * A context object which is specific to our application, is instantiated
@@ -34,22 +43,24 @@ public class ApplicationContext
   ServletContext servletcontext;
   
   // Our context data is split into these three objects
-  LtiConfiguration config;
+  LtiConfiguration lticonfig;
   PeerGroupResourceStore store;
-  AppLtiStateStore statestore;
+  LtiStateStore<AppLtiState> ltistatestore;
   
-  /**
-   * Get this object to add itself to a ServletContext as an attribute.
-   * 
-   * @param context The ServletContext to add to.
-   */
-  public void addToServletContext( ServletContext context )
+  public ApplicationContext( ServletContext context )
   {
     servletcontext = context;
-    context.setAttribute( KEY, this );
-    config = new LtiConfiguration();
-    store = new PeerGroupResourceStore();
-    statestore = new AppLtiStateStore();
+    context.setAttribute( KEY, this );    
+    lticonfig = new LtiConfiguration();
+    store = new PeerGroupResourceStore( Paths.get( context.getRealPath( "/WEB-INF/cache/" ) ) );
+    
+    Cache<String, AppLtiState> cache;
+    CacheManager manager = Caching.getCachingProvider().getCacheManager();
+    MutableConfiguration<String, AppLtiState> cacheconfig = 
+            new MutableConfiguration<String, AppLtiState>()
+                    .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
+    cache = manager.createCache( "appltistate", cacheconfig );
+    ltistatestore = new LtiStateStore<>( cache, new AppLtiStateSupplier() );
   }
   
   /**
@@ -71,7 +82,7 @@ public class ApplicationContext
    */
   public LtiConfiguration getConfig()
   {
-    return config;
+    return lticonfig;
   }
 
   /**
@@ -89,8 +100,8 @@ public class ApplicationContext
    * 
    * @return 
    */
-  public AppLtiStateStore getStateStore()
+  public LtiStateStore<AppLtiState> getStateStore()
   {
-    return statestore;
+    return ltistatestore;
   }
 }

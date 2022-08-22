@@ -16,13 +16,15 @@
 
 package uk.ac.leedsbeckett.ltitools.launch;
 
-import uk.ac.leedsbeckett.ltitools.app.FixedLtiConfiguration;
+import java.util.logging.Logger;
+import uk.ac.leedsbeckett.ltitools.app.FixedAppConfiguration;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import javax.servlet.ServletContext;
 import javax.servlet.annotation.WebServlet;
-import uk.ac.leedsbeckett.lti.LtiConfiguration;
+import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.servlet.LtiLoginServlet;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 
 /**
  * This demo's implementation of the LTI login servlet. The annotation determines
@@ -30,9 +32,10 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  * 
  * @author jon
  */
-@WebServlet(name = "DemoLtiLoginServlet", urlPatterns = { FixedLtiConfiguration.LOGIN_PATTERN })
-public class AppLtiLoginServlet extends LtiLoginServlet
+@WebServlet(name = "AppLtiLoginServlet", urlPatterns = { FixedAppConfiguration.LOGIN_PATTERN })
+public class AppLtiLoginServlet extends LtiLoginServlet<AppLtiState>
 {
+  static final Logger logger = Logger.getLogger( AppLtiLoginServlet.class.getName() );
 
   /**
    * This implementation ensures that the library code knows how to store
@@ -42,7 +45,7 @@ public class AppLtiLoginServlet extends LtiLoginServlet
    * @return The store.
    */  
   @Override
-  protected LtiStateStore getLtiStateStore( ServletContext context )
+  protected LtiStateStore<AppLtiState> getLtiStateStore( ServletContext context )
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getStateStore();
@@ -54,10 +57,10 @@ public class AppLtiLoginServlet extends LtiLoginServlet
    * @param context The servlet context in whose attributes the store can be found.
    * @return The configuration.
    */  
+  @Override
   protected LtiConfiguration getLtiConfiguration( ServletContext context )
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getConfig();
   }
-
 }

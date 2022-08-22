@@ -17,25 +17,25 @@
 package uk.ac.leedsbeckett.ltitools.launch;
 
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
-import uk.ac.leedsbeckett.ltitools.app.FixedLtiConfiguration;
-import uk.ac.leedsbeckett.ltitools.state.LaunchState;
+import uk.ac.leedsbeckett.ltitools.app.FixedAppConfiguration;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
-import uk.ac.leedsbeckett.ltitools.state.AppState;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
+import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.servlet.LtiLaunchServlet;
-import uk.ac.leedsbeckett.lti.state.LtiState;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 /**
  * This demo's implementation of the LTI launch servlet. This implementation
@@ -43,55 +43,55 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  * 
  * @author jon
  */
-@WebServlet( name = "DemoLtiLaunchServlet", urlPatterns = { FixedLtiConfiguration.LAUNCH_PATTERN } )
-public class AppLtiLaunchServlet extends LtiLaunchServlet
+@WebServlet( name = "AppLtiLaunchServlet", urlPatterns = { FixedAppConfiguration.LAUNCH_PATTERN } )
+public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
 {
+  static final Logger logger = Logger.getLogger( AppLtiLaunchServlet.class.getName() );
   
   /**
    * The parent class calls this method after it has processed and validated 
-   * the launch request. The job here is to look at the claims in the LTI
-   * launch and decide how to prepare state and how to forward the user to
-   * the servlet or JSP page that actually implements the tool.
+   * the launch request.The job here is to look at the claims in the LTI
+ launch and decide how to prepare state and how to forward the user to
+ the servlet or JSP page that actually implements the tool.
    * 
    * @param lticlaims The validated LTI claims for this launch request.
-   * @param ltistate The LTI state that was created by the preceding login request.
+   * @param state
    * @param request The HTTP request.
    * @param response The HTTP response.
    * @throws ServletException If there is an internal problem forwarding the user's browser.
    * @throws IOException If the network connection is broken while sending the forwarding response.
    */
   @Override
-  protected void processLaunchRequest( LtiClaims lticlaims, LtiState ltistate, HttpServletRequest request, HttpServletResponse response )
+  protected void processLaunchRequest( LtiClaims lticlaims, AppLtiState state, HttpServletRequest request, HttpServletResponse response )
           throws ServletException, IOException
   {
-    ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
+    logger.info( "Processing Launch Request" );
+    //ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
     
-    if ( !(ltistate instanceof AppState ) )
-      throw new ServletException( "Wrong type of LtiState." );
-    AppState state = (AppState)ltistate;
-    this.log( "AppLtiLaunchServlet.processLaunchRequest() " + state.getId() );
     String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
     String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
     
     
     if ( "coursecontent".equals( tooltype ) && "peergrpassess".equals( toolname ) )
     {
-      PeerGroupAssessmentState courselaunch;
-      PeerGroupResourceStore resourcestore = appcontext.getStore();
-      courselaunch = new PeerGroupAssessmentState();
-      courselaunch.setPersonName( lticlaims.get( "name" ).toString() );
-      courselaunch.setPlatformName( lticlaims.getLtiToolPlatform().getUrl() );      
-      courselaunch.setCourseId( lticlaims.getLtiContext().getId() );
-      courselaunch.setCourseTitle( lticlaims.getLtiContext().getLabel() );
-      courselaunch.setResourceId( lticlaims.getLtiResource().getId() );
-      courselaunch.setRoles( lticlaims.getLtiRoles() );
-      PeerGroupResource resource = resourcestore.get( courselaunch.getPlatformName(), courselaunch.getResourceId(), true );
-      courselaunch.setResource( resource );
+      PeerGroupAssessmentState pgastate;
+      pgastate = new PeerGroupAssessmentState();
+      pgastate.setCourseId( lticlaims.getLtiContext().getId() );
+      pgastate.setCourseTitle( lticlaims.getLtiContext().getLabel() );
+      ResourceKey rk = new ResourceKey( state.getPlatformName(), lticlaims.getLtiResource().getId() );
+      pgastate.setResourceKey( rk );
       if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
-        courselaunch.setAllowedToClearResource( true );
-      state.setPeerGroupAssessmentState( courselaunch );
-      //response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergroupassessment/index.jsp?state_id=" + state.getId() ) );
-      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergrpassess?state_id=" + state.getId() ) );
+        pgastate.setAllowedToClearResource( true );
+      logger.log( Level.FINE, "Created PeerGroupAssessmentState with resource key = {0}",  pgastate.getResourceKey() );    
+      logger.log( Level.FINE, "Calling setPeerGroupAssessmentState() with state id = {0}", state.getId()             );    
+      
+      // If the state is changed it needs to be updated in the cache.
+      state.setPeerGroupAssessmentState( pgastate );
+      getLtiStateStore( request.getServletContext() ).updateState( state );
+      
+      logger.log( Level.FINE, "Confirming {0}", state.getPeerGroupAssessmentState().getResourceKey() );    
+      logger.fine( "Forwarding to peer group assessment tool index page." );
+      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergroupassessment/index.jsp?state_id=" + state.getId() ) );
       return;
     }
     
@@ -158,10 +158,23 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet
    * @return The store.
    */
   @Override
-  protected LtiStateStore getLtiStateStore( ServletContext context )
+  protected LtiStateStore<AppLtiState> getLtiStateStore( ServletContext context )
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getStateStore();
+  }
+
+  /**
+   * This implementation ensures that the library code knows the configuration.
+   * 
+   * @param context The servlet context in whose attributes the store can be found.
+   * @return The configuration.
+   */  
+  @Override
+  protected LtiConfiguration getLtiConfiguration( ServletContext context )
+  {
+    ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
+    return appcontext.getConfig();
   }
   
   

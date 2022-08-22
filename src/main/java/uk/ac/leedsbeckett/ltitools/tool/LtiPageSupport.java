@@ -18,28 +18,18 @@ package uk.ac.leedsbeckett.ltitools.tool;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
+import uk.ac.leedsbeckett.lti.state.LtiStateStore;
+import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 
 /**
- * This class provides common logic for supporting all the JSP pages.
+ * This class logic for JSP pages that run in the context of LTI
+ * launches. Provides subclasses with easy access to LTI state.
  * 
  * @author jon
  */
-public abstract class PageSupport
+public abstract class LtiPageSupport extends PageSupport
 {
-  protected HttpServletRequest request;
-  protected String importantmessage="";
-  
-  protected ApplicationContext appcontext;
-
-  /**
-   * Get the HTTP request associated with the JSP page that uses this object.
-   * @return 
-   */
-  public HttpServletRequest getRequest()
-  {
-    return request;
-  }
+  protected AppLtiState state;
 
   /**
    * The JSP will call this to initiate processing and then call the getter
@@ -48,19 +38,20 @@ public abstract class PageSupport
    * @param request The HttpRequest associated with the JSP's servlet.
    * @throws javax.servlet.ServletException
    */
+  @Override
   public void setRequest( HttpServletRequest request ) throws ServletException
   {
-    this.request = request;
-    appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
+    super.setRequest( request );
+
+    String stateid = request.getParameter( "state_id" );
+    if ( stateid == null )
+      throw new ServletException( "State ID missing." );
+    LtiStateStore<AppLtiState> statestore = appcontext.getStateStore();
+    if ( statestore == null )
+      throw new ServletException( "State store missing." );
+    state = statestore.getState( stateid );
+    if ( state == null )
+      throw new ServletException( "State missing. " + stateid );
   }
 
-  /**
-   * Get the important message.
-   * 
-   * @return An important message or an empty string.
-   */
-  public String getImportantMessage()
-  {
-    return importantmessage;
-  }
 }

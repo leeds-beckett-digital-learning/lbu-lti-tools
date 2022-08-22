@@ -34,7 +34,7 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
  */
 public class ContextListener implements ServletContextListener
 {
-  static Logger logger = Logger.getLogger( ContextListener.class.getName() );
+  static final Logger logger = Logger.getLogger( ContextListener.class.getName() );
 
   /**
    * This will be called when the web application is initialised. So some
@@ -45,17 +45,19 @@ public class ContextListener implements ServletContextListener
   @Override
   public void contextInitialized( ServletContextEvent event )
   {
+    org.slf4j.Logger slf4jlogger = org.slf4j.LoggerFactory.getLogger( ContextListener.class );
+    slf4jlogger.error( "SLF4J logging is working" );
+    
     logger.severe( "LBU LTI tools - context initialised." );
     ServletContext context =event.getServletContext();
     
-    ApplicationContext appcontext = new ApplicationContext();
-    appcontext.addToServletContext( context );
+    ApplicationContext appcontext = new ApplicationContext( context );
 
     String configpath = context.getRealPath( "/WEB-INF/config.json" );
     if ( !StringUtils.isEmpty( configpath ) )
       appcontext.getConfig().load( configpath );
   }
-
+  
   /**
    * At present out app doesn't need to do any cleaning up, but it could
    * be done here.

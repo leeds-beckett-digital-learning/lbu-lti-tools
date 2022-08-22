@@ -16,8 +16,9 @@
 
 package uk.ac.leedsbeckett.ltitools.state;
 
+import java.io.Serializable;
+import uk.ac.leedsbeckett.lti.config.ClientLtiConfigurationKey;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
-import uk.ac.leedsbeckett.lti.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.state.LtiState;
 
 /**
@@ -26,7 +27,7 @@ import uk.ac.leedsbeckett.lti.state.LtiState;
  * 
  * @author jon
  */
-public class AppState extends LtiState
+public class AppLtiState extends LtiState implements Serializable
 {
   /**
    * Data that relates to the course-content servlet.
@@ -34,39 +35,14 @@ public class AppState extends LtiState
   PeerGroupAssessmentState   peerGroupAssessmentState = null;
   
   /**
-   * Data that relates to the platform wide servlet.
-   */
-  LaunchState       platformLaunchState = null;
-  
-  /**
    * Constructor of this state must make sure the superclass constructor
    * is called.
    * 
-   * @param client The LTI issuer client configuration.
+   * @param clientKey
    */
-  public AppState( LtiConfiguration.Client client )
+  public AppLtiState( ClientLtiConfigurationKey clientKey )
   {
-    super( client );
-  }
-  
-  /**
-   * Get the platform launch state from within this LTI state.
-   * 
-   * @return The platform state.
-   */
-  public LaunchState getPlatformLaunchState()
-  {
-    return platformLaunchState;
-  }
-
-  /**
-   * Set the platform launch state during launch.
-   * 
-   * @param platformLaunchState The platform state.
-   */
-  public void setPlatformLaunchState( LaunchState platformLaunchState )
-  {
-    this.platformLaunchState = platformLaunchState;
+    super( clientKey );
   }
 
   /**

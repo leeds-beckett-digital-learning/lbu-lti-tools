@@ -16,48 +16,11 @@
 
 package uk.ac.leedsbeckett.ltitools.state;
 
-import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
-
 /**
  * This contains data that a user of the platform-wide tool might need.
  * 
  * @author jon
  */
-public class LaunchState
+public interface AppSessionState
 {
-  private String personName;
-  private String platformName;
-  private LtiRoleClaims roles;
-
-  public String getPersonName()
-  {
-    return personName;
-  }
-
-  public void setPersonName( String personName )
-  {
-    this.personName = personName;
-  }
-
-  public String getPlatformName()
-  {
-    return platformName;
-  }
-
-  public void setPlatformName( String platformName )
-  {
-    this.platformName = platformName;
-  }
-
-  public LtiRoleClaims getRoles()
-  {
-    return roles;
-  }
-
-  public void setRoles( LtiRoleClaims roles )
-  {
-    this.roles = roles;
-  }
-  
-  
 }

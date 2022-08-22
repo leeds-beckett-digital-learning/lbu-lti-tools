@@ -4,31 +4,36 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import uk.ac.leedsbeckett.ltitools.tool.PageSupport;
+import uk.ac.leedsbeckett.ltitools.tool.LtiPageSupport;
 
 /**
- *
+ * Support class for PeerGroupPage related JSP pages.
  * @author jon
  */
-public class PeerGroupPageSupport extends PageSupport
+public class PeerGroupPageSupport extends LtiPageSupport
 {
+  static final Logger logger = Logger.getLogger( PeerGroupPageSupport.class.getName() );
+  
   PeerGroupAssessmentState pgaState;
-  PeerGroupResource pgaResourse;
+  PeerGroupResource pgaResource;
   
   @Override
   public void setRequest(HttpServletRequest request) throws ServletException
   {
-    super.setRequest(request); 
+    super.setRequest( request );
+    logger.log( Level.FINE, "setRequest() state id = {0}", state.getId() );
     pgaState = state.getPeerGroupAssessmentState();
     if ( pgaState == null )
-      throw new ServletException( "Could not find data about the requested resource." );    
-    pgaResourse = pgaState.getResource();
+      throw new ServletException( "Could not find peer group assessment tool session data." );
+    pgaResource = this.appcontext.getStore().get( pgaState.getResourceKey(), true );
   }
 
-  public PeerGroupResource getPgaResourse()
+  public PeerGroupResource getPgaResource()
   {
-    return pgaResourse;
+    return pgaResource;
   }
 }

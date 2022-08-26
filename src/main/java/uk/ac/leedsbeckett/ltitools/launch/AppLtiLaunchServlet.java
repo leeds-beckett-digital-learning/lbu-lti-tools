@@ -16,6 +16,7 @@
 
 package uk.ac.leedsbeckett.ltitools.launch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.app.FixedAppConfiguration;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
@@ -67,7 +68,7 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
   {
     logger.info( "Processing Launch Request" );
     //ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
-    
+        
     String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
     String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
     
@@ -81,7 +82,9 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
       ResourceKey rk = new ResourceKey( state.getPlatformName(), lticlaims.getLtiResource().getId() );
       pgastate.setResourceKey( rk );
       if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
-        pgastate.setAllowedToClearResource( true );
+        pgastate.setAllowedToManage( true );
+      if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
+        pgastate.setAllowedToParticipate( true );
       logger.log( Level.FINE, "Created PeerGroupAssessmentState with resource key = {0}",  pgastate.getResourceKey() );    
       logger.log( Level.FINE, "Calling setPeerGroupAssessmentState() with state id = {0}", state.getId()             );    
       
@@ -89,6 +92,15 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
       state.setPeerGroupAssessmentState( pgastate );
       getLtiStateStore( request.getServletContext() ).updateState( state );
       
+      if ( logger.isLoggable( Level.FINE ) )
+      {
+        ObjectMapper mapper = new ObjectMapper();
+        logger.fine( "Launch Claims" );
+        logger.fine( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( lticlaims ) );
+        logger.fine( "Launch State" );
+        logger.fine( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) );
+      }
+            
       logger.log( Level.FINE, "Confirming {0}", state.getPeerGroupAssessmentState().getResourceKey() );    
       logger.fine( "Forwarding to peer group assessment tool index page." );
       response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergroupassessment/index.jsp?state_id=" + state.getId() ) );

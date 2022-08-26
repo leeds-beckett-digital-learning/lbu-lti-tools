@@ -40,11 +40,8 @@ public class PeerGroupAssessmentState implements Serializable, AppSessionState
   
   private String courseId;
   private String courseTitle;
-    
-  /**
-   * Rights of user with respect to the resource being accessed.
-   */
-  private boolean allowedToClearResource=false;
+  private boolean allowedToManage=false;
+  private boolean allowedToParticipate=false;
 
   /**
    * Get the key of the resource that this state relates to.
@@ -108,22 +105,42 @@ public class PeerGroupAssessmentState implements Serializable, AppSessionState
   }
 
   /**
-   * Is the user connected to this state object allowed to clear the resource?
+   * Is the user connected to this state object allowed to manage the resource?
    * 
    * @return Is allowed?
    */
-  public boolean isAllowedToClearResource()
+  public boolean isAllowedToManage()
   {
-    return allowedToClearResource;
+    return allowedToManage;
   }
 
   /**
    * Simple setter.
    * 
-   * @param allowedToClearResource Is the user allowed to clear the resource.
+   * @param allowedToManage Is the user allowed to manage the resource.
    */
-  public void setAllowedToClearResource( boolean allowedToClearResource )
+  public void setAllowedToManage( boolean allowedToManage )
   {
-    this.allowedToClearResource = allowedToClearResource;
+    this.allowedToManage = allowedToManage;
+  }
+
+  /**
+   * Find out if user is allowed to fill in data.
+   * 
+   * @return 
+   */
+  public boolean isAllowedToParticipate()
+  {
+    return allowedToParticipate;
+  }
+
+  /**
+   * Set permission to fill in data.
+   * 
+   * @param allowedToParticipate 
+   */
+  public void setAllowedToParticipate( boolean allowedToParticipate )
+  {
+    this.allowedToParticipate = allowedToParticipate;
   }
 }

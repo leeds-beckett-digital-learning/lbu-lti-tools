@@ -16,6 +16,7 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
@@ -54,6 +55,7 @@ public class PeerGroupResourceStore
   {
     objectmapper.enable( SerializationFeature.INDENT_OUTPUT );
     objectmapper.disable( SerializationFeature.FAIL_ON_EMPTY_BEANS );
+    objectmapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
   }
   
   Path basepath;
@@ -104,6 +106,8 @@ public class PeerGroupResourceStore
       if ( r == null )
       {
         r = new PeerGroupResource();
+        // an entirely new resource to set it up
+        r.initialize();
         saveResource( key, r );
       }
     }
@@ -156,8 +160,9 @@ public class PeerGroupResourceStore
     logger.setLevel( Level.ALL );
     
     logger.info( "Starting." );
-    PeerGroupResourceStore store = new PeerGroupResourceStore( Paths.get( "~/peerstore/") );
+    PeerGroupResourceStore store = new PeerGroupResourceStore( Paths.get( "/Users/maber01/peerstore/") );
     ResourceKey rk = new ResourceKey( "platform", "1" );
-    store.get( rk, true );
+    PeerGroupResource r = store.get( rk, true );
+    
   }
 }

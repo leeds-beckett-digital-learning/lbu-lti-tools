@@ -4,6 +4,8 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -35,5 +37,42 @@ public class PeerGroupPageSupport extends LtiPageSupport
   public PeerGroupResource getPgaResource()
   {
     return pgaResource;
+  }
+  
+  public boolean isAllowedToParticipate()
+  {
+    return pgaState.isAllowedToParticipate();
+  }
+
+  public boolean isAllowedToManage()
+  {
+    return pgaState.isAllowedToManage();
+  }
+  
+  public boolean isDebugging()
+  {
+    return logger.isLoggable( Level.FINE );
+  }
+  
+  public String getDump()
+  {
+    StringBuilder sb = new StringBuilder();
+    try
+    {
+      ObjectMapper mapper = new ObjectMapper();
+      sb.append( "Launch State\n" );    
+      sb.append( "=============\n" );
+      sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) );
+      sb.append( "\n\n" );    
+      sb.append( "Resource\n" );    
+      sb.append( "=============\n" );
+      sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( pgaResource ) );
+    }
+    catch ( JsonProcessingException ex )
+    {
+      logger.log( Level.SEVERE, "Unable to dump data as JSON.", ex );
+      return "Unable to dump data as JSON.\n";
+    }
+    return sb.toString();
   }
 }

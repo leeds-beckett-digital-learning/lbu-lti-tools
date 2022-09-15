@@ -16,8 +16,8 @@
 
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonRawValue;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,8 +35,7 @@ import java.util.Map;
 @JsonIgnoreProperties({ "groups" })
 public class PeerGroupResource implements Serializable
 {
-  String title;
-  String description;
+  PeerGroupResourceProperties properties = new PeerGroupResourceProperties();
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();
@@ -45,8 +44,6 @@ public class PeerGroupResource implements Serializable
   
   public PeerGroupResource()
   {
-    title = "Initial Title";
-    description = "Initial Description";
   }
 
   /**
@@ -59,23 +56,73 @@ public class PeerGroupResource implements Serializable
     addMember(  null, "001", "Fred Bloggs" );
     addMember( "id1", "002", "Joe Brown"   );
   }
+
+  public PeerGroupResourceProperties getProperties()
+  {
+    return properties;
+  }
+
+  public void setProperties( PeerGroupResourceProperties properties )
+  {
+    this.properties = properties;
+  }
   
+  @JsonIgnore    
   public String getTitle() {
-    return title;
+    return properties.getTitle();
   }
 
+  @JsonIgnore    
   public void setTitle(String title) {
-    this.title = title;
+    properties.setTitle( title );
   }
 
+  @JsonIgnore    
   public String getDescription() {
-    return description;
+    return properties.getDescription();
   }
 
+  @JsonIgnore    
   public void setDescription(String description) {
-    this.description = description;
+    properties.setDescription( description );
   } 
 
+  @JsonIgnore    
+  public Stage getStage()
+  {
+    return properties.getStage();
+  }
+
+  @JsonIgnore    
+  public void setStage( Stage stage )
+  {
+    properties.setStage( stage );
+  }
+
+  @JsonIgnore    
+  public boolean isSetupStage()
+  {
+    return properties.getStage() == Stage.SETUP;
+  }
+  
+  @JsonIgnore    
+  public boolean isJoinStage()
+  {
+    return properties.getStage() == Stage.JOIN;
+  }
+  
+  @JsonIgnore    
+  public boolean isDataEntryStage()
+  {
+    return properties.getStage() == Stage.DATAENTRY;
+  }
+  
+  @JsonIgnore    
+  public boolean isResultsStage()
+  {
+    return properties.getStage() == Stage.RESULTS;
+  }
+  
   public void registerIfFirstAccess( String id, String name )
   {
     
@@ -180,7 +227,7 @@ public class PeerGroupResource implements Serializable
         membersbyid.put( id, m );
       }
     }
-    
+
     public boolean isMember( String id )
     {
       synchronized ( membersbyid )
@@ -227,5 +274,32 @@ public class PeerGroupResource implements Serializable
     {
       this.name = name;
     }
+  }
+  
+  /**
+   * Represents the stage of operation of the resource. Instructors
+   * can change the stage.
+   */
+  public enum Stage
+  {
+    /**
+     * Instructor is setting up the resource and students must wait.
+     */
+    SETUP,
+    
+    /**
+     * Students can join groups.
+     */
+    JOIN,
+
+    /**
+     * Students in groups can enter data.
+     */
+    DATAENTRY,
+    
+    /**
+     * Data in the resource is frozen.
+     */
+    RESULTS
   }
 }

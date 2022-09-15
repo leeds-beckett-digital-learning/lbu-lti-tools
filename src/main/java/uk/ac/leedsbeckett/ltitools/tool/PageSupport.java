@@ -16,8 +16,10 @@
 
 package uk.ac.leedsbeckett.ltitools.tool;
 
+import java.lang.annotation.Annotation;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 
 /**
@@ -62,5 +64,27 @@ public abstract class PageSupport
   public String getImportantMessage()
   {
     return importantmessage;
+  }
+  
+  /**
+   *
+   * @param annotation
+   * @return
+   */
+  protected String computeWebSocketUri( Annotation annotation )
+  {
+    if ( annotation != null && annotation instanceof ServerEndpoint )
+    {
+      ServerEndpoint se = (ServerEndpoint)annotation;
+      StringBuilder sb = new StringBuilder();
+      sb.append( (request.isSecure()?"wss://":"ws://") );
+      sb.append( request.getServerName() );
+      sb.append( ":" );
+      sb.append( request.getServerPort() );
+      sb.append( request.getServletContext().getContextPath() );
+      sb.append( se.value() );
+      return sb.toString();
+    }
+    return null;
   }
 }

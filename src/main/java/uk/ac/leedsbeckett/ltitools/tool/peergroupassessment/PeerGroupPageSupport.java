@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.tool.LtiPageSupport;
 
 /**
@@ -22,6 +23,7 @@ public class PeerGroupPageSupport extends LtiPageSupport
   
   PeerGroupAssessmentState pgaState;
   PeerGroupResource pgaResource;
+  String websocketuri;
   
   @Override
   public void setRequest(HttpServletRequest request) throws ServletException
@@ -31,7 +33,10 @@ public class PeerGroupPageSupport extends LtiPageSupport
     pgaState = state.getPeerGroupAssessmentState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
-    pgaResource = this.appcontext.getStore().get( pgaState.getResourceKey(), true );
+    pgaResource = appcontext.getStore().get( pgaState.getResourceKey(), true );
+
+    String base = computeWebSocketUri( PeerGroupAssessmentEndpoint.class.getAnnotation( ServerEndpoint.class ) );
+    websocketuri = base + "?state=" + state.getId();
   }
 
   public PeerGroupResource getPgaResource()
@@ -49,6 +54,13 @@ public class PeerGroupPageSupport extends LtiPageSupport
     return pgaState.isAllowedToManage();
   }
   
+  
+  public String getWebsocketUri()
+  {
+    return websocketuri;
+  }
+
+
   public boolean isDebugging()
   {
     return logger.isLoggable( Level.FINE );
@@ -64,7 +76,10 @@ public class PeerGroupPageSupport extends LtiPageSupport
       sb.append( "=============\n" );
       sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) );
       sb.append( "\n\n" );    
-      sb.append( "Resource\n" );    
+      sb.append( "Web Socket\n" );
+      sb.append( "=============\n" );
+      sb.append( getWebsocketUri() );
+      sb.append( "\nResource\n" );    
       sb.append( "=============\n" );
       sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( pgaResource ) );
     }

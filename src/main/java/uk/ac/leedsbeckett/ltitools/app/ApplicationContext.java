@@ -17,6 +17,9 @@
 package uk.ac.leedsbeckett.ltitools.app;
 
 import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.logging.Logger;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
@@ -26,6 +29,8 @@ import javax.cache.expiry.Duration;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
 import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.ServletContext;
+import javax.websocket.WebSocketContainer;
+import javax.websocket.server.ServerContainer;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
@@ -38,7 +43,10 @@ import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
  */
 public class ApplicationContext
 {
+  static final Logger logger = Logger.getLogger( ApplicationContext.class.getName() );
+  
   public static final String KEY = ApplicationContext.class.getCanonicalName();
+  static HashMap<WebSocketContainer,ApplicationContext> servercontainermap = new HashMap<>();
   
   ServletContext servletcontext;
   
@@ -61,6 +69,10 @@ public class ApplicationContext
                     .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
     cache = manager.createCache( "appltistate", cacheconfig );
     ltistatestore = new LtiStateStore<>( cache, new AppLtiStateSupplier() );
+    
+    ServerContainer sc = (ServerContainer)context.getAttribute( ServerContainer.class.getName() );
+    if ( sc != null )
+      servercontainermap.put( sc, this );
   }
   
   /**
@@ -73,6 +85,11 @@ public class ApplicationContext
   public static ApplicationContext getFromServletContext( ServletContext context )
   {
     return (ApplicationContext)context.getAttribute( KEY );
+  }
+
+  public static ApplicationContext getFromWebSocketContainer( WebSocketContainer wscontainer )
+  {
+    return servercontainermap.get( wscontainer );
   }
 
   /**

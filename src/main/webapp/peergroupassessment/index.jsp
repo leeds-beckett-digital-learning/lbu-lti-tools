@@ -77,6 +77,9 @@
             switch ( message.messageType )
             {
               case "resource":
+                updateResource( message.payload.properties );
+                break;
+              case "resourceproperties":
                 updateResource( message.payload );
                 break;
             }
@@ -84,16 +87,16 @@
         });
       }
       
-      function updateResource( resource )
+      function updateResource( properties )
       {
-        console.log( "stage       = " + resource.properties.stage       );
-        console.log( "title       = " + resource.properties.title       );
-        console.log( "description = " + resource.properties.description );
+        console.log( "stage       = " + properties.stage       );
+        console.log( "title       = " + properties.title       );
+        console.log( "description = " + properties.description );
         
-        mainTitle.innerHTML        = resource.properties.title;
-        editpropsTitle.value       = resource.properties.title;
-        mainDescription.innerHTML  = resource.properties.description;
-        editpropsDescription.value = resource.properties.description;
+        mainTitle.innerHTML        = properties.title;
+        editpropsTitle.value       = properties.title;
+        mainDescription.innerHTML  = properties.description;
+        editpropsDescription.value = properties.description;
       }
       
       function openDialog( id )

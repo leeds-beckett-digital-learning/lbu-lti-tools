@@ -17,8 +17,10 @@
 package uk.ac.leedsbeckett.ltitools.app;
 
 import java.nio.file.Paths;
-import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -29,11 +31,13 @@ import javax.cache.expiry.Duration;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
 import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.ServletContext;
+import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 import javax.websocket.server.ServerContainer;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 /**
  * A context object which is specific to our application, is instantiated
@@ -54,6 +58,10 @@ public class ApplicationContext
   LtiConfiguration lticonfig;
   PeerGroupResourceStore store;
   LtiStateStore<AppLtiState> ltistatestore;
+
+  // WebSocket Endpoint related stuff
+  HashMap<ResourceKey,CopyOnWriteArraySet<Session>> wssessionlistmap = new HashMap<>();
+  ClosedSessionPredicate closedsessionpredicate = new ClosedSessionPredicate();
   
   public ApplicationContext( ServletContext context )
   {
@@ -120,5 +128,50 @@ public class ApplicationContext
   public LtiStateStore<AppLtiState> getStateStore()
   {
     return ltistatestore;
+  }
+  
+  public void addWsSession( ResourceKey key, Session session )
+  {
+    synchronized ( wssessionlistmap )
+    {
+      CopyOnWriteArraySet<Session> set = wssessionlistmap.get( key );
+      if ( set == null )
+      {
+        set = new CopyOnWriteArraySet<Session>();
+        wssessionlistmap.put( key, set );
+      }
+      set.add( session );
+    }
+  }
+  
+  public void removeWsSession( ResourceKey key, Session session )
+  {
+    synchronized ( wssessionlistmap )
+    {
+      CopyOnWriteArraySet<Session> set = wssessionlistmap.get( key );
+      if ( set == null ) return;
+      set.remove( session );
+    }
+  }
+  
+  public Set<Session> getWsSessionsForResource( ResourceKey key )
+  {
+    synchronized ( wssessionlistmap )
+    {
+      CopyOnWriteArraySet<Session> set = wssessionlistmap.get( key );
+      if ( set == null ) return null;
+      set.removeIf( closedsessionpredicate );
+      return set;
+    }  
+  }
+  
+  class ClosedSessionPredicate implements Predicate<Session>
+  {
+    @Override
+    public boolean test( Session t )
+    {
+      return !t.isOpen();
+    }
+    
   }
 }

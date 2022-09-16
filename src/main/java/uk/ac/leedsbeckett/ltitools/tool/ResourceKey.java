@@ -4,6 +4,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 
 /**
@@ -12,29 +13,33 @@ import java.io.Serializable;
  */
   public class ResourceKey implements Serializable
   {
-    final String platform;
-    final String resource;
+    final String platformId;
+    final String resourceId;
 
-    public ResourceKey(String platform, String resource)
+    public ResourceKey( 
+            @JsonProperty("platformId") String platformId, 
+            @JsonProperty("resourceId") String resourceId )
     {
-      this.platform = platform;
-      this.resource = resource;
-      assert( platform != null && resource != null );
+      this.platformId = platformId;
+      this.resourceId = resourceId;
+      assert( platformId != null && resourceId != null );
     }
     
-    public String getPlatform()
+    public String getPlatformId()
     {
-      return platform;
+      return platformId;
     }
 
-    public String getResource()
+    public String getResourceId()
     {
-      return resource;
+      return resourceId;
     }
 
+    
+    
     @Override
     public String toString() {
-      return platform + "    " + resource;
+      return platformId + "    " + resourceId;
     }
 
     @Override
@@ -49,7 +54,7 @@ import java.io.Serializable;
     @Override
     public int hashCode()
     {
-      return platform.hashCode() | resource.hashCode();
+      return platformId.hashCode() | resourceId.hashCode();
     }
   }
   

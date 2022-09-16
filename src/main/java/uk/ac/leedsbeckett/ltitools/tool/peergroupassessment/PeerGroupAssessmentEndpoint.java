@@ -47,6 +47,7 @@ public class PeerGroupAssessmentEndpoint
   AppLtiState state;
   ApplicationContext appcontext;
   PeerGroupAssessmentState pgaState;
+  PeerGroupResourceStore store;
   PeerGroupResource pgaResource;
   
   @OnOpen
@@ -65,7 +66,9 @@ public class PeerGroupAssessmentEndpoint
       state = appcontext.getStateStore().getState( stateid );
       logger.info( state.getPersonName() );
       pgaState = state.getPeerGroupAssessmentState();
-      pgaResource = appcontext.getStore().get( pgaState.getResourceKey(), true );
+      store = appcontext.getStore();
+      pgaResource = store.get( pgaState.getResourceKey(), true );
+      appcontext.addWsSession( pgaState.getResourceKey(), session );
     }
   }
 
@@ -102,6 +105,21 @@ public class PeerGroupAssessmentEndpoint
         logger.log( Level.INFO, "State [{0}]",       p.stage.toString() );
         logger.log( Level.INFO, "Title [{0}]",       p.title );
         logger.log( Level.INFO, "Description [{0}]", p.description );
+        pgaResource.setProperties( p );
+        try
+        {
+          store.update( pgaResource );
+          ToolMessage tm = new ToolMessage( message.getId(), "resourceproperties", pgaResource.getProperties() );
+          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+          {
+            logger.info( "Telling a client." );
+            s.getAsyncRemote().sendObject( tm );
+          }
+        }
+        catch ( IOException e )
+        {
+          logger.log(  Level.SEVERE, "Unable to store changes.", e );
+        }
       }
     }
   }
@@ -110,6 +128,7 @@ public class PeerGroupAssessmentEndpoint
   public void onClose(Session session) throws IOException
   {
     logger.info( "Closed websocket session " );
+    appcontext.removeWsSession( pgaState.getResourceKey(), session );
   }
 
   @OnError

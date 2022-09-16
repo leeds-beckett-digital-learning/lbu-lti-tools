@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 
 /**
@@ -35,6 +36,8 @@ import java.util.Map;
 @JsonIgnoreProperties({ "groups" })
 public class PeerGroupResource implements Serializable
 {
+  ResourceKey resourceKey;
+  
   PeerGroupResourceProperties properties = new PeerGroupResourceProperties();
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
@@ -46,6 +49,20 @@ public class PeerGroupResource implements Serializable
   {
   }
 
+  public ResourceKey getResourceKey()
+  {
+    return resourceKey;
+  }
+
+  public void setResourceKey( ResourceKey resourceKey )
+  {
+    if ( this.resourceKey != null )
+      throw new IllegalArgumentException( "Not allowed to change resource key." );
+    this.resourceKey = resourceKey;
+  }
+
+  
+  
   /**
    * Called by the resource store when an entirely new resource is needed.
    */

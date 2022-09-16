@@ -106,7 +106,8 @@ public class PeerGroupResourceStore
       if ( r == null )
       {
         r = new PeerGroupResource();
-        // an entirely new resource to set it up
+        r.setResourceKey( key );
+        // an entirely new resource so set it up
         r.initialize();
         saveResource( key, r );
       }
@@ -119,15 +120,22 @@ public class PeerGroupResourceStore
     
     cache.put( key, r );
     if ( !cache.containsKey(key) )
-      logger.log( Level.FINE, "Put resource in cache but key is not present {0}", key.toString() );
+      logger.log( Level.SEVERE, "Put resource in cache but key is not present {0}", key.toString() );
 
     return r;
   }
     
+  public void update( PeerGroupResource pgr ) throws IOException
+  {
+    if ( pgr.getResourceKey() == null )
+      throw new IllegalArgumentException( "Cannot update resource that lacks a key." );
+    saveResource( pgr.getResourceKey(), pgr );
+  }
+  
   Path getResourcePath( ResourceKey key )
   {
-    Path d = basepath.resolve( URLEncoder.encode( key.getPlatform(), StandardCharsets.UTF_8 ) );
-    return d.resolve( URLEncoder.encode( key.getResource(), StandardCharsets.UTF_8 ) );
+    Path d = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
+    return d.resolve( URLEncoder.encode( key.getResourceId(), StandardCharsets.UTF_8 ) );
   }
   
   PeerGroupResource loadResource( ResourceKey key ) throws IOException

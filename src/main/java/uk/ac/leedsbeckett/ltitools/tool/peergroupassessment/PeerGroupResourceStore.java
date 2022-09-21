@@ -111,6 +111,12 @@ public class PeerGroupResourceStore
         r.initialize();
         saveResource( key, r );
       }
+      else
+      {
+        cache.put( key, r );
+        if ( !cache.containsKey(key) )
+          logger.log( Level.SEVERE, "Put resource in cache but key is not present {0}", key.toString() );
+      }
     }
     catch (IOException ex)
     {
@@ -118,10 +124,6 @@ public class PeerGroupResourceStore
       return null;
     }
     
-    cache.put( key, r );
-    if ( !cache.containsKey(key) )
-      logger.log( Level.SEVERE, "Put resource in cache but key is not present {0}", key.toString() );
-
     return r;
   }
     
@@ -155,6 +157,9 @@ public class PeerGroupResourceStore
     Files.createDirectories( filepath.getParent() );
     logger.log( Level.FINE, "Saving PeerGroupResource {0}", filepath );
     objectmapper.writeValue( filepath.toFile(), r );
+    cache.put( key, r );
+    if ( !cache.containsKey(key) )
+      logger.log( Level.SEVERE, "Put resource in cache but key is not present {0}", key.toString() );
   }
   
   public static void main( String[] args )

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 
@@ -68,10 +69,8 @@ public class PeerGroupResource implements Serializable
    */
   public void initialize()
   {
-    for ( int i=1; i<=5; i++ )
-      addGroup( "id" + i, "Group " + i );
-    addMember(  null, "001", "Fred Bloggs" );
-    addMember( "id1", "002", "Joe Brown"   );
+//    for ( int i=1; i<=5; i++ )
+//      addGroup( "Group " + i );
   }
 
   public PeerGroupResourceProperties getProperties()
@@ -171,23 +170,28 @@ public class PeerGroupResource implements Serializable
   
   public Group getGroupByMemberId( String id )
   {
+    if ( id == null ) return groupOfUnattached;
     String gid = groupIdsByMember.get( id );
-    if ( gid == null ) return null;
     return getGroupById( gid );
   }
   
-  public void addGroup( String gid, String gtitle )
+  public Group addGroup( String gtitle )
   {
-    groupsinorder = null;
+    String gid = UUID.randomUUID().toString();
     Group g = new Group();
     g.setId( gid );
     g.setTitle( gtitle );
     groupsById.put( gid, g );
+    return g;
   }
   
   public void addMember( String gid, String uid, String name )
   {
-    Group g;
+    Group oldgroup = getGroupByMemberId( uid );
+    if ( oldgroup != null )
+      oldgroup.removeMember( uid );
+    
+    Group g;    
     if ( gid == null )
       g = groupOfUnattached;
     else
@@ -196,7 +200,13 @@ public class PeerGroupResource implements Serializable
     if ( gid != null )
       groupIdsByMember.put( uid, gid );
   }
-  
+
+  public void addMemberships( PeerGroupAddMembership pgcm )
+  {
+    for ( Member m : pgcm.getPids() )
+      addMember( pgcm.getId(), m.getLtiId(), m.getName() );
+  }  
+
   @Override
   public String toString()
   {
@@ -204,7 +214,7 @@ public class PeerGroupResource implements Serializable
   }
   
   @JsonIgnoreProperties({ "members" })
-  public static class Group
+  public static class Group implements Serializable
   {
     String id;
     String title;
@@ -244,6 +254,15 @@ public class PeerGroupResource implements Serializable
         membersbyid.put( id, m );
       }
     }
+    
+    public void removeMember( String id )
+    {
+      synchronized ( membersbyid )
+      {
+        membersinorder = null;
+        membersbyid.remove( id );
+      }
+    }
 
     public boolean isMember( String id )
     {
@@ -267,7 +286,7 @@ public class PeerGroupResource implements Serializable
     }
   }
   
-  public static class Member
+  public static class Member implements Serializable
   {
     String ltiId;
     String name;

@@ -77,6 +77,8 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
     {
       PeerGroupAssessmentState pgastate;
       pgastate = new PeerGroupAssessmentState();
+      pgastate.setPersonId( state.getPersonId() );
+      pgastate.setPersonName( state.getPersonName() );
       pgastate.setCourseId( lticlaims.getLtiContext().getId() );
       pgastate.setCourseTitle( lticlaims.getLtiContext().getLabel() );
       ResourceKey rk = new ResourceKey( state.getPlatformName(), lticlaims.getLtiResource().getId() );

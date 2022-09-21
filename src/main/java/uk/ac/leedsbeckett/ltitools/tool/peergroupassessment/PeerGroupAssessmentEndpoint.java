@@ -27,6 +27,8 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitools.tool.websocket.EmptyPayload;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessageEncoder;
@@ -55,7 +57,11 @@ public class PeerGroupAssessmentEndpoint
   {
     logger.info( "Opened websocket session uri = " + session.getRequestURI().toASCIIString() );
     
+    ToolMessageTypeSet.addType( EmptyPayload.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupResource.class.getName() );
+    ToolMessageTypeSet.addType( PeerGroupResource.Group.class.getName() );
+    ToolMessageTypeSet.addType( PeerGroupChangeGroup.class.getName() );
+    ToolMessageTypeSet.addType( PeerGroupAddMembership.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupResourceProperties.class.getName() );
     appcontext = ApplicationContext.getFromWebSocketContainer( session.getContainer() );
     List<String> list = session.getRequestParameterMap().get( "state" );
@@ -122,6 +128,96 @@ public class PeerGroupAssessmentEndpoint
         }
       }
     }
+
+    if ( "setgroupproperties".equals( message.getMessageType() ) )
+    {
+      Object payload = message.getPayload();
+      if ( PeerGroupChangeGroup.class.equals( payload.getClass() ) )
+      {
+        PeerGroupChangeGroup p = (PeerGroupChangeGroup)payload;
+        logger.log( Level.INFO, "ID [{0}]",       p.id );
+        logger.log( Level.INFO, "Title [{0}]",    p.title );
+        Group g = pgaResource.getGroupById( p.id );
+        if ( g != null )
+        {
+          logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
+          g.setTitle( p.title );
+          logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
+          try
+          {
+            store.update( pgaResource );
+            logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
+            ToolMessage tm = new ToolMessage( message.getId(), "group", g );
+            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+            {
+              logger.info( "Telling a client." );
+              s.getAsyncRemote().sendObject( tm );
+            }
+          }
+          catch ( IOException e )
+          {
+            logger.log(  Level.SEVERE, "Unable to store changes.", e );
+          }
+        }
+      }
+    }
+
+    if ( "addgroup".equals( message.getMessageType() ) )
+    {
+      Object payload = message.getPayload();
+      if ( EmptyPayload.class.equals( payload.getClass() ) )
+      {
+        Group g = pgaResource.addGroup( "New Group" );
+        if ( g != null )
+        {
+          try
+          {
+            store.update( pgaResource );
+            PeerGroupChangeGroup p = new PeerGroupChangeGroup();
+            p.setId( g.getId() );
+            p.setTitle( g.getTitle() );
+            ToolMessage tm = new ToolMessage( message.getId(), "group", p );
+            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+            {
+              logger.info( "Telling a client." );
+              s.getAsyncRemote().sendObject( tm );
+            }
+          }
+          catch ( IOException e )
+          {
+            logger.log(  Level.SEVERE, "Unable to store changes.", e );
+          }
+        }
+      }
+    }
+
+    if ( "membership".equals( message.getMessageType() ) )
+    {
+      Object payload = message.getPayload();
+      if ( PeerGroupAddMembership.class.equals( payload.getClass() ) )
+      {
+        PeerGroupAddMembership m = (PeerGroupAddMembership)payload;
+        logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
+        try
+        {
+          pgaResource.addMemberships( m );
+          store.update( pgaResource );
+          logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
+          ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
+          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+          {
+            logger.info( "Telling a client." );
+            s.getAsyncRemote().sendObject( tm );
+          }
+        }
+        catch ( IOException e )
+        {
+          logger.log(  Level.SEVERE, "Unable to store changes.", e );
+        }
+      }
+    }
+
+    
   }
 
   @OnClose

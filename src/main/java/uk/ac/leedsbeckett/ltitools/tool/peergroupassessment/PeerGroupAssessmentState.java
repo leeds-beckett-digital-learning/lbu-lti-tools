@@ -38,6 +38,8 @@ public class PeerGroupAssessmentState implements Serializable, AppSessionState
    */
   private ResourceKey resourceKey;
   
+  private String personId;
+  private String personName;
   private String courseId;
   private String courseTitle;
   private boolean allowedToManage=false;
@@ -62,6 +64,26 @@ public class PeerGroupAssessmentState implements Serializable, AppSessionState
   public void setResourceKey(ResourceKey resourceKey)
   {
     this.resourceKey = resourceKey;
+  }
+
+  public String getPersonId()
+  {
+    return personId;
+  }
+
+  public void setPersonId( String personId )
+  {
+    this.personId = personId;
+  }
+
+  public String getPersonName()
+  {
+    return personName;
+  }
+
+  public void setPersonName( String personName )
+  {
+    this.personName = personName;
   }
 
   /**

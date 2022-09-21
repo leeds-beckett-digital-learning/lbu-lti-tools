@@ -44,6 +44,16 @@ public class PeerGroupPageSupport extends LtiPageSupport
     return pgaResource;
   }
   
+  public String getPersonId()
+  {
+    return pgaState.getPersonId();
+  }
+  
+  public String getPersonName()
+  {
+    return pgaState.getPersonName();
+  }
+  
   public boolean isAllowedToParticipate()
   {
     return pgaState.isAllowedToParticipate();

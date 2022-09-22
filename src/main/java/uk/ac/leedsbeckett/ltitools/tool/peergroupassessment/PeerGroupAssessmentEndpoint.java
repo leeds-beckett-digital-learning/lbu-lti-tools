@@ -50,6 +50,8 @@ public class PeerGroupAssessmentEndpoint
   ApplicationContext appcontext;
   PeerGroupAssessmentState pgaState;
   PeerGroupResourceStore store;
+  PeerGroupFormStore formStore;
+  PeerGroupForm defaultForm;
   PeerGroupResource pgaResource;
   
   @OnOpen
@@ -75,6 +77,8 @@ public class PeerGroupAssessmentEndpoint
       store = appcontext.getStore();
       pgaResource = store.get( pgaState.getResourceKey(), true );
       appcontext.addWsSession( pgaState.getResourceKey(), session );
+      formStore = appcontext.getFormStore();
+      defaultForm = formStore.getDefault();
     }
   }
 
@@ -215,6 +219,13 @@ public class PeerGroupAssessmentEndpoint
           logger.log(  Level.SEVERE, "Unable to store changes.", e );
         }
       }
+    }
+
+    if ( "getform".equals( message.getMessageType() ) )
+    {
+      logger.log( Level.INFO, "Sending form [{0}]", defaultForm.getName() );
+      ToolMessage tm = new ToolMessage( message.getId(), "form", defaultForm );
+      session.getAsyncRemote().sendObject( tm );
     }
 
     

@@ -1,0 +1,64 @@
+{
+  "id": "0bc57416-99cb-43fd-b2d9-04f621a9f2d0",
+  "name": "Default Template",
+  "fieldIds":
+  [
+    "445ad173-28f2-4157-9462-617d56fea328",
+    "ed8effb8-bfb7-41b8-a562-15ce6c307c6e",
+    "29c0ab40-5dbe-4a78-be05-b29e7dcbf236",
+    "193303a3-6de3-4d2f-8047-6e6f8e8767db",
+    "7be34d77-b87b-41df-8d26-7029cd0930dd",
+    "5b8a9853-e32c-4087-bfb7-65c05a7bdd9d"
+  ],
+  "fields":
+  {
+    "445ad173-28f2-4157-9462-617d56fea328":
+    {
+      "id": "445ad173-28f2-4157-9462-617d56fea328",
+      "description": "Regular attendance at group meetings",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "ed8effb8-bfb7-41b8-a562-15ce6c307c6e":
+    {
+      "id": "ed8effb8-bfb7-41b8-a562-15ce6c307c6e",
+      "description": "Contribution of ideas for the task",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "29c0ab40-5dbe-4a78-be05-b29e7dcbf236":
+    {
+      "id": "29c0ab40-5dbe-4a78-be05-b29e7dcbf236",
+      "description": "Researching, analysing and preparing material for the task",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "193303a3-6de3-4d2f-8047-6e6f8e8767db":
+    {
+      "id": "193303a3-6de3-4d2f-8047-6e6f8e8767db",
+      "description": "Contribution to co-operative group process",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "7be34d77-b87b-41df-8d26-7029cd0930dd":
+    {
+      "id": "7be34d77-b87b-41df-8d26-7029cd0930dd",
+      "description": "Supporting and encouraging group members",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    },
+    "5b8a9853-e32c-4087-bfb7-65c05a7bdd9d":
+    {
+      "id": "5b8a9853-e32c-4087-bfb7-65c05a7bdd9d",
+      "description": "Practical contribution to the end product",
+      "type": "INTEGER",
+      "minimum": 0,
+      "maximum": 20
+    }
+  }
+}

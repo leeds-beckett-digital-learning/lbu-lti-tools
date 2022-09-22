@@ -67,12 +67,12 @@ public class PeerGroupResourceStore
     try
     {
       Files.createDirectories( basepath );
-    }
+  }
     catch (IOException ex)
     {
       logger.log(Level.SEVERE, null, ex);
     }
-    
+  
     logger.log(Level.FINE, "Caching provider class {0}", Caching.getCachingProvider().getClass().getName() );
     CacheManager manager = Caching.getCachingProvider().getCacheManager();
     MutableConfiguration<ResourceKey, PeerGroupResource> config = 
@@ -110,7 +110,7 @@ public class PeerGroupResourceStore
         // an entirely new resource so set it up
         r.initialize();
         saveResource( key, r );
-      }
+    }
       else
       {
         cache.put( key, r );
@@ -122,7 +122,7 @@ public class PeerGroupResourceStore
     {
       logger.log(Level.SEVERE, null, ex);
       return null;
-    }
+    }  
     
     return r;
   }

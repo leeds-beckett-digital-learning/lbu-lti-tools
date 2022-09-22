@@ -73,7 +73,7 @@
           <select id="editprops-stage">
             <option value="SETUP">Set Up</option>
             <option value="JOIN">Join Groups</option>
-            <option value="ENTER">Enter Data</option>
+            <option value="DATAENTRY">Enter Data</option>
             <option value="RESULTS">Results Frozen</option>
           </select>
         </p>
@@ -94,6 +94,24 @@
           <button onclick="closeDialog('editgroupprops');" value="Close">Close</button></p>
       </div>
     </div>
+
+    <div id="dataentry" class="dialog">
+      <div class="dialogcontent">
+        <h3>Data Entry</h3>
+        <p><button onclick="alert('Not implemented.');" value="Save">Save</button>
+           <button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+        <table>
+          <thead>
+            <tr id="dataentry-headrow"><th></th></tr>
+          </thead>
+          <tbody id="dataentry-tablebody">
+          </tbody>
+        </table>
+        <p><button onclick="alert('Not implemented.');" value="Save">Save</button>
+           <button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+      </div>
+    </div>
+
 
     <h1>Peer Group Assessment Tool</h1>
     <p class="important">${support.importantMessage}</p>

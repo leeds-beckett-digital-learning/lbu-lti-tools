@@ -32,7 +32,9 @@ var resource =
           "groupIdsByMember":{}
         };
 
-function init()
+var selectedgroupid;
+
+ function init()
 {
   mainTitle            = document.getElementById( "main-title" );
   mainDescription      = document.getElementById( "main-description" );
@@ -43,12 +45,15 @@ function init()
   editgrouppropsId     = document.getElementById( "editgroupprops-id" );
   editgrouppropsTitle  = document.getElementById( "editgroupprops-title" );
   grouptable           = document.getElementById( "grouptable" );
+  dataentrytablebody   = document.getElementById( "dataentry-tablebody" );
+  dataentryheadrow     = document.getElementById( "dataentry-headrow" );
 
   console.log( wsuri );
   socket = new WebSocket( wsuri );
   socket.addEventListener( 'open',    (event) => 
   {
     socket.send( messageToString( "getresource" ) );
+    socket.send( messageToString( "getform" ) );
   });
 
   socket.addEventListener( 'close', (event) => 
@@ -84,6 +89,11 @@ function init()
           break;
         case "group":
           updateGroup( message.payload );
+          break;
+        case "form":
+          form = message.payload;
+          console.log( form );
+          updateForm();
           break;
       }
     }
@@ -131,7 +141,7 @@ function updateResource( properties )
 
 function updateGroups()
 {
-  var html = "<tr><th>Title</th><th>Members</th><th></th></tr>\n";
+  var html = "<tr><th colspan=\"4\">Title</th><th colspan=\"3\">Members</th></tr>\n";
   grouptable.innerHTML = html;
   for ( const gid in resource.groupsById )
   {
@@ -142,7 +152,7 @@ function updateGroups()
   if ( manager )
   {
     row = document.createElement( "tr" );
-    row.innerHTML = "<tr><td colspan=\"2\"><button onclick=\"addGroup()\">Add Group</button></td></tr>\n";
+    row.innerHTML = "<tr><td colspan=\"3\"><button onclick=\"addGroup()\">Add Group</button></td></tr>\n";
     grouptable.appendChild( row );
   }  
 }
@@ -163,27 +173,86 @@ function updateGroup( g )
     grouptable.appendChild( row );
   }
 
-  html = "<td><span>" + g.title + "</span>";
-  if ( manager )
-    html += " <button onclick=\"openGroupEditDialog( '" + g.id + "' )\">Edit</button>";
-  html += "</td><td>";
+  html = "";
+  html += "<td><button onclick=\"alert( '" + g.id + "' )\">Delete</button></td>\n";
+  html += "<td><button onclick=\"openGroupEditDialog( '" + g.id + "' )\">Edit</button></td>\n";
+  //if ( participant && resource.properties.stage === "DATAENTRY" && ingroup )
+  html += "<td><button onclick=\"openDataEntryDialog( '" + g.id + "' )\">View</button></td>\n";
+  html += "<td><span>" + g.title + "</span></td>\n";
+
+  html += "<td>";
   var ingroup = false;
+  var first = true;
   for ( const mid in g.membersbyid )
   {
-    console.log( mid );
+    if ( first )
+      first = true;
+    else
+      html += "<br>\n";
     m = g.membersbyid[mid];
-    console.log( m );
     if ( m.ltiId === myid )
       ingroup = true;
-    console.log( `Comparing ${m.ltiId} with ${myid} ingroup = ${ingroup}` );
-    html += m.name + "<br>\n";
+    html += m.name;
   }
-  html += "</td>\n<td>";
-  if ( participant && resource.properties.stage === "JOIN" && !ingroup )
-    html += "<button class=\"joinbutton\" onclick=\"addMembership( '" + g.id + "')\">Join</button>";
   html += "</td>\n";
+  //if ( participant && resource.properties.stage === "JOIN" && !ingroup )
+  html += "<td><button class=\"joinbutton\" onclick=\"addMembership( '" + g.id + "')\">Join</button></td>";
 
   row.innerHTML = html;
+}
+
+function updateForm()
+{
+  var formrows = document.getElementsByClassName( "dataentry-formrow" );
+  console.log( formrows );
+  console.log( formrows.length );
+  while ( formrows.length > 0 )
+  {
+    var formrow = formrows[0];
+    console.log( formrow );
+    formrow.remove();
+  }
+  var formcells = document.getElementsByClassName( "dataentry-formcell" );
+  while ( formcells.length > 0 )
+  {
+    var formcell = formcells[0];
+    console.log( formcell );
+    formcell.remove();
+  }
+  
+  
+  var groupid = selectedgroupid;
+  if ( !groupid )
+    groupid = resource.groupIdsByMember[myid];
+  console.log( "group id = " + groupid );
+  if ( !groupid )
+    return;
+  
+  var group = resource.groupsById[groupid];
+  for ( var m in group.membersbyid )
+  {
+    var th = document.createElement( "th" );
+    th.className = "dataentry-formcell";
+    th.innerHTML = group.membersbyid[m].name;
+    dataentryheadrow.append( th );
+  }
+  
+  for ( var i=0; i<form.fieldIds.length; i++ )
+  {
+    var field = form.fields[form.fieldIds[i]];
+    if ( !field ) continue;
+    var row = document.createElement( "tr" );
+    row.className = "dataentry-formrow";
+    row.id = "dataentryrow-" + field.id;
+    var html = "<td>" + field.description + "</td>\n";
+    for ( var m in group.membersbyid )
+    {
+      var inputid = "dataentrycell_" + groupid + "_" + m;
+      html += "<td><input size=\"5\" id = \"" + inputid + "\"/></td>\n";
+    }
+    row.innerHTML = html;
+    dataentrytablebody.append( row );
+  }
 }
 
 function openDialog( id )
@@ -213,6 +282,13 @@ function openGroupEditDialog( gid )
   var g = resource.groupsById[gid];
   editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
   openDialog( 'editgroupprops' );
+}
+
+function openDataEntryDialog( gid )
+{
+  selectedgroupid = gid;
+  updateForm();
+  openDialog( 'dataentry' );
 }
 
 function saveEditProps()

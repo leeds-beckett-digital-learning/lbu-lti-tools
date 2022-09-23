@@ -33,7 +33,7 @@ public class PeerGroupPageSupport extends LtiPageSupport
     pgaState = state.getPeerGroupAssessmentState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
-    pgaResource = appcontext.getStore().get( pgaState.getResourceKey(), true );
+    pgaResource = appcontext.getPeerGroupAssessmentStore().getResource( pgaState.getResourceKey(), true );
 
     String base = computeWebSocketUri( PeerGroupAssessmentEndpoint.class.getAnnotation( ServerEndpoint.class ) );
     websocketuri = base + "?state=" + state.getId();

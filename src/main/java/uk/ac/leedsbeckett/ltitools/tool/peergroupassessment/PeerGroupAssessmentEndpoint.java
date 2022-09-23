@@ -49,8 +49,7 @@ public class PeerGroupAssessmentEndpoint
   AppLtiState state;
   ApplicationContext appcontext;
   PeerGroupAssessmentState pgaState;
-  PeerGroupResourceStore store;
-  PeerGroupFormStore formStore;
+  PeerGroupAssessmentStore store;
   PeerGroupForm defaultForm;
   PeerGroupResource pgaResource;
   
@@ -59,10 +58,12 @@ public class PeerGroupAssessmentEndpoint
   {
     logger.info( "Opened websocket session uri = " + session.getRequestURI().toASCIIString() );
     
+    ToolMessageTypeSet.addType( String.class.getName() );
     ToolMessageTypeSet.addType( EmptyPayload.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupResource.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupResource.Group.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupChangeGroup.class.getName() );
+    ToolMessageTypeSet.addType( PeerGroupChangeDatum.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupAddMembership.class.getName() );
     ToolMessageTypeSet.addType( PeerGroupResourceProperties.class.getName() );
     appcontext = ApplicationContext.getFromWebSocketContainer( session.getContainer() );
@@ -74,11 +75,10 @@ public class PeerGroupAssessmentEndpoint
       state = appcontext.getStateStore().getState( stateid );
       logger.info( state.getPersonName() );
       pgaState = state.getPeerGroupAssessmentState();
-      store = appcontext.getStore();
-      pgaResource = store.get( pgaState.getResourceKey(), true );
+      store = appcontext.getPeerGroupAssessmentStore();
+      pgaResource = store.getResource( pgaState.getResourceKey(), true );
       appcontext.addWsSession( pgaState.getResourceKey(), session );
-      formStore = appcontext.getFormStore();
-      defaultForm = formStore.getDefault();
+      defaultForm = store.getDefaultForm();
     }
   }
 
@@ -118,9 +118,9 @@ public class PeerGroupAssessmentEndpoint
         pgaResource.setProperties( p );
         try
         {
-          store.update( pgaResource );
+          store.updateResource( pgaResource );
           ToolMessage tm = new ToolMessage( message.getId(), "resourceproperties", pgaResource.getProperties() );
-          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getKey() ) )
           {
             logger.info( "Telling a client." );
             s.getAsyncRemote().sendObject( tm );
@@ -149,10 +149,10 @@ public class PeerGroupAssessmentEndpoint
           logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
           try
           {
-            store.update( pgaResource );
+            store.updateResource( pgaResource );
             logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
             ToolMessage tm = new ToolMessage( message.getId(), "group", g );
-            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getKey() ) )
             {
               logger.info( "Telling a client." );
               s.getAsyncRemote().sendObject( tm );
@@ -176,12 +176,12 @@ public class PeerGroupAssessmentEndpoint
         {
           try
           {
-            store.update( pgaResource );
+            store.updateResource( pgaResource );
             PeerGroupChangeGroup p = new PeerGroupChangeGroup();
             p.setId( g.getId() );
             p.setTitle( g.getTitle() );
             ToolMessage tm = new ToolMessage( message.getId(), "group", p );
-            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+            for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getKey() ) )
             {
               logger.info( "Telling a client." );
               s.getAsyncRemote().sendObject( tm );
@@ -205,10 +205,10 @@ public class PeerGroupAssessmentEndpoint
         try
         {
           pgaResource.addMemberships( m );
-          store.update( pgaResource );
+          store.updateResource( pgaResource );
           logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
           ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
-          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getResourceKey() ) )
+          for ( Session s : appcontext.getWsSessionsForResource( pgaResource.getKey() ) )
           {
             logger.info( "Telling a client." );
             s.getAsyncRemote().sendObject( tm );
@@ -221,11 +221,19 @@ public class PeerGroupAssessmentEndpoint
       }
     }
 
-    if ( "getform".equals( message.getMessageType() ) )
+    if ( "getformanddata".equals( message.getMessageType() ) )
     {
       logger.log( Level.INFO, "Sending form [{0}]", defaultForm.getName() );
-      ToolMessage tm = new ToolMessage( message.getId(), "form", defaultForm );
-      session.getAsyncRemote().sendObject( tm );
+      Object payload = message.getPayload();
+      if ( String.class.equals( payload.getClass() ) )
+      {
+        String gid = (String)payload;
+        PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid );
+        PeerGroupFormAndData fad = new PeerGroupFormAndData( defaultForm, store.getData( key, true ) );
+        
+        ToolMessage tm = new ToolMessage( message.getId(), "formanddata", fad );
+        session.getAsyncRemote().sendObject( tm );
+      }
     }
 
     

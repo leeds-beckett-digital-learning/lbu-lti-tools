@@ -24,18 +24,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.Caching;
-import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.CreatedExpiryPolicy;
-import javax.cache.expiry.Duration;
-import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
 
 /**
  * A store of resources which can be retrieved using keys. At present all

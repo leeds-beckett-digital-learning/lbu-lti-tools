@@ -90,9 +90,11 @@ var selectedgroupid;
         case "group":
           updateGroup( message.payload );
           break;
-        case "form":
-          form = message.payload;
+        case "formanddata":
+          form = message.payload.form;
+          data = message.payload.data;
           console.log( form );
+          console.log( data );
           updateForm();
           break;
       }
@@ -201,7 +203,7 @@ function updateGroup( g )
   row.innerHTML = html;
 }
 
-function updateForm()
+function clearForm()
 {
   var formrows = document.getElementsByClassName( "dataentry-formrow" );
   console.log( formrows );
@@ -219,7 +221,32 @@ function updateForm()
     console.log( formcell );
     formcell.remove();
   }
-  
+}
+
+function processFormInputEvent( e, f, m )
+{
+  console.log( 'processFormInputEvent' );
+  console.log( e );
+  console.log( f );
+  console.log( m );
+  var datum = {};
+  datum.fieldId = f.id;
+  datum.memberId = m.ltiId;
+  datum.value = e.value;
+  socket.send( messageToString( 
+      "changedatum", 
+      "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupChangeDatum",
+      datum ) );
+}
+
+function addFormInputListener( e, f, m )
+{
+  e.addEventListener('input', function () { processFormInputEvent( e, f, m ); } );  
+}
+
+function updateForm()
+{
+  clearForm();
   
   var groupid = selectedgroupid;
   if ( !groupid )
@@ -244,13 +271,20 @@ function updateForm()
     var row = document.createElement( "tr" );
     row.className = "dataentry-formrow";
     row.id = "dataentryrow-" + field.id;
-    var html = "<td>" + field.description + "</td>\n";
+    var td = document.createElement( "td" );
+    td.innerText = field.description;
+    row.append( td );
     for ( var m in group.membersbyid )
     {
+      td = document.createElement( "td" );
+      row.append( td );
       var inputid = "dataentrycell_" + groupid + "_" + m;
-      html += "<td><input size=\"5\" id = \"" + inputid + "\"/></td>\n";
+      var input = document.createElement( "input" );
+      input.size = 5;
+      input.id = inputid;
+      td.append( input );
+      addFormInputListener( input, field, group.membersbyid[m] );
     }
-    row.innerHTML = html;
     dataentrytablebody.append( row );
   }
 }
@@ -287,8 +321,13 @@ function openGroupEditDialog( gid )
 function openDataEntryDialog( gid )
 {
   selectedgroupid = gid;
-  updateForm();
-  openDialog( 'dataentry' );
+  socket.send( messageToString( 
+      "getformanddata", 
+      "java.lang.String",
+      selectedgroupid ) );
+      
+  clearForm();
+  openDialog( 'dataentry' );;
 }
 
 function saveEditProps()

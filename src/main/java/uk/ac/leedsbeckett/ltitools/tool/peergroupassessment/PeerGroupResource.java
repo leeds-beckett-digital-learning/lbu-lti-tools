@@ -25,19 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
+import uk.ac.leedsbeckett.ltitools.tool.store.Entry;
 
 
 /**
  * An object that represents the resource which the user is accessing after the
- * LTI launch. A simple stack of log entries.
+ * LTI launch.A simple stack of log entries.
  * 
  * @author jon
  */
-
 @JsonIgnoreProperties({ "groups" })
-public class PeerGroupResource implements Serializable
+public class PeerGroupResource implements Serializable, Entry<ResourceKey>
 {
-  ResourceKey resourceKey;
+  ResourceKey key;
   
   PeerGroupResourceProperties properties = new PeerGroupResourceProperties();
   public final Map<String,Group> groupsById = new HashMap<>();
@@ -46,27 +46,30 @@ public class PeerGroupResource implements Serializable
   
   ArrayList<Group> groupsinorder = null;
   
-  public PeerGroupResource()
+  public PeerGroupResource( ResourceKey key )
   {
+    this.key = key;
   }
 
-  public ResourceKey getResourceKey()
+  @Override
+  public ResourceKey getKey()
   {
-    return resourceKey;
+    return key;
   }
 
-  public void setResourceKey( ResourceKey resourceKey )
+  @Override
+  public void setKey( ResourceKey key )
   {
-    if ( this.resourceKey != null )
+    if ( this.key != null )
       throw new IllegalArgumentException( "Not allowed to change resource key." );
-    this.resourceKey = resourceKey;
+    this.key = key;
   }
-
   
   
   /**
    * Called by the resource store when an entirely new resource is needed.
    */
+  @Override
   public void initialize()
   {
 //    for ( int i=1; i<=5; i++ )
@@ -212,7 +215,7 @@ public class PeerGroupResource implements Serializable
   {
     return getTitle();
   }
-  
+
   @JsonIgnoreProperties({ "members" })
   public static class Group implements Serializable
   {

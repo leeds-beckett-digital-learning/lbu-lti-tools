@@ -28,7 +28,6 @@ import javax.cache.Caching;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupFormStore;
 import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.ServletContext;
 import javax.websocket.Session;
@@ -38,7 +37,7 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
 import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceStore;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentStore;
 
 /**
  * A context object which is specific to our application, is instantiated
@@ -57,9 +56,10 @@ public class ApplicationContext
   
   // Our context data is split into these three objects
   LtiConfiguration lticonfig;
-  PeerGroupResourceStore store;
+  
+  PeerGroupAssessmentStore pgaStore;
+  
   LtiStateStore<AppLtiState> ltistatestore;
-  PeerGroupFormStore formstore;
   
   // WebSocket Endpoint related stuff
   HashMap<ResourceKey,CopyOnWriteArraySet<Session>> wssessionlistmap = new HashMap<>();
@@ -70,8 +70,8 @@ public class ApplicationContext
     servletcontext = context;
     context.setAttribute( KEY, this );    
     lticonfig = new LtiConfiguration();
-    store = new PeerGroupResourceStore( Paths.get( context.getRealPath( "/WEB-INF/cache/" ) ) );
-    formstore = new PeerGroupFormStore( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/forms/" ) ) );
+    pgaStore = new PeerGroupAssessmentStore( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
+
     Cache<String, AppLtiState> cache;
     CacheManager manager = Caching.getCachingProvider().getCacheManager();
     MutableConfiguration<String, AppLtiState> cacheconfig = 
@@ -117,21 +117,11 @@ public class ApplicationContext
    * 
    * @return The instance.
    */
-  public PeerGroupResourceStore getStore()
+  public PeerGroupAssessmentStore getPeerGroupAssessmentStore()
   {
-    return store;
+    return pgaStore;
   }
-
-  /**
-   * Fetch the application-wide FormStore
-   * 
-   * @return The instance.
-   */
-  public PeerGroupFormStore getFormStore()
-  {
-    return formstore;
-  }
-
+  
   /**
    * Fetch the application-wide state store.
    * 

@@ -59,4 +59,10 @@ public class PeerGroupAssessmentStore
   {
     return dataStore.get( key, create );
   }
+
+  public void updateData( PeerGroupData d ) throws IOException
+  {
+    dataStore.update( d );
+  }
+  
 }

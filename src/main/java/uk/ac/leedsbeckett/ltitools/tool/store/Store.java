@@ -61,7 +61,7 @@ public abstract class Store<K,T extends Entry<K>>
     logger.log(Level.FINE, "Caching provider class {0}", Caching.getCachingProvider().getClass().getName() );
     CacheManager manager = Caching.getCachingProvider().getCacheManager();
     MutableConfiguration<K,T> config = new MutableConfiguration<K,T>()
-        .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR));
+        .setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES));
     cache = manager.createCache( name, config );
   }
   

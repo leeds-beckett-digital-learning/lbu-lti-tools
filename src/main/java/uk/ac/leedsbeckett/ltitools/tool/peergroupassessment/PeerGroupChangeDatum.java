@@ -15,6 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 
 /**
@@ -23,15 +24,26 @@ import java.io.Serializable;
  */
 public class PeerGroupChangeDatum implements Serializable
 {
+  final String groupId;
   final String fieldId;
   final String memberId;
   final String value;
 
-  public PeerGroupChangeDatum( String fieldId, String memberId, String value )
+  public PeerGroupChangeDatum( 
+          @JsonProperty("groupId")  String groupId, 
+          @JsonProperty("fieldId")  String fieldId, 
+          @JsonProperty("memberId") String memberId, 
+          @JsonProperty("value")    String value )
   {
+    this.groupId = groupId;
     this.fieldId = fieldId;
     this.memberId = memberId;
     this.value = value;
+  }
+
+  public String getGroupId()
+  {
+    return groupId;
   }
 
   public String getFieldId()

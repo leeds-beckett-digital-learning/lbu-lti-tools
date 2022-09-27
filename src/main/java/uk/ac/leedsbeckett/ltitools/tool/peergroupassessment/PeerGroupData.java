@@ -61,6 +61,28 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     this.participantData = participantData;
   }
 
+  public void setParticipantDatum( PeerGroupChangeDatum change )
+  {
+    synchronized ( participantData )
+    {
+      ParticipantData pd = participantData.get( change.memberId );
+      if ( pd == null )
+      {
+        pd = new ParticipantData( change.memberId );
+        participantData.put( change.memberId, pd );
+        pd.setParticipantData( new HashMap<>() );
+      }
+      ParticipantDatum datum = pd.participantData.get( change.fieldId );
+      if ( datum == null )
+      {
+        datum = new ParticipantDatum();
+        pd.participantData.put( change.fieldId, datum );
+      }
+      datum.value = change.value;
+      datum.valid = false;
+    }
+  }
+  
   @Override
   public void setKey( PeerGroupDataKey key )
   {
@@ -74,52 +96,6 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     participantData = new HashMap<>();
   }
   
-  
-  
-  public class ParticipantData implements Serializable
-  {
-    final String participantId;
-    boolean endorsed;
-    HashMap<String,ParticipantDatum> participantData;
-    
-    public ParticipantData( String participantId )
-    {
-      this.participantId = participantId;
-    }
-    public String getParticipantId()
-    {
-      return participantId;
-    }
-    public boolean isEndorsed()
-    {
-      return endorsed;
-    }
-    public void setEndorsed( boolean endorsed )
-    {
-      this.endorsed = endorsed;
-    }
-    public HashMap<String, ParticipantDatum> getParticipantData()
-    {
-      return participantData;
-    }
-    public void setParticipantData( HashMap<String, ParticipantDatum> participantData )
-    {
-      this.participantData = participantData;
-    }
-  }
-  
-  public class ParticipantDatum implements Serializable
-  {
-    int value;
-    public int getValue()
-    {
-      return value;
-    }
-    public void setValue( int value )
-    {
-      this.value = value;
-    }
-  }
   
   public enum Status
   {

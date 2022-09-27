@@ -98,8 +98,7 @@
     <div id="dataentry" class="dialog">
       <div class="dialogcontent">
         <h3>Data Entry</h3>
-        <p><button onclick="alert('Not implemented.');" value="Save">Save</button>
-           <button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+        <p><button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
         <table>
           <thead>
             <tr id="dataentry-headrow"><th></th></tr>
@@ -107,8 +106,7 @@
           <tbody id="dataentry-tablebody">
           </tbody>
         </table>
-        <p><button onclick="alert('Not implemented.');" value="Save">Save</button>
-           <button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+        <p><button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
       </div>
     </div>
 

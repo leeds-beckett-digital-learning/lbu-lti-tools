@@ -18,6 +18,7 @@ package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ import uk.ac.leedsbeckett.ltitools.tool.store.Entry;
 
 /**
  * An object that represents the resource which the user is accessing after the
- * LTI launch.A simple stack of log entries.
+ * LTI launch.
  * 
  * @author jon
  */
@@ -46,7 +47,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   
   ArrayList<Group> groupsinorder = null;
   
-  public PeerGroupResource( ResourceKey key )
+  public PeerGroupResource( @JsonProperty("key") ResourceKey key )
   {
     this.key = key;
   }

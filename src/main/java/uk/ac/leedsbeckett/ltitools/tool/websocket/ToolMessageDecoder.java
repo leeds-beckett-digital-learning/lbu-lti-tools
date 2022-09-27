@@ -31,6 +31,8 @@ import javax.websocket.EndpointConfig;
  */
 public class ToolMessageDecoder implements Decoder.Text<ToolMessage>
 {
+  static final Logger logger = Logger.getLogger( ToolMessageDecoder.class.getName() );
+  
   ObjectMapper mapper = new ObjectMapper();
 
   @Override
@@ -92,12 +94,16 @@ public class ToolMessageDecoder implements Decoder.Text<ToolMessage>
         {
           throw new DecodeException( s, "Unknown type of payload in message." );
         }
-        tm.setPayload( mapper.readValue( reader, c ) );
+        Object o = mapper.readValue( reader, c );
+        if ( o == null )
+          throw new DecodeException( s, "Unable to decode payload in message." );
+        tm.setPayload( o );
       }
     }
     catch ( IOException ex )
     {
-      // Can't happen
+      logger.log( Level.SEVERE, "Payload decoded and set in message.", ex );
+      throw new DecodeException( s, "IOException occured while decoding payload in message." );
     }
     
     return tm;

@@ -92,10 +92,19 @@ var selectedgroupid;
           break;
         case "formanddata":
           form = message.payload.form;
-          data = message.payload.data;
+          if ( message.payload.data.key.groupId === selectedgroupid )
+            data = message.payload.data;
           console.log( form );
           console.log( data );
           updateForm();
+          break;
+        case "data":
+          if ( message.payload.key.groupId === selectedgroupid )
+          {
+            data = message.payload;
+            console.log( data );
+            updateForm();
+          }
           break;
       }
     }
@@ -223,13 +232,14 @@ function clearForm()
   }
 }
 
-function processFormInputEvent( e, f, m )
+function processFormInputEvent( e, gid, f, m )
 {
   console.log( 'processFormInputEvent' );
   console.log( e );
   console.log( f );
   console.log( m );
   var datum = {};
+  datum.groupId = gid;
   datum.fieldId = f.id;
   datum.memberId = m.ltiId;
   datum.value = e.value;
@@ -239,9 +249,9 @@ function processFormInputEvent( e, f, m )
       datum ) );
 }
 
-function addFormInputListener( e, f, m )
+function addFormInputListener( e, gid, f, m )
 {
-  e.addEventListener('input', function () { processFormInputEvent( e, f, m ); } );  
+  e.addEventListener('input', function () { processFormInputEvent( e, gid, f, m ); } );  
 }
 
 function updateForm()
@@ -266,7 +276,8 @@ function updateForm()
   
   for ( var i=0; i<form.fieldIds.length; i++ )
   {
-    var field = form.fields[form.fieldIds[i]];
+    var fieldid = form.fieldIds[i];
+    var field = form.fields[fieldid];
     if ( !field ) continue;
     var row = document.createElement( "tr" );
     row.className = "dataentry-formrow";
@@ -276,14 +287,21 @@ function updateForm()
     row.append( td );
     for ( var m in group.membersbyid )
     {
+      var memberdata = undefined;
+      var memberdatum = undefined;
+      if ( data ) memberdata = data.participantData[m];
+      if ( memberdata ) memberdatum = memberdata.participantData[fieldid];
       td = document.createElement( "td" );
       row.append( td );
       var inputid = "dataentrycell_" + groupid + "_" + m;
       var input = document.createElement( "input" );
       input.size = 5;
       input.id = inputid;
+      if ( memberdatum && memberdatum.value )
+        input.value = memberdatum.value;
       td.append( input );
-      addFormInputListener( input, field, group.membersbyid[m] );
+      addFormInputListener( input, groupid, field, group.membersbyid[m] );
+      
     }
     dataentrytablebody.append( row );
   }

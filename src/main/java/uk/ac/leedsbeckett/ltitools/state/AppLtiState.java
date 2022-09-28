@@ -18,8 +18,9 @@ package uk.ac.leedsbeckett.ltitools.state;
 
 import java.io.Serializable;
 import uk.ac.leedsbeckett.lti.config.ClientLtiConfigurationKey;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
 import uk.ac.leedsbeckett.lti.state.LtiState;
+import uk.ac.leedsbeckett.ltitools.tool.Tool;
+import uk.ac.leedsbeckett.ltitools.tool.ToolKey;
 
 /**
  * This demo's customised subclass of LtiState which can store additional
@@ -32,7 +33,9 @@ public class AppLtiState extends LtiState implements Serializable
   /**
    * Data that relates to the course-content servlet.
    */
-  PeerGroupAssessmentState   peerGroupAssessmentState = null;
+  AppSessionState   appSessionState = null;
+  
+  ToolKey toolKey = null;
   
   /**
    * Constructor of this state must make sure the superclass constructor
@@ -50,9 +53,9 @@ public class AppLtiState extends LtiState implements Serializable
    * 
    * @return The course content state.
    */
-  public PeerGroupAssessmentState getPeerGroupAssessmentState()
+  public AppSessionState getAppSessionState()
   {
-    return peerGroupAssessmentState;
+    return appSessionState;
   }
 
   /**
@@ -60,9 +63,18 @@ public class AppLtiState extends LtiState implements Serializable
    * 
    * @param launchState The course content state.
    */
-  public void setPeerGroupAssessmentState( PeerGroupAssessmentState launchState )
+  public void setAppSessionState( AppSessionState launchState )
   {
-    this.peerGroupAssessmentState = launchState;
-  }  
-  
+    this.appSessionState = launchState;
+  }
+
+  public ToolKey getToolKey()
+  {
+    return toolKey;
+  }
+
+  public void setToolKey( ToolKey toolKey )
+  {
+    this.toolKey = toolKey;
+  }
 }

@@ -19,7 +19,6 @@ package uk.ac.leedsbeckett.ltitools.launch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.app.FixedAppConfiguration;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentState;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -36,7 +35,10 @@ import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import uk.ac.leedsbeckett.lti.servlet.LtiLaunchServlet;
 import uk.ac.leedsbeckett.lti.state.LtiStateStore;
-import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
+import uk.ac.leedsbeckett.ltitools.state.AppSessionState;
+import uk.ac.leedsbeckett.ltitools.tool.Tool;
+import uk.ac.leedsbeckett.ltitools.tool.ToolKey;
+import uk.ac.leedsbeckett.ltitools.tool.ToolManager;
 
 /**
  * This demo's implementation of the LTI launch servlet. This implementation
@@ -67,31 +69,22 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
           throws ServletException, IOException
   {
     logger.info( "Processing Launch Request" );
-    //ApplicationContext appcontext = ApplicationContext.getFromServletContext( request.getServletContext() );
+    ToolManager toolManager = ToolManager.getFromServletContext( request.getServletContext() );
+    if ( toolManager == null ) { response.sendError( 500, "Cannot find tool manager." ); return; }
         
     String toolname = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_name" );
     String tooltype = lticlaims.getLtiCustom().getAsString( "digles.leedsbeckett.ac.uk#tool_type" );
+
+    ToolKey toolKey = new ToolKey( tooltype, toolname );
+    Tool tool = toolManager.getTool( toolKey );
     
-    
-    if ( "coursecontent".equals( tooltype ) && "peergrpassess".equals( toolname ) )
+    if ( tool != null )
     {
-      PeerGroupAssessmentState pgastate;
-      pgastate = new PeerGroupAssessmentState();
-      pgastate.setPersonId( state.getPersonId() );
-      pgastate.setPersonName( state.getPersonName() );
-      pgastate.setCourseId( lticlaims.getLtiContext().getId() );
-      pgastate.setCourseTitle( lticlaims.getLtiContext().getLabel() );
-      ResourceKey rk = new ResourceKey( state.getPlatformName(), lticlaims.getLtiResource().getId() );
-      pgastate.setResourceKey( rk );
-      if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
-        pgastate.setAllowedToManage( true );
-      if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
-        pgastate.setAllowedToParticipate( true );
-      logger.log( Level.FINE, "Created PeerGroupAssessmentState with resource key = {0}",  pgastate.getResourceKey() );    
-      logger.log( Level.FINE, "Calling setPeerGroupAssessmentState() with state id = {0}", state.getId()             );    
+      state.setToolKey( toolKey );
+      AppSessionState pgastate = tool.createState( lticlaims, state );
       
       // If the state is changed it needs to be updated in the cache.
-      state.setPeerGroupAssessmentState( pgastate );
+      state.setAppSessionState( pgastate );
       getLtiStateStore( request.getServletContext() ).updateState( state );
       
       if ( logger.isLoggable( Level.FINE ) )
@@ -103,9 +96,13 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
         logger.fine( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) );
       }
             
-      logger.log( Level.FINE, "Confirming {0}", state.getPeerGroupAssessmentState().getResourceKey() );    
       logger.fine( "Forwarding to peer group assessment tool index page." );
-      response.sendRedirect( response.encodeRedirectURL( request.getContextPath() + "/peergroupassessment/index.jsp?state_id=" + state.getId() ) );
+      StringBuilder sb = new StringBuilder();
+      sb.append( request.getContextPath() )
+        .append( tool.getLaunchBase()     )
+        .append( "?state_id="             )
+        .append( state.getId()            );
+      response.sendRedirect( response.encodeRedirectURL( sb.toString() ) );
       return;
     }
     
@@ -175,7 +172,7 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
   protected LtiStateStore<AppLtiState> getLtiStateStore( ServletContext context )
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
-    return appcontext.getStateStore();
+   return appcontext.getStateStore();
   }
 
   /**
@@ -189,7 +186,5 @@ public class AppLtiLaunchServlet extends LtiLaunchServlet<AppLtiState>
   {
     ApplicationContext appcontext = ApplicationContext.getFromServletContext( context );
     return appcontext.getConfig();
-  }
-  
-  
+  }  
 }

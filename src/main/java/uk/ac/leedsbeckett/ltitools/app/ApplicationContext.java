@@ -16,7 +16,6 @@
 
 package uk.ac.leedsbeckett.ltitools.app;
 
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -37,7 +36,9 @@ import uk.ac.leedsbeckett.lti.state.LtiStateStore;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiStateSupplier;
 import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentStore;
+import uk.ac.leedsbeckett.ltitools.tool.Tool;
+import uk.ac.leedsbeckett.ltitools.tool.ToolKey;
+import uk.ac.leedsbeckett.ltitools.tool.ToolManager;
 
 /**
  * A context object which is specific to our application, is instantiated
@@ -56,9 +57,6 @@ public class ApplicationContext
   
   // Our context data is split into these three objects
   LtiConfiguration lticonfig;
-  
-  PeerGroupAssessmentStore pgaStore;
-  
   LtiStateStore<AppLtiState> ltistatestore;
   
   // WebSocket Endpoint related stuff
@@ -68,9 +66,7 @@ public class ApplicationContext
   public ApplicationContext( ServletContext context )
   {
     servletcontext = context;
-    context.setAttribute( KEY, this );    
     lticonfig = new LtiConfiguration();
-    pgaStore = new PeerGroupAssessmentStore( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
 
     Cache<String, AppLtiState> cache;
     CacheManager manager = Caching.getCachingProvider().getCacheManager();
@@ -83,8 +79,9 @@ public class ApplicationContext
     ServerContainer sc = (ServerContainer)context.getAttribute( ServerContainer.class.getName() );
     if ( sc != null )
       servercontainermap.put( sc, this );
+    context.setAttribute( KEY, this );
   }
-  
+
   /**
    * A static method that will retrieve an instance from an attribute of
    * a ServletContext.
@@ -102,6 +99,16 @@ public class ApplicationContext
     return servercontainermap.get( wscontainer );
   }
 
+  public ToolManager getToolManager()
+  {
+    return ToolManager.getFromServletContext( servletcontext );
+  }
+  
+  public Tool getTool( ToolKey toolKey )
+  {
+    return getToolManager().getTool( toolKey );
+  }
+  
   /**
    * Fetch the application-wide LTIConfiguration.
    * 
@@ -112,16 +119,6 @@ public class ApplicationContext
     return lticonfig;
   }
 
-  /**
-   * Fetch the application-wide ResourceStore
-   * 
-   * @return The instance.
-   */
-  public PeerGroupAssessmentStore getPeerGroupAssessmentStore()
-  {
-    return pgaStore;
-  }
-  
   /**
    * Fetch the application-wide state store.
    * 

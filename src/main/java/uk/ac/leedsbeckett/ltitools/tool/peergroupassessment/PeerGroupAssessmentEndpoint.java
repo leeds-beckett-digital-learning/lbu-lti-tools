@@ -30,6 +30,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
+import uk.ac.leedsbeckett.ltitools.tool.ToolManager;
 import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.EmptyPayload;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessage;
@@ -52,6 +53,8 @@ public class PeerGroupAssessmentEndpoint
 
   AppLtiState state;
   ApplicationContext appcontext;
+  ToolManager toolManager;
+  PeerGroupAssessmentTool tool;
   PeerGroupAssessmentState pgaState;
   PeerGroupAssessmentStore store;
   PeerGroupForm defaultForm;
@@ -103,17 +106,17 @@ public class PeerGroupAssessmentEndpoint
     if ( list != null )
     {
       String stateid = list.get( 0 );
-      logger.info( "State ID = " + stateid );
+      logger.log(Level.INFO, "State ID = {0}", stateid);
       state = appcontext.getStateStore().getState( stateid );
       logger.info( state.getPersonName() );
-      pgaState = state.getPeerGroupAssessmentState();
-      store = appcontext.getPeerGroupAssessmentStore();
+      pgaState = (PeerGroupAssessmentState)state.getAppSessionState();
+      tool = (PeerGroupAssessmentTool)appcontext.getTool( state.getToolKey() );
+      store = tool.getPeerGroupAssessmentStore();
       pgaResource = store.getResource( pgaState.getResourceKey(), true );
       appcontext.addWsSession( pgaState.getResourceKey(), session );
       defaultForm = store.getDefaultForm();
     }
   }
-
   @OnClose
   public void onClose(Session session) throws IOException
   {

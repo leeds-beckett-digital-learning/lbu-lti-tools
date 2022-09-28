@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 import javax.websocket.EncodeException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentEndpoint;
 
 /**
  *
@@ -30,7 +29,7 @@ import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAssessmentE
  */
 public class ToolMessageEncoder implements Encoder.Text<ToolMessage>
 {
-  static final Logger logger = Logger.getLogger( PeerGroupAssessmentEndpoint.class.getName() );
+  static final Logger logger = Logger.getLogger( ToolMessageEncoder.class.getName() );
 
   ObjectMapper mapper = new ObjectMapper();
   

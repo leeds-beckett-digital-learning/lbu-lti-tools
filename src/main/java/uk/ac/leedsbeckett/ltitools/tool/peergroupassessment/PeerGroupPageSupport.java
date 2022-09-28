@@ -21,6 +21,8 @@ public class PeerGroupPageSupport extends LtiPageSupport
 {
   static final Logger logger = Logger.getLogger( PeerGroupPageSupport.class.getName() );
   
+  PeerGroupAssessmentTool tool;
+  PeerGroupAssessmentStore store;
   PeerGroupAssessmentState pgaState;
   PeerGroupResource pgaResource;
   String websocketuri;
@@ -30,10 +32,12 @@ public class PeerGroupPageSupport extends LtiPageSupport
   {
     super.setRequest( request );
     logger.log( Level.FINE, "setRequest() state id = {0}", state.getId() );
-    pgaState = state.getPeerGroupAssessmentState();
+    pgaState = (PeerGroupAssessmentState)state.getAppSessionState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
-    pgaResource = appcontext.getPeerGroupAssessmentStore().getResource( pgaState.getResourceKey(), true );
+    tool = (PeerGroupAssessmentTool)appcontext.getTool( state.getToolKey() );
+    store = tool.getPeerGroupAssessmentStore();
+    pgaResource = store.getResource( pgaState.getResourceKey(), true );
 
     String base = computeWebSocketUri( PeerGroupAssessmentEndpoint.class.getAnnotation( ServerEndpoint.class ) );
     websocketuri = base + "?state=" + state.getId();

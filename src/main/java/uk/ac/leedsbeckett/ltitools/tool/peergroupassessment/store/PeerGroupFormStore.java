@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupForm;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

@@ -13,33 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
  * @author maber01
  */
-public class PeerGroupFormAndData implements Serializable
+public class Id
 {
-  final PeerGroupForm form;
-  final PeerGroupData data;
+  final String id;
 
-  public PeerGroupFormAndData( PeerGroupForm form, PeerGroupData data )
+  public Id( @JsonProperty("id") String id )
   {
-    this.form = form;
-    this.data = data;
+    this.id = id;
   }
 
-  public PeerGroupForm getForm()
+  public String getId()
   {
-    return form;
+    return id;
   }
-
-  public PeerGroupData getData()
-  {
-    return data;
-  }
-  
 }

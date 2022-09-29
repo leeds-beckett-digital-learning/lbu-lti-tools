@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupAddMembership;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,7 +41,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
 {
   ResourceKey key;
   
-  PeerGroupResourceProperties properties = new PeerGroupResourceProperties();
+  PeerGroupResourceProperties properties = new PeerGroupResourceProperties( "Initial Title", "Initial Decsription", Stage.SETUP );
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();
@@ -93,30 +94,14 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   }
 
   @JsonIgnore    
-  public void setTitle(String title) {
-    properties.setTitle( title );
-  }
-
-  @JsonIgnore    
   public String getDescription() {
     return properties.getDescription();
   }
 
   @JsonIgnore    
-  public void setDescription(String description) {
-    properties.setDescription( description );
-  } 
-
-  @JsonIgnore    
   public Stage getStage()
   {
     return properties.getStage();
-  }
-
-  @JsonIgnore    
-  public void setStage( Stage stage )
-  {
-    properties.setStage( stage );
   }
 
   @JsonIgnore    

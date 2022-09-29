@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
 import java.io.Serializable;
 
@@ -21,29 +21,25 @@ import java.io.Serializable;
  *
  * @author maber01
  */
-public class PeerGroupChangeGroup implements Serializable
+public class PeerGroupFormAndData implements Serializable
 {
-  String id;
-  String title;
+  final PeerGroupForm form;
+  final PeerGroupData data;
 
-  public String getId()
+  public PeerGroupFormAndData( PeerGroupForm form, PeerGroupData data )
   {
-    return id;
+    this.form = form;
+    this.data = data;
   }
 
-  public void setId( String id )
+  public PeerGroupForm getForm()
   {
-    this.id = id;
+    return form;
   }
 
-  public String getTitle()
+  public PeerGroupData getData()
   {
-    return title;
-  }
-
-  public void setTitle( String title )
-  {
-    this.title = title;
+    return data;
   }
   
 }

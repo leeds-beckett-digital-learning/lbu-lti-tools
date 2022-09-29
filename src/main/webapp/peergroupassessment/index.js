@@ -34,7 +34,7 @@ var resource =
 
 var selectedgroupid;
 
- function init()
+function init()
 {
   mainTitle            = document.getElementById( "main-title" );
   mainDescription      = document.getElementById( "main-description" );
@@ -52,9 +52,8 @@ var selectedgroupid;
   socket = new WebSocket( wsuri );
   socket.addEventListener( 'open',    (event) => 
   {
-    socket.send( messageToString( "getresource" ) );
-    socket.send( messageToString( "getform" ) );
-  });
+    sendMessage( new GetResourceMessage() );
+   });
 
   socket.addEventListener( 'close', (event) => 
   {
@@ -71,7 +70,8 @@ var selectedgroupid;
 
   socket.addEventListener( 'message', (event) => 
   {
-    console.log( 'Message from server: ', event.data);          var message = stringToMessage( event.data );
+    console.log( 'Message from server: ', event.data);
+    var message = stringToMessage( event.data );
     console.log( message );
     if ( message.valid )
     {
@@ -109,6 +109,11 @@ var selectedgroupid;
       }
     }
   });
+}
+
+function sendMessage( message )
+{
+  socket.send( message.toString() );
 }
 
 function updateSelf()
@@ -238,15 +243,7 @@ function processFormInputEvent( e, gid, f, m )
   console.log( e );
   console.log( f );
   console.log( m );
-  var datum = {};
-  datum.groupId = gid;
-  datum.fieldId = f.id;
-  datum.memberId = m.ltiId;
-  datum.value = e.value;
-  socket.send( messageToString( 
-      "changedatum", 
-      "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupChangeDatum",
-      datum ) );
+  sendMessage( new changedatumMessage( gid, f.id, m.ltiId, e.value ) );
 }
 
 function addFormInputListener( e, gid, f, m )
@@ -339,78 +336,44 @@ function openGroupEditDialog( gid )
 function openDataEntryDialog( gid )
 {
   selectedgroupid = gid;
-  socket.send( messageToString( 
-      "getformanddata", 
-      "java.lang.String",
-      selectedgroupid ) );
+  sendMessage( new getformanddataMessage( gid ) );
       
   clearForm();
-  openDialog( 'dataentry' );;
+  openDialog( 'dataentry' );
+}
+
+function openDebugDialog()
+{
+  var pre = document.getElementById( "debugtext" );
+  pre.innerHTML = "testing...";  
+  openDialog( 'debugdialog' );
 }
 
 function saveEditProps()
 {
-  var payload = new Object();
-  payload.stage = editpropsStage.value;
-  payload.title = editpropsTitle.value;
-  payload.description = editpropsDescription.value;
-  socket.send( messageToString( 
-      "setresourceproperties", 
-      "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResourceProperties",
-      payload ) );
+  sendMessage( new setresourcepropertiesMessage( editpropsStage.value, editpropsTitle.value, editpropsDescription.value ) );
   closeDialog( "editprops" );
 }
 
 function saveEditGroupProps()
 {
-  var payload = new Object();
-  payload.id = editgrouppropsId.innerHTML;
-  payload.title = editgrouppropsTitle.value;
-  socket.send( messageToString( 
-      "setgroupproperties", 
-      "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupChangeGroup",
-      payload ) );
+  sendMessage( new setgrouppropertiesMessage( editgrouppropsId.innerHTML, editgrouppropsTitle.value ) );
   closeDialog( "editgroupprops" );
 }
 
 function addGroup()
 {
-  var payload = new Object();
-  socket.send( messageToString( 
-      "addgroup", 
-      "uk.ac.leedsbeckett.ltitools.tool.websocket.EmptyPayload",
-      payload ) );
+  sendMessage( new addgroupMessage() );
 }
 
 function addMembership( gid )
 {
-  var payload  = {};
-  payload.id   = gid;
-  payload.pids = [];
-  payload.pids[0] = {};
-  payload.pids[0].ltiId = myid;
-  payload.pids[0].name  = myname;
-  
-  socket.send( messageToString( 
-      "membership", 
-      "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupAddMembership",
-      payload ) );  
-}
+  var pids = [];
+  pids[0] = {};
+  pids[0].ltiId = myid;
+  pids[0].name  = myname;
 
-function messageToString( messageType, payloadType, payload, replyToId  )
-{
-  var str = "toolmessageversion1.0\n";
-  str += "id:" + nextid++ + "\n";
-  if ( replyToId )
-    str += "replytoid:" + replyToId + "\n";
-  if ( messageType )
-    str += "messagetype:" + messageType + "\n";
-  if ( payloadType && payload )
-  {
-    str += "payloadtype:" + payloadType + "\npayload:\n" ;
-    str += JSON.stringify( payload );
-  }
-  return str;
+  sendMessage( new membershipMessage( gid, pids ) );
 }
 
 function stringToMessage( str )

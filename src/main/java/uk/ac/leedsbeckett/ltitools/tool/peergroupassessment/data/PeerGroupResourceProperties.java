@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 
 /**
@@ -23,25 +24,24 @@ import java.io.Serializable;
  */
 public class PeerGroupResourceProperties implements Serializable
 {
-  String title;
-  String description;
-  PeerGroupResource.Stage stage;  
+  final String title;
+  final String description;
+  final PeerGroupResource.Stage stage;  
 
-  public PeerGroupResourceProperties()
+  public PeerGroupResourceProperties( 
+          @JsonProperty("title")       String title, 
+          @JsonProperty("description") String description, 
+          @JsonProperty("stage")       PeerGroupResource.Stage stage )
   {
-    title = "Initial Title";
-    description = "Initial Description";
-    stage = PeerGroupResource.Stage.SETUP;
+    this.title = title;
+    this.description = description;
+    this.stage = stage;
   }
+
   
   public String getTitle()
   {
     return title;
-  }
-
-  public void setTitle( String title )
-  {
-    this.title = title;
   }
 
   public String getDescription()
@@ -49,19 +49,8 @@ public class PeerGroupResourceProperties implements Serializable
     return description;
   }
 
-  public void setDescription( String description )
-  {
-    this.description = description;
-  }
-
   public PeerGroupResource.Stage getStage()
   {
     return stage;
-  }
-
-  public void setStage( PeerGroupResource.Stage stage )
-  {
-    this.stage = stage;
-  }
-  
+  }  
 }

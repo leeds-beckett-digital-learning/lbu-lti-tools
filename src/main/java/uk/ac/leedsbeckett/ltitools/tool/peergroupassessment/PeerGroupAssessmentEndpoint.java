@@ -15,10 +15,17 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResourceProperties;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store.PeerGroupAssessmentStore;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupChangeGroup;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupFormAndData;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupAddMembership;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupDataKey;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupChangeDatum;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,13 +37,12 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.app.ApplicationContext;
 import uk.ac.leedsbeckett.ltitools.state.AppLtiState;
-import uk.ac.leedsbeckett.ltitools.tool.ToolManager;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource.Group;
-import uk.ac.leedsbeckett.ltitools.tool.websocket.EmptyPayload;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.Id;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessageEncoder;
-import uk.ac.leedsbeckett.ltitools.tool.websocket.ToolMessageTypeSet;
 import uk.ac.leedsbeckett.ltitools.tool.websocket.annotations.EndpointMessageHandler;
 
 /**
@@ -47,60 +53,23 @@ import uk.ac.leedsbeckett.ltitools.tool.websocket.annotations.EndpointMessageHan
         value="/socket/peergroupassessment", 
         decoders=ToolMessageDecoder.class, 
         encoders=ToolMessageEncoder.class )
-public class PeerGroupAssessmentEndpoint
+public class PeerGroupAssessmentEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger( PeerGroupAssessmentEndpoint.class.getName() );
 
   AppLtiState state;
   ApplicationContext appcontext;
-  ToolManager toolManager;
   PeerGroupAssessmentTool tool;
   PeerGroupAssessmentState pgaState;
   PeerGroupAssessmentStore store;
   PeerGroupForm defaultForm;
   PeerGroupResource pgaResource;
   
-  final HashMap<String,HandlerMethodRecord> handlerMethods = new HashMap<>();
-  
-  public PeerGroupAssessmentEndpoint()
-  {
-    for ( Method method : PeerGroupAssessmentEndpoint.class.getMethods() )
-    {
-      logger.log( Level.INFO, "Checking method {0}", method.getName() );
-      for ( EndpointMessageHandler handler : method.getAnnotationsByType( EndpointMessageHandler.class ) )
-      {
-        logger.log( Level.INFO, "Method has EndpointMessageHandler annotation and name = " + handler.name() );
-        Class<?>[] classarray = method.getParameterTypes();
-        logger.log( Level.INFO, "Method parameter count = " + classarray.length );
-        if ( ( classarray.length == 2 || classarray.length == 3 ) && 
-                classarray[0].equals( Session.class ) &&
-                classarray[1].equals( ToolMessage.class ) )
-        {
-          logger.log( Level.INFO, "Parameters match signature and second parameter class is " + 
-                  (classarray.length == 3?classarray[2]:"not present") );
-          handlerMethods.put( handler.name(), 
-                  new HandlerMethodRecord( 
-                          handler.name(), 
-                          method, 
-                          classarray.length == 3?classarray[2]:null ) );
-        }
-      }
-    }
-  }
   
   @OnOpen
   public void onOpen(Session session) throws IOException
   {
-    logger.info( "Opened websocket session uri = " + session.getRequestURI().toASCIIString() );
-    
-    ToolMessageTypeSet.addType( String.class.getName() );
-    ToolMessageTypeSet.addType( EmptyPayload.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupResource.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupResource.Group.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupChangeGroup.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupChangeDatum.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupAddMembership.class.getName() );
-    ToolMessageTypeSet.addType( PeerGroupResourceProperties.class.getName() );
+    logger.info( "Opened websocket session uri = " + session.getRequestURI().toASCIIString() );    
     appcontext = ApplicationContext.getFromWebSocketContainer( session.getContainer() );
     List<String> list = session.getRequestParameterMap().get( "state" );
     if ( list != null )
@@ -117,6 +86,7 @@ public class PeerGroupAssessmentEndpoint
       defaultForm = store.getDefaultForm();
     }
   }
+  
   @OnClose
   public void onClose(Session session) throws IOException
   {
@@ -150,64 +120,21 @@ public class PeerGroupAssessmentEndpoint
     logger.log( Level.INFO, "Did not find handler for message." );
   }
 
-  boolean dispatchMessage( Session session, ToolMessage message ) throws IOException
-  {
-    logger.log( Level.INFO, "dispatchMessage type = " + message.getMessageType() );
-    HandlerMethodRecord record = handlerMethods.get( message.getMessageType() );
-    if ( record == null ) return false;
-    
-    Class pc = record.getParameterClass();
-    logger.log( Level.INFO, "dispatchMessage found handler record " + pc );
-    
-    if ( pc != null )
-    {
-      if ( message.getPayload() == null ) return false;
-      logger.log( Level.INFO, "dispatchMessage payload class is " + message.getPayload().getClass() );
-      if ( !(message.getPayload().getClass().isAssignableFrom( record.getParameterClass() ) ) )
-        return false;
-    }
-    
-    logger.log( Level.INFO, "Invoking method." );
-    try
-    {
-      if ( pc == null )
-        record.method.invoke( this, session, message );
-      else
-        record.method.invoke( this, session, message, message.getPayload() );
-    }
-    catch ( IllegalAccessException | IllegalArgumentException ex )
-    {
-      logger.log( Level.SEVERE, "Web socket message handler error.", ex );
-    }
-    catch ( InvocationTargetException ex )
-    {
-      // method threw exception
-      Throwable original = ex.getCause();
-      if ( original instanceof IOException )
-        throw (IOException)original;
-      logger.log( Level.SEVERE, "Web socket message handler error.", ex );
-    }
-    
-    return true;
-  }
 
-  @EndpointMessageHandler(name = "getresource")
+  @EndpointMessageHandler()
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
-    if ( "getresource".equals( message.getMessageType() ) )
-    {
-      logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
-      ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
-      session.getAsyncRemote().sendObject( tm );
-    }
+    logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
+    ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
+    session.getAsyncRemote().sendObject( tm );
   }
   
   @EndpointMessageHandler(name = "setresourceproperties")
   public void handleSetResourceProperties( Session session, ToolMessage message, PeerGroupResourceProperties p ) throws IOException
   {
-    logger.log( Level.INFO, "State [{0}]",       p.stage.toString() );
-    logger.log( Level.INFO, "Title [{0}]",       p.title );
-    logger.log( Level.INFO, "Description [{0}]", p.description );
+    logger.log( Level.INFO, "State       [{0}]", p.getStage().toString() );
+    logger.log( Level.INFO, "Title       [{0}]", p.getTitle() );
+    logger.log( Level.INFO, "Description [{0}]", p.getDescription() );
     pgaResource.setProperties( p );
     try
     {
@@ -222,15 +149,15 @@ public class PeerGroupAssessmentEndpoint
   }  
 
   @EndpointMessageHandler(name = "setgroupproperties")
-  public void handleAddGroup( Session session, ToolMessage message, PeerGroupChangeGroup p ) throws IOException
+  public void handleSetGroupProperties( Session session, ToolMessage message, PeerGroupChangeGroup p ) throws IOException
   {
-    logger.log( Level.INFO, "ID [{0}]",       p.id );
-    logger.log( Level.INFO, "Title [{0}]",    p.title );
-    Group g = pgaResource.getGroupById( p.id );
+    logger.log( Level.INFO, "ID [{0}]",       p.getId() );
+    logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
+    Group g = pgaResource.getGroupById( p.getId() );
     if ( g != null )
     {
       logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
-      g.setTitle( p.title );
+      g.setTitle( p.getTitle() );
       logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
       try
       {
@@ -255,9 +182,7 @@ public class PeerGroupAssessmentEndpoint
       try
       {
         store.updateResource( pgaResource );
-        PeerGroupChangeGroup p = new PeerGroupChangeGroup();
-        p.setId( g.getId() );
-        p.setTitle( g.getTitle() );
+        PeerGroupChangeGroup p = new PeerGroupChangeGroup( g.getId(), g.getTitle() );
         ToolMessage tm = new ToolMessage( message.getId(), "group", p );
         sendToolMessageToResourceUsers( tm );
       }
@@ -288,10 +213,10 @@ public class PeerGroupAssessmentEndpoint
   }
   
   @EndpointMessageHandler(name = "getformanddata")
-  public void handleGetFormAndData( Session session, ToolMessage message, String gid ) throws IOException
+  public void handleGetFormAndData( Session session, ToolMessage message, Id gid ) throws IOException
   {
     logger.log( Level.INFO, "handleGetFormAndData" );
-    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid );
+    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid.getId() );
     PeerGroupFormAndData fad = new PeerGroupFormAndData( defaultForm, store.getData( key, true ) );
     ToolMessage tm = new ToolMessage( message.getId(), "formanddata", fad );
     session.getAsyncRemote().sendObject( tm );
@@ -303,9 +228,9 @@ public class PeerGroupAssessmentEndpoint
     logger.log( 
             Level.INFO, 
             "handleChangeDatum() {0} {1} {2} {3}", 
-            new Object[ ]{ datum.groupId, datum.fieldId, datum.memberId, datum.value } );
+            new Object[ ]{ datum.getGroupId(), datum.getFieldId(), datum.getMemberId(), datum.getValue() } );
     
-    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), datum.groupId );
+    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), datum.getGroupId() );
     PeerGroupData data = store.getData( key, true );
     data.setParticipantDatum( datum );
     store.updateData( data );
@@ -322,33 +247,4 @@ public class PeerGroupAssessmentEndpoint
     }
   }
   
-  public class HandlerMethodRecord
-  {
-    final String name;
-    final Method method;
-    final Class<?> parameterClass;
-    
-    public HandlerMethodRecord( String name, Method method, Class<?> parameterClass )
-    {
-      this.name = name;
-      this.method = method;
-      this.parameterClass = parameterClass;
-    }
-
-    public String getName()
-    {
-      return name;
-    }
-
-    public Method getMethod()
-    {
-      return method;
-    }
-
-    public Class<?> getParameterClass()
-    {
-      return parameterClass;
-    }
-    
-  }
 }

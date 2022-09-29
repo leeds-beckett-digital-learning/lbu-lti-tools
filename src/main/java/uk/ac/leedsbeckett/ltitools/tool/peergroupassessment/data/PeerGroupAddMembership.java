@@ -13,15 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.websocket;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.ArrayList;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResource.Member;
 
 /**
  *
  * @author maber01
  */
-public class EmptyPayload implements Serializable
+public class PeerGroupAddMembership implements Serializable
 {
-  
+  final String id;
+  final ArrayList<Member> pids;
+
+  public PeerGroupAddMembership( 
+          @JsonProperty("id") String id, 
+          @JsonProperty("pids") ArrayList<Member> pids )
+  {
+    this.id = id;
+    this.pids = pids;
+  }
+
+  public String getId()
+  {
+    return id;
+  }
+
+  public ArrayList<Member> getPids()
+  {
+    return pids;
+  }
 }
+

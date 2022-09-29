@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupDataKey;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import uk.ac.leedsbeckett.ltitools.tool.ResourceKey;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResource;
 
 /**
  *

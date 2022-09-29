@@ -4,8 +4,12 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store.PeerGroupAssessmentStore;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -74,6 +78,14 @@ public class PeerGroupPageSupport extends LtiPageSupport
     return websocketuri;
   }
 
+  public String getMessagingScript()
+  {
+    // Create an endpoint temporarily just to fetch the
+    // javascript.  Not great - should be possible to get script
+    // from a static method....
+    PeerGroupAssessmentEndpoint e = new PeerGroupAssessmentEndpoint();
+    return e.getJavaScript();
+  }
 
   public boolean isDebugging()
   {
@@ -86,6 +98,9 @@ public class PeerGroupPageSupport extends LtiPageSupport
     try
     {
       ObjectMapper mapper = new ObjectMapper();
+      mapper.enable( SerializationFeature.INDENT_OUTPUT );
+      mapper.disable( SerializationFeature.FAIL_ON_EMPTY_BEANS );
+      mapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
       sb.append( "Launch State\n" );    
       sb.append( "=============\n" );
       sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) );

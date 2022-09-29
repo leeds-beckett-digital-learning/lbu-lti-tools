@@ -43,12 +43,16 @@
                    background: white; }
       
     </style>
-    <script lang="JavaScript">      
-      const myid        = '${support.personId}';
-      const myname      = '${support.personName}';
-      const manager     = ${support.allowedToManage};
-      const participant = ${support.allowedToParticipate};
-      const wsuri       = '${support.websocketUri}';
+    <script lang="JavaScript">
+      
+const myid        = '${support.personId}';
+const myname      = '${support.personName}';
+const manager     = ${support.allowedToManage};
+const participant = ${support.allowedToParticipate};
+const wsuri       = '${support.websocketUri}';
+
+${support.messagingScript}
+        
     </script>
     <script lang="JavaScript" src="index.js"></script>
   </head>
@@ -110,6 +114,15 @@
       </div>
     </div>
 
+    <div id="debugdialog" class="dialog">
+      <div class="dialogcontent">
+        <h3>Debug Information</h3>
+        <p><button onclick="closeDialog('debugdialog');" value="Close">Close</button></p>
+        <pre id="debugtext"></pre>
+        <p><button onclick="closeDialog('debugdialog');" value="Close">Close</button></p>
+      </div>
+    </div>
+
 
     <h1>Peer Group Assessment Tool</h1>
     <p class="important">${support.importantMessage}</p>
@@ -142,6 +155,8 @@
         can neither participate or manage this resource.</p>
       </c:otherwise>
     </c:choose>
+    
+    <p><button onclick="openDebugDialog()">Debug Dialog</button></p>          
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

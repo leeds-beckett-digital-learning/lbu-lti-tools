@@ -15,6 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store.PeerGroupAssessmentStore;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;

@@ -13,39 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import java.util.ArrayList;
-import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupResource.Member;
 
 /**
  *
  * @author maber01
  */
-public class PeerGroupAddMembership implements Serializable
+public class PeerGroupChangeGroup implements Serializable
 {
-  String id;
-  ArrayList<Member> pids;
+  final String id;
+  final String title;
 
+  public PeerGroupChangeGroup( 
+          @JsonProperty("id") String id, 
+          @JsonProperty("title") String title )
+  {
+    this.id = id;
+    this.title = title;
+  }
+
+  
   public String getId()
   {
     return id;
   }
 
-  public void setId( String id )
+  public String getTitle()
   {
-    this.id = id;
+    return title;
   }
-
-  public ArrayList<Member> getPids()
-  {
-    return pids;
-  }
-
-  public void setPids( ArrayList<Member> pids )
-  {
-    this.pids = pids;
-  }  
 }
-

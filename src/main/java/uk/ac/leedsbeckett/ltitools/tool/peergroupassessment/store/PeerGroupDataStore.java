@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment;
+package uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.store;
 
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupDataKey;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

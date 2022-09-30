@@ -78,15 +78,6 @@ public class PeerGroupPageSupport extends LtiPageSupport
     return websocketuri;
   }
 
-  public String getMessagingScript()
-  {
-    // Create an endpoint temporarily just to fetch the
-    // javascript.  Not great - should be possible to get script
-    // from a static method....
-    PeerGroupAssessmentEndpoint e = new PeerGroupAssessmentEndpoint();
-    return e.getJavaScript();
-  }
-
   public boolean isDebugging()
   {
     return logger.isLoggable( Level.FINE );

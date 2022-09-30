@@ -51,9 +51,9 @@ const manager     = ${support.allowedToManage};
 const participant = ${support.allowedToParticipate};
 const wsuri       = '${support.websocketUri}';
 
-${support.messagingScript}
         
     </script>
+    <script lang="JavaScript" src="../gen/websocket.js"></script>
     <script lang="JavaScript" src="index.js"></script>
   </head>
   <body>

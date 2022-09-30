@@ -7,6 +7,17 @@ compileJava {
     options.compilerArgs << '-Xlint:unchecked' 
 }
 
+task generateJavascript( type: JavaExec ) {
+  dependsOn compileJava
+  classpath = sourceSets.main.runtimeClasspath
+  main = "uk.ac.leedsbeckett.ltitools.tool.EndpointJavascriptGenerator"
+  args webAppDirName + '/gen/websocket.js'
+}
+
+war {
+  dependsOn generateJavascript
+}
+
 description = 'LBU-LTI-Tools'
     group = 'uk.ac.leedsbeckett'
 repositories {
@@ -38,6 +49,7 @@ dependencies {
     
     implementation 'jstl:jstl:1.2'
     implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.19'
+    implementation 'org.reflections:reflections:0.10.2'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2',

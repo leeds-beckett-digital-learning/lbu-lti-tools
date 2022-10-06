@@ -3,6 +3,10 @@ apply plugin: 'jacoco'
 apply plugin: 'war'
 apply plugin: 'maven-publish'
 
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 compileJava {
     options.compilerArgs << '-Xlint:unchecked' 
 }
@@ -28,6 +32,7 @@ description = 'LBU-LTI-Tools'
     group = 'uk.ac.leedsbeckett'
 repositories {
     mavenCentral()
+    mavenLocal()
     maven {
       url "https://maven.pkg.github.com/leeds-beckett-digital-learning/lbu-lti"
       credentials {
@@ -62,8 +67,8 @@ dependencies {
     
     implementation 'jstl:jstl:1.2'
     implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.22'
-    implementation 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.7'
-    //implementation files('../lbu-lti-toolapi/build/libs/lbu-lti-toolapi-0.0.6.jar')
+    //implementation 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.7'
+    implementation changing: true, group: 'uk.ac.leedsbeckett', name: 'lbu-lti-toolapi', version: '0.0.8-SNAPSHOT'
 
     implementation 'org.reflections:reflections:0.10.2'
 

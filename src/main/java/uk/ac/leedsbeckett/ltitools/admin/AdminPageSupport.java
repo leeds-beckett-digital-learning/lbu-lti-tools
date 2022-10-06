@@ -28,7 +28,7 @@ import javax.servlet.ServletException;
 import uk.ac.leedsbeckett.lti.config.LtiConfiguration;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
-import uk.ac.leedsbeckett.ltitools.tool.PageSupport;
+import uk.ac.leedsbeckett.ltitoolset.page.PageSupport;
 
 /**
  * This class provides logic for use within an admin JSP page.
@@ -49,6 +49,7 @@ public class AdminPageSupport extends PageSupport
    * methods to retrieve outcomes of the processing.
    * 
    * @param request The HttpRequest associated with the JSP's servlet.
+   * @throws javax.servlet.ServletException
    */
   @Override
   public void setRequest( HttpServletRequest request ) throws ServletException
@@ -56,7 +57,7 @@ public class AdminPageSupport extends PageSupport
     super.setRequest( request );
     
     // Retrieve information about the application
-    LtiConfiguration config = appcontext.getConfig();
+    LtiConfiguration config = this.toolCoordinator.getLtiConfiguration();
     logconfigpath = Paths.get( request.getServletContext().getRealPath( "WEB-INF/classes/logging.properties" ) );
     
     // Find out if there was a form field called 'action'

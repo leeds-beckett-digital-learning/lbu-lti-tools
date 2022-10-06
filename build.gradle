@@ -7,11 +7,17 @@ compileJava {
     options.compilerArgs << '-Xlint:unchecked' 
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 task generateJavascript( type: JavaExec ) {
   dependsOn compileJava
   classpath = sourceSets.main.runtimeClasspath
-  main = "uk.ac.leedsbeckett.ltitools.tool.EndpointJavascriptGenerator"
-  args webAppDirName + '/gen/websocket.js'
+  main = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
+  args 'uk.ac.leedsbeckett', webAppDirName + '/gen/websocket.js'
 }
 
 war {
@@ -29,6 +35,13 @@ repositories {
         password = gitHubPrivateToken
       }
     }
+    maven {
+      url "https://maven.pkg.github.com/leeds-beckett-digital-learning/lbu-lti-toolapi"
+      credentials {
+        username = gitHubUserName
+        password = gitHubPrivateToken
+      }
+    }
 }
 
 dependencies {
@@ -38,7 +51,7 @@ dependencies {
 
     implementation 'commons-io:commons-io:2.11.0'
     implementation 'org.apache.commons:commons-text:1.9'
-    implementation 'org.apache.httpcomponents.core5:httpcore5:5.1.2'
+    // implementation 'org.apache.httpcomponents.core5:httpcore5:5.1.2'
     implementation 'javax.cache:cache-api:1.1.1'
     implementation 'org.ehcache:ehcache:3.10.0'
 
@@ -48,7 +61,10 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.0'
     
     implementation 'jstl:jstl:1.2'
-    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.19'
+    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.22'
+    implementation 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.7'
+    //implementation files('../lbu-lti-toolapi/build/libs/lbu-lti-toolapi-0.0.6.jar')
+
     implementation 'org.reflections:reflections:0.10.2'
 
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'

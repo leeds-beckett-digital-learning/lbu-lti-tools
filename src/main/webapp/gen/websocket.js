@@ -36,7 +36,7 @@ class getformanddataMessage extends Message
 {
   constructor( id )
   {
-    super( "getformanddata", "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.Id" );
+    super( "getformanddata", "uk.ac.leedsbeckett.ltitools.peergroupassessment.data.Id" );
     this.payload = { "id": id };
   }
 }
@@ -54,7 +54,7 @@ class setresourcepropertiesMessage extends Message
 {
   constructor( title, description, stage )
   {
-    super( "setresourceproperties", "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupResourceProperties" );
+    super( "setresourceproperties", "uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResourceProperties" );
     this.payload = { "title": title, "description": description, "stage": stage };
   }
 }
@@ -72,7 +72,7 @@ class membershipMessage extends Message
 {
   constructor( id, pids )
   {
-    super( "membership", "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupAddMembership" );
+    super( "membership", "uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupAddMembership" );
     this.payload = { "id": id, "pids": pids };
   }
 }
@@ -81,7 +81,7 @@ class setgrouppropertiesMessage extends Message
 {
   constructor( id, title )
   {
-    super( "setgroupproperties", "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupChangeGroup" );
+    super( "setgroupproperties", "uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupChangeGroup" );
     this.payload = { "id": id, "title": title };
   }
 }
@@ -90,7 +90,7 @@ class changedatumMessage extends Message
 {
   constructor( groupId, fieldId, memberId, value )
   {
-    super( "changedatum", "uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.data.PeerGroupChangeDatum" );
+    super( "changedatum", "uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupChangeDatum" );
     this.payload = { "groupId": groupId, "fieldId": fieldId, "memberId": memberId, "value": value };
   }
 }

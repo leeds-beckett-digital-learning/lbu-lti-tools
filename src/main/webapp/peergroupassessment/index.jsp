@@ -12,7 +12,7 @@
 <!DOCTYPE html>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<jsp:useBean id="support" class="uk.ac.leedsbeckett.ltitools.tool.peergroupassessment.PeerGroupPageSupport" scope="request"/>
+<jsp:useBean id="support" class="uk.ac.leedsbeckett.ltitools.peergroupassessment.PeerGroupPageSupport" scope="request"/>
 <% support.setRequest( request ); %>
 
 <html>

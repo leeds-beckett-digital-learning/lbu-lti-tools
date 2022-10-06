@@ -351,7 +351,7 @@ function openDebugDialog()
 
 function saveEditProps()
 {
-  sendMessage( new setresourcepropertiesMessage( editpropsStage.value, editpropsTitle.value, editpropsDescription.value ) );
+  sendMessage( new setresourcepropertiesMessage( editpropsTitle.value, editpropsDescription.value, editpropsStage.value ) );
   closeDialog( "editprops" );
 }
 

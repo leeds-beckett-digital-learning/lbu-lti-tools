@@ -28,7 +28,7 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
  * 
  * @author jon
  */
-public class PeerGroupAssessmentState implements Serializable, ToolLaunchState
+public class PgaToolLaunchState implements Serializable, ToolLaunchState
 {
   /**
    * Many users (many states) may reference the same resource. It is 

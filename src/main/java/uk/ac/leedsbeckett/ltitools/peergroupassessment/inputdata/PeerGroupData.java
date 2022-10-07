@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata;
 
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -61,24 +62,24 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     this.participantData = participantData;
   }
 
-  public void setParticipantDatum( PeerGroupChangeDatum change )
+  public void setParticipantDatum( PgaChangeDatum change )
   {
     synchronized ( participantData )
     {
-      ParticipantData pd = participantData.get( change.memberId );
+      ParticipantData pd = participantData.get( change.getMemberId() );
       if ( pd == null )
       {
-        pd = new ParticipantData( change.memberId );
-        participantData.put( change.memberId, pd );
+        pd = new ParticipantData( change.getMemberId() );
+        participantData.put( change.getMemberId(), pd );
         pd.setParticipantData( new HashMap<>() );
       }
-      ParticipantDatum datum = pd.participantData.get( change.fieldId );
+      ParticipantDatum datum = pd.participantData.get( change.getFieldId() );
       if ( datum == null )
       {
         datum = new ParticipantDatum();
-        pd.participantData.put( change.fieldId, datum );
+        pd.participantData.put( change.getFieldId(), datum );
       }
-      datum.value = change.value;
+      datum.value = change.getValue();
       datum.valid = false;
     }
   }

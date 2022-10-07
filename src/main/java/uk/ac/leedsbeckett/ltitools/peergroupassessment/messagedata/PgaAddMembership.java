@@ -13,44 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.ArrayList;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 
 /**
  *
  * @author maber01
  */
-public class PeerGroupResourceProperties implements Serializable
+public class PgaAddMembership implements Serializable
 {
-  final String title;
-  final String description;
-  final Stage stage;  
+  final String id;
+  final ArrayList<Member> pids;
 
-  public PeerGroupResourceProperties( 
-          @JsonProperty("title")       String title, 
-          @JsonProperty("description") String description, 
-          @JsonProperty("stage")       Stage stage )
+  public PgaAddMembership( 
+          @JsonProperty("id") String id, 
+          @JsonProperty("pids") ArrayList<Member> pids )
   {
-    this.title = title;
-    this.description = description;
-    this.stage = stage;
+    this.id = id;
+    this.pids = pids;
   }
 
-  
-  public String getTitle()
+  public String getId()
   {
-    return title;
+    return id;
   }
 
-  public String getDescription()
+  public ArrayList<Member> getPids()
   {
-    return description;
+    return pids;
   }
-
-  public Stage getStage()
-  {
-    return stage;
-  }  
 }
+

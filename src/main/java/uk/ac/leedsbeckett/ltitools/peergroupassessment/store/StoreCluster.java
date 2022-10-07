@@ -15,33 +15,33 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment.store;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupForm;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupDataKey;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 
 /**
  *
  * @author maber01
  */
-public class PeerGroupAssessmentStore
+public class StoreCluster
 {
   Path basePath;
   
-  PeerGroupResourceStore resourceStore;
-  PeerGroupDataStore dataStore;
-  PeerGroupFormStore formstore;
+  ResourceStore resourceStore;
+  InputDataStore dataStore;
+  FormStore formstore;
 
-  public PeerGroupAssessmentStore( Path basePath )
+  public StoreCluster( Path basePath )
   {
     this.basePath = basePath;
-    resourceStore = new PeerGroupResourceStore( basePath.resolve( "resources" ) );
-    dataStore     = new PeerGroupDataStore(     basePath.resolve( "data"      ) );
-    formstore     = new PeerGroupFormStore(     basePath.resolve( "forms"     ) );
+    resourceStore = new ResourceStore( basePath.resolve( "resources" ) );
+    dataStore     = new InputDataStore(     basePath.resolve( "data"      ) );
+    formstore     = new FormStore(     basePath.resolve( "forms"     ) );
   }
 
   public PeerGroupResource getResource( ResourceKey key, boolean create )

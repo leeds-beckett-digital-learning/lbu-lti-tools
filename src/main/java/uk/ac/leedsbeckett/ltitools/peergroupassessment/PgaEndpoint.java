@@ -15,16 +15,16 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResourceProperties;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResource;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.PeerGroupAssessmentStore;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupForm;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupChangeGroup;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupFormAndData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupAddMembership;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupDataKey;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupChangeDatum;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeGroup;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaFormAndData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembership;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
@@ -42,8 +42,8 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.Id;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 
 /**
  *
@@ -53,15 +53,15 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResource.Gr
         value="/socket/peergroupassessment", 
         decoders=ToolMessageDecoder.class, 
         encoders=ToolMessageEncoder.class )
-public class PeerGroupAssessmentEndpoint extends ToolEndpoint
+public class PgaEndpoint extends ToolEndpoint
 {
-  static final Logger logger = Logger.getLogger( PeerGroupAssessmentEndpoint.class.getName() );
+  static final Logger logger = Logger.getLogger(PgaEndpoint.class.getName() );
 
   ToolSetLtiState state;
   ToolCoordinator toolCoordinator;
   PeerGroupAssessmentTool tool;
-  PeerGroupAssessmentState pgaState;
-  PeerGroupAssessmentStore store;
+  PgaToolLaunchState pgaState;
+  StoreCluster store;
   PeerGroupForm defaultForm;
   PeerGroupResource pgaResource;
   
@@ -78,7 +78,7 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
       logger.log(Level.INFO, "State ID = {0}", stateid);
       state = toolCoordinator.getLtiStateStore().getState( stateid );
       logger.info( state.getPersonName() );
-      pgaState = (PeerGroupAssessmentState)state.getAppSessionState();
+      pgaState = (PgaToolLaunchState)state.getAppSessionState();
       tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolKey() );
       store = tool.getPeerGroupAssessmentStore();
       pgaResource = store.getResource( pgaState.getResourceKey(), true );
@@ -129,8 +129,8 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
     session.getAsyncRemote().sendObject( tm );
   }
   
-  @EndpointMessageHandler(name = "setresourceproperties")
-  public void handleSetResourceProperties( Session session, ToolMessage message, PeerGroupResourceProperties p ) throws IOException
+  @EndpointMessageHandler()
+  public void handleSetResourceProperties( Session session, ToolMessage message, PgaProperties p ) throws IOException
   {
     logger.log( Level.INFO, "State       [{0}]", p.getStage().toString() );
     logger.log( Level.INFO, "Title       [{0}]", p.getTitle() );
@@ -148,8 +148,8 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
     }
   }  
 
-  @EndpointMessageHandler(name = "setgroupproperties")
-  public void handleSetGroupProperties( Session session, ToolMessage message, PeerGroupChangeGroup p ) throws IOException
+  @EndpointMessageHandler()
+  public void handleSetGroupProperties( Session session, ToolMessage message, PgaChangeGroup p ) throws IOException
   {
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
     logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
@@ -173,7 +173,7 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
     }
   }
   
-  @EndpointMessageHandler(name = "addgroup")
+  @EndpointMessageHandler()
   public void handleAddGroup( Session session, ToolMessage message ) throws IOException
   {
     Group g = pgaResource.addGroup( "New Group" );
@@ -182,7 +182,7 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
       try
       {
         store.updateResource( pgaResource );
-        PeerGroupChangeGroup p = new PeerGroupChangeGroup( g.getId(), g.getTitle() );
+        PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
         ToolMessage tm = new ToolMessage( message.getId(), "group", p );
         sendToolMessageToResourceUsers( tm );
       }
@@ -194,8 +194,8 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
   }  
   
   
-  @EndpointMessageHandler(name = "membership")
-  public void handleMembership( Session session, ToolMessage message, PeerGroupAddMembership m ) throws IOException
+  @EndpointMessageHandler()
+  public void handleMembership( Session session, ToolMessage message, PgaAddMembership m ) throws IOException
   {
     logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
     try
@@ -212,18 +212,18 @@ public class PeerGroupAssessmentEndpoint extends ToolEndpoint
     }
   }
   
-  @EndpointMessageHandler(name = "getformanddata")
+  @EndpointMessageHandler()
   public void handleGetFormAndData( Session session, ToolMessage message, Id gid ) throws IOException
   {
     logger.log( Level.INFO, "handleGetFormAndData" );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid.getId() );
-    PeerGroupFormAndData fad = new PeerGroupFormAndData( defaultForm, store.getData( key, true ) );
+    PgaFormAndData fad = new PgaFormAndData( defaultForm, store.getData( key, true ) );
     ToolMessage tm = new ToolMessage( message.getId(), "formanddata", fad );
     session.getAsyncRemote().sendObject( tm );
   }
   
-  @EndpointMessageHandler(name = "changedatum")
-  public void handleChangeDatum( Session session, ToolMessage message, PeerGroupChangeDatum datum ) throws IOException
+  @EndpointMessageHandler()
+  public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum ) throws IOException
   {
     logger.log( 
             Level.INFO, 

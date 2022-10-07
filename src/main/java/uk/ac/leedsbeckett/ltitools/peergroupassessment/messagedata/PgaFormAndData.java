@@ -13,34 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata;
 
 import java.io.Serializable;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 
 /**
  *
  * @author maber01
  */
-public class ParticipantDatum implements Serializable
+public class PgaFormAndData implements Serializable
 {
-    String value;
-    boolean valid;
-    
-    public String getValue()
-    {
-      return value;
-    }
-    public void setValue( String value )
-    {
-      this.value = value;
-    }
-    public boolean isValid()
-    {
-      return valid;
-    }
-    public void setValid( boolean valid )
-    {
-      this.valid = valid;
-    }
+  final PeerGroupForm form;
+  final PeerGroupData data;
+
+  public PgaFormAndData( PeerGroupForm form, PeerGroupData data )
+  {
+    this.form = form;
+    this.data = data;
+  }
+
+  public PeerGroupForm getForm()
+  {
+    return form;
+  }
+
+  public PeerGroupData getData()
+  {
+    return data;
+  }
   
 }

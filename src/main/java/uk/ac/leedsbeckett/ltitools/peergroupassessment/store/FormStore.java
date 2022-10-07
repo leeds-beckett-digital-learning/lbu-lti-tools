@@ -16,7 +16,7 @@
 
 package uk.ac.leedsbeckett.ltitools.peergroupassessment.store;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -38,9 +38,9 @@ import java.util.logging.Logger;
  * 
  * @author jon
  */
-public class PeerGroupFormStore
+public class FormStore
 {
-  static final Logger logger = Logger.getLogger(PeerGroupFormStore.class.getName() );
+  static final Logger logger = Logger.getLogger(FormStore.class.getName() );
   private static final ObjectMapper objectmapper = new ObjectMapper();
   static
   {
@@ -52,7 +52,7 @@ public class PeerGroupFormStore
   Path basepath;
   PeerGroupForm defaultForm;
   
-  public PeerGroupFormStore( Path basepath )
+  public FormStore( Path basepath )
   {
     this.basepath = basepath;
     try

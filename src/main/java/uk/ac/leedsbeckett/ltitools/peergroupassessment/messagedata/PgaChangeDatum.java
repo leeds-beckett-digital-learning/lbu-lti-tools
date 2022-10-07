@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
@@ -22,14 +22,14 @@ import java.io.Serializable;
  *
  * @author maber01
  */
-public class PeerGroupChangeDatum implements Serializable
+public class PgaChangeDatum implements Serializable
 {
   final String groupId;
   final String fieldId;
   final String memberId;
   final String value;
 
-  public PeerGroupChangeDatum( 
+  public PgaChangeDatum( 
           @JsonProperty("groupId")  String groupId, 
           @JsonProperty("fieldId")  String fieldId, 
           @JsonProperty("memberId") String memberId, 

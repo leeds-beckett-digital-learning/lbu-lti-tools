@@ -15,7 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.PeerGroupAssessmentStore;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +37,7 @@ public class PeerGroupAssessmentTool implements Tool
   static final Logger logger = Logger.getLogger( PeerGroupAssessmentTool.class.getName() );
   
   ServletContext context;
-  PeerGroupAssessmentStore pgaStore;
+  StoreCluster pgaStore;
 
   public PeerGroupAssessmentTool()
   {
@@ -47,7 +47,7 @@ public class PeerGroupAssessmentTool implements Tool
   public void init( ServletContext context )
   {
     this.context = context;
-    pgaStore = new PeerGroupAssessmentStore( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
+    pgaStore = new StoreCluster( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
   }
   
   /**
@@ -55,7 +55,7 @@ public class PeerGroupAssessmentTool implements Tool
    * 
    * @return The instance.
    */
-  public PeerGroupAssessmentStore getPeerGroupAssessmentStore()
+  public StoreCluster getPeerGroupAssessmentStore()
   {
     return pgaStore;
   }
@@ -63,7 +63,7 @@ public class PeerGroupAssessmentTool implements Tool
   @Override
   public ToolLaunchState createToolLaunchState( LtiClaims lticlaims, ToolSetLtiState state )
   {
-    PeerGroupAssessmentState pgastate = new PeerGroupAssessmentState();
+    PgaToolLaunchState pgastate = new PgaToolLaunchState();
     pgastate.setPersonId( state.getPersonId() );
     pgastate.setPersonName( state.getPersonName() );
     pgastate.setCourseId( lticlaims.getLtiContext().getId() );

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupAddMembership;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembership;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,7 +41,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
 {
   ResourceKey key;
   
-  PeerGroupResourceProperties properties = new PeerGroupResourceProperties( "Initial Title", "Initial Decsription", Stage.SETUP );
+  PgaProperties properties = new PgaProperties( "Initial Title", "Initial Decsription", Stage.SETUP );
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();
@@ -78,12 +78,12 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
 //      addGroup( "Group " + i );
   }
 
-  public PeerGroupResourceProperties getProperties()
+  public PgaProperties getProperties()
   {
     return properties;
   }
 
-  public void setProperties( PeerGroupResourceProperties properties )
+  public void setProperties( PgaProperties properties )
   {
     this.properties = properties;
   }
@@ -190,7 +190,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
       groupIdsByMember.put( uid, gid );
   }
 
-  public void addMemberships( PeerGroupAddMembership pgcm )
+  public void addMemberships( PgaAddMembership pgcm )
   {
     for ( Member m : pgcm.getPids() )
       addMember( pgcm.getId(), m.getLtiId(), m.getName() );

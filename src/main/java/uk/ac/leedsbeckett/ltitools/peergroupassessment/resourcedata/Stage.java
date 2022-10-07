@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata;
 
 import java.io.Serializable;
 
@@ -21,25 +21,25 @@ import java.io.Serializable;
  *
  * @author maber01
  */
-public class PeerGroupFormAndData implements Serializable
+public enum Stage implements Serializable
 {
-  final PeerGroupForm form;
-  final PeerGroupData data;
+  /**
+   * Instructor is setting up the resource and students must wait.
+   */
+  SETUP,
 
-  public PeerGroupFormAndData( PeerGroupForm form, PeerGroupData data )
-  {
-    this.form = form;
-    this.data = data;
-  }
+  /**
+   * Students can join groups.
+   */
+  JOIN,
 
-  public PeerGroupForm getForm()
-  {
-    return form;
-  }
+  /**
+   * Students in groups can enter data.
+   */
+  DATAENTRY,
 
-  public PeerGroupData getData()
-  {
-    return data;
-  }
-  
+  /**
+   * Data in the resource is frozen.
+   */
+  RESULTS  
 }

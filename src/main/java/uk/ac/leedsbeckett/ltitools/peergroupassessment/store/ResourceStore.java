@@ -16,8 +16,7 @@
 
 package uk.ac.leedsbeckett.ltitools.peergroupassessment.store;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupDataKey;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -41,15 +40,15 @@ import uk.ac.leedsbeckett.ltitoolset.store.Store;
  * 
  * @author jon
  */
-public class PeerGroupDataStore extends Store<PeerGroupDataKey,PeerGroupData>
+public class ResourceStore extends Store<ResourceKey,PeerGroupResource>
 {
-  static final Logger logger = Logger.getLogger(PeerGroupDataStore.class.getName() );
+  static final Logger logger = Logger.getLogger(ResourceStore.class.getName() );
 
   Path basepath;
   
-  public PeerGroupDataStore( Path basepath )
+  public ResourceStore( Path basepath )
   {
-    super( "peergroupdatastore" );
+    super( "peergroupresourcestore" );
     this.basepath = basepath;
     try
     {
@@ -62,23 +61,22 @@ public class PeerGroupDataStore extends Store<PeerGroupDataKey,PeerGroupData>
   }
 
   @Override
-  public PeerGroupData create( PeerGroupDataKey key )
+  public PeerGroupResource create( ResourceKey key )
   {
-    return new PeerGroupData( key );
+    return new PeerGroupResource( key );
   }
 
   @Override
-  public Class<PeerGroupData> getEntryClass()
+  public Class<PeerGroupResource> getEntryClass()
   {
-    return PeerGroupData.class;
+    return PeerGroupResource.class;
   }
   
   @Override
-  public Path getPath( PeerGroupDataKey key )
+  public Path getPath( ResourceKey key )
   {
-    Path d = basepath.resolve( URLEncoder.encode( key.getResourceKey().getPlatformId(), StandardCharsets.UTF_8 ) );
-    Path dd = d.resolve(       URLEncoder.encode( key.getResourceKey().getResourceId(), StandardCharsets.UTF_8 ) );
-    return dd.resolve(         URLEncoder.encode( key.getGroupId(), StandardCharsets.UTF_8 ) );
+    Path d = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
+    return d.resolve( URLEncoder.encode( key.getResourceId(), StandardCharsets.UTF_8 ) );
   }
   
   
@@ -93,8 +91,8 @@ public class PeerGroupDataStore extends Store<PeerGroupDataKey,PeerGroupData>
     logger.setLevel( Level.ALL );
     
     logger.info( "Starting." );
-    PeerGroupDataStore store = new PeerGroupDataStore( Paths.get( "/Users/maber01/peerstore/data/") );
-    PeerGroupDataKey rk = new PeerGroupDataKey( new ResourceKey( "platform", "1" ), "222" );
-    PeerGroupData r = store.get( rk, true );    
+    ResourceStore store = new ResourceStore( Paths.get( "/Users/maber01/peerstore/") );
+    ResourceKey rk = new ResourceKey( "platform", "1" );
+    PeerGroupResource r = store.get( rk, true );    
   }
 }

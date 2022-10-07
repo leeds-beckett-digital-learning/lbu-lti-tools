@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
+import lbultitoolapi from "../gen/websocket.js";
+
 
 var socket;
 var loading;
 var nextid = 100000000;
-var mainTitle;
-var mainDescription;
-var editpropsTitle;
-var editpropsDescription;
+
+var elements = {};
 
 var resource = 
         {
@@ -31,29 +31,50 @@ var resource =
           "groupOfUnattached":{"id":null,"title":null,"membersbyid":{}},
           "groupIdsByMember":{}
         };
+var form;
+var data;
 
 var selectedgroupid;
 
 function init()
 {
-  mainTitle            = document.getElementById( "main-title" );
-  mainDescription      = document.getElementById( "main-description" );
-  mainStage            = document.getElementById( "main-stage" );
-  editpropsTitle       = document.getElementById( "editprops-title" );
-  editpropsDescription = document.getElementById( "editprops-description" );
-  editpropsStage       = document.getElementById( "editprops-stage" );
-  editgrouppropsId     = document.getElementById( "editgroupprops-id" );
-  editgrouppropsTitle  = document.getElementById( "editgroupprops-title" );
-  grouptable           = document.getElementById( "grouptable" );
-  dataentrytablebody   = document.getElementById( "dataentry-tablebody" );
-  dataentryheadrow     = document.getElementById( "dataentry-headrow" );
+  let list = document.body.getElementsByTagName("*");
+  for ( let i=0; i<list.length; i++ )
+  {
+    let e = list[i];
+    if ( e.id )
+    {
+      console.log( "Found element with ID " + e.id );
+      elements[e.id] = e;
+    }
+  }
+  console.log( elements );
 
+  elements.editpropsSaveButtonTop      .addEventListener( 'click', () => saveEditProps()                );
+  elements.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
+  elements.editpropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editprops')       );
+  elements.editpropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editprops')       );
+  
+  elements.editgrouppropsSaveButtonTop      .addEventListener( 'click', () => saveEditGroupProps()                );
+  elements.editgrouppropsSaveButtonBottom   .addEventListener( 'click', () => saveEditGroupProps()                );
+  elements.editgrouppropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editgroupProps')       );
+  elements.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editgroupProps')       );
+  
+  elements.dataentryCloseButtonTop     .addEventListener( 'click', () => closeDialog('dataentry')       );
+  elements.dataentryCloseButtonBottom  .addEventListener( 'click', () => closeDialog('dataentry')       );
+  
+  elements.debugdialogCloseButtonTop     .addEventListener( 'click', () => closeDialog('debugdialog')       );
+  elements.debugdialogCloseButtonBottom  .addEventListener( 'click', () => closeDialog('debugdialog')       );
+  
+  elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
+  elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
+  
   console.log( wsuri );
   socket = new WebSocket( wsuri );
   socket.addEventListener( 'open',    (event) => 
   {
-    sendMessage( new GetResourceMessage() );
-   });
+    sendMessage( new lbultitoolapi.GetResourceMessage() );
+  });
 
   socket.addEventListener( 'close', (event) => 
   {
@@ -71,7 +92,7 @@ function init()
   socket.addEventListener( 'message', (event) => 
   {
     console.log( 'Message from server: ', event.data);
-    var message = stringToMessage( event.data );
+    let message = stringToMessage( event.data );
     console.log( message );
     if ( message.valid )
     {
@@ -121,7 +142,7 @@ function updateSelf()
   if ( !participant )
     return;
   
-  var gid = resource.groupIdsByMember[myid];
+  let gid = resource.groupIdsByMember[myid];
   console.log( "updateSelf() " + gid );
   if ( gid === undefined )
     console.log( "Need to add self." );
@@ -133,32 +154,32 @@ function updateResource( properties )
   console.log( "title       = " + properties.title       );
   console.log( "description = " + properties.description );
 
-  mainTitle.innerHTML        = properties.title;
-  editpropsTitle.value       = properties.title;
-  mainDescription.innerHTML  = properties.description;
-  editpropsDescription.value = properties.description;
+  elements.mainTitle.innerHTML        = properties.title;
+  elements.editpropsTitle.value       = properties.title;
+  elements.mainDescription.innerHTML  = properties.description;
+  elements.editpropsDescription.value = properties.description;
   switch ( properties.stage )
   {
     case "SETUP":
-      mainStage.innerHTML = "Setting Up Stage";
+      elements.mainStage.innerHTML = "Setting Up Stage";
       break;
     case "JOIN":
-      mainStage.innerHTML = "Group Members Joining";
+      elements.mainStage.innerHTML = "Group Members Joining";
       break;
     case "DATAENTRY":
-      mainStage.innerHTML = "Group Members Entering Data";
+      elements.mainStage.innerHTML = "Group Members Entering Data";
       break;
     case "RESULTS":
-      mainStage.innerHTML = "Results Frozen";
+      elements.mainStage.innerHTML = "Results Frozen";
       break;
   }
-  editpropsStage.value = properties.stage;
+  elements.editpropsStage.value = properties.stage;
 }
 
 function updateGroups()
 {
-  var html = "<tr><th colspan=\"4\">Title</th><th colspan=\"3\">Members</th></tr>\n";
-  grouptable.innerHTML = html;
+  let html = "<tr><th colspan=\"4\">Title</th><th colspan=\"3\">Members</th></tr>\n";
+  elements.grouptable.innerHTML = html;
   for ( const gid in resource.groupsById )
   {
     const g = resource.groupsById[gid];
@@ -167,9 +188,10 @@ function updateGroups()
   }
   if ( manager )
   {
-    row = document.createElement( "tr" );
-    row.innerHTML = "<tr><td colspan=\"3\"><button onclick=\"addGroup()\">Add Group</button></td></tr>\n";
-    grouptable.appendChild( row );
+    let row = document.createElement( "tr" );
+    row.innerHTML = "<tr><td colspan=\"3\"><button id=\"addgroupButton\">Add Group</button></td></tr>\n";
+    elements.grouptable.appendChild( row );
+    document.getElementById("addgroupButton").addEventListener( 'click', () => addGroup() );
   }  
 }
 
@@ -181,57 +203,62 @@ function updateGroup( g )
     return;
   }
   resource.groupsById[g.id] = g;
-  var row = document.getElementById( "group-" + g.id );
+  let row = document.getElementById( "group-" + g.id );
   if ( !row )
   {
     row = document.createElement( "tr" );
     row.id = "group-" + g.id;
-    grouptable.appendChild( row );
+    elements.grouptable.appendChild( row );
   }
 
-  html = "";
-  html += "<td><button onclick=\"alert( '" + g.id + "' )\">Delete</button></td>\n";
-  html += "<td><button onclick=\"openGroupEditDialog( '" + g.id + "' )\">Edit</button></td>\n";
+  let html = "";
+  html += "<td><button id=\"groupDeleteButton" + g.id + "\">Delete</button></td>\n";
+  html += "<td><button id=\"groupEditButton"   + g.id + "\">Edit</button></td>\n";
   //if ( participant && resource.properties.stage === "DATAENTRY" && ingroup )
-  html += "<td><button onclick=\"openDataEntryDialog( '" + g.id + "' )\">View</button></td>\n";
+  html += "<td><button id=\"groupViewButton"   + g.id + "\">View</button></td>\n";
   html += "<td><span>" + g.title + "</span></td>\n";
 
   html += "<td>";
-  var ingroup = false;
-  var first = true;
+  let ingroup = false;
+  let first = true;
   for ( const mid in g.membersbyid )
   {
     if ( first )
       first = true;
     else
       html += "<br>\n";
-    m = g.membersbyid[mid];
+    let m = g.membersbyid[mid];
     if ( m.ltiId === myid )
       ingroup = true;
     html += m.name;
   }
   html += "</td>\n";
   //if ( participant && resource.properties.stage === "JOIN" && !ingroup )
-  html += "<td><button class=\"joinbutton\" onclick=\"addMembership( '" + g.id + "')\">Join</button></td>";
+  html += "<td><button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button></td>";
 
   row.innerHTML = html;
+  
+  document.getElementById( "groupDeleteButton" + g.id ).addEventListener( 'click', () => alert( g.id ) );
+  document.getElementById( "groupEditButton"   + g.id ).addEventListener( 'click', () => openGroupEditDialog( g.id ) );
+  document.getElementById( "groupViewButton"   + g.id ).addEventListener( 'click', () => openDataEntryDialog( g.id ) );
+  document.getElementById( "groupJoinButton"   + g.id ).addEventListener( 'click', () => addMembership( g.id ) );
 }
 
 function clearForm()
 {
-  var formrows = document.getElementsByClassName( "dataentry-formrow" );
+  let formrows = document.getElementsByClassName( "dataentry-formrow" );
   console.log( formrows );
   console.log( formrows.length );
   while ( formrows.length > 0 )
   {
-    var formrow = formrows[0];
+    let formrow = formrows[0];
     console.log( formrow );
     formrow.remove();
   }
-  var formcells = document.getElementsByClassName( "dataentry-formcell" );
+  let formcells = document.getElementsByClassName( "dataentry-formcell" );
   while ( formcells.length > 0 )
   {
-    var formcell = formcells[0];
+    let formcell = formcells[0];
     console.log( formcell );
     formcell.remove();
   }
@@ -243,7 +270,7 @@ function processFormInputEvent( e, gid, f, m )
   console.log( e );
   console.log( f );
   console.log( m );
-  sendMessage( new changedatumMessage( gid, f.id, m.ltiId, e.value ) );
+  sendMessage( new lbultitoolapi.ChangeDatumMessage( gid, f.id, m.ltiId, e.value ) );
 }
 
 function addFormInputListener( e, gid, f, m )
@@ -255,43 +282,43 @@ function updateForm()
 {
   clearForm();
   
-  var groupid = selectedgroupid;
+  let groupid = selectedgroupid;
   if ( !groupid )
     groupid = resource.groupIdsByMember[myid];
   console.log( "group id = " + groupid );
   if ( !groupid )
     return;
   
-  var group = resource.groupsById[groupid];
-  for ( var m in group.membersbyid )
+  let group = resource.groupsById[groupid];
+  for ( let m in group.membersbyid )
   {
-    var th = document.createElement( "th" );
+    let th = document.createElement( "th" );
     th.className = "dataentry-formcell";
     th.innerHTML = group.membersbyid[m].name;
-    dataentryheadrow.append( th );
+    elements.dataentryheadrow.append( th );
   }
   
-  for ( var i=0; i<form.fieldIds.length; i++ )
+  for ( let i=0; i<form.fieldIds.length; i++ )
   {
-    var fieldid = form.fieldIds[i];
-    var field = form.fields[fieldid];
+    let fieldid = form.fieldIds[i];
+    let field = form.fields[fieldid];
     if ( !field ) continue;
-    var row = document.createElement( "tr" );
+    let row = document.createElement( "tr" );
     row.className = "dataentry-formrow";
     row.id = "dataentryrow-" + field.id;
-    var td = document.createElement( "td" );
+    let td = document.createElement( "td" );
     td.innerText = field.description;
     row.append( td );
-    for ( var m in group.membersbyid )
+    for ( let m in group.membersbyid )
     {
-      var memberdata = undefined;
-      var memberdatum = undefined;
+      let memberdata = undefined;
+      let memberdatum = undefined;
       if ( data ) memberdata = data.participantData[m];
       if ( memberdata ) memberdatum = memberdata.participantData[fieldid];
       td = document.createElement( "td" );
       row.append( td );
-      var inputid = "dataentrycell_" + groupid + "_" + m;
-      var input = document.createElement( "input" );
+      let inputid = "dataentrycell_" + groupid + "_" + m;
+      let input = document.createElement( "input" );
       input.size = 5;
       input.id = inputid;
       if ( memberdatum && memberdatum.value )
@@ -300,13 +327,13 @@ function updateForm()
       addFormInputListener( input, groupid, field, group.membersbyid[m] );
       
     }
-    dataentrytablebody.append( row );
+    elements.dataentrytablebody.append( row );
   }
 }
 
 function openDialog( id )
 {
-  var dialog = document.getElementById( id );
+  let dialog = document.getElementById( id );
   if ( dialog === null )
   {
     alert( "Programmer error - unknown dialog id: " + id );
@@ -316,7 +343,7 @@ function openDialog( id )
 }
 function closeDialog( id )
 {
-  var dialog = document.getElementById( id );
+  let dialog = document.getElementById( id );
   if ( dialog === null )
   {
     alert( "Programmer error - unknown dialog id: " + id );
@@ -327,16 +354,16 @@ function closeDialog( id )
 
 function openGroupEditDialog( gid )
 {
-  editgrouppropsId.innerHTML = gid;
-  var g = resource.groupsById[gid];
-  editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
-  openDialog( 'editgroupprops' );
+  elements.editgrouppropsId.innerHTML = gid;
+  let g = resource.groupsById[gid];
+  elements.editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
+  openDialog( 'editgroupProps' );
 }
 
 function openDataEntryDialog( gid )
 {
   selectedgroupid = gid;
-  sendMessage( new getformanddataMessage( gid ) );
+  sendMessage( new lbultitoolapi.GetFormAndDataMessage( gid ) );
       
   clearForm();
   openDialog( 'dataentry' );
@@ -344,44 +371,49 @@ function openDataEntryDialog( gid )
 
 function openDebugDialog()
 {
-  var pre = document.getElementById( "debugtext" );
+  let pre = document.getElementById( "debugtext" );
   pre.innerHTML = "testing...";  
   openDialog( 'debugdialog' );
 }
 
 function saveEditProps()
 {
-  sendMessage( new setresourcepropertiesMessage( editpropsTitle.value, editpropsDescription.value, editpropsStage.value ) );
+  sendMessage( new lbultitoolapi.SetResourcePropertiesMessage( 
+          elements.editpropsTitle.value, 
+          elements.editpropsDescription.value, 
+          elements.editpropsStage.value ) );
   closeDialog( "editprops" );
 }
 
 function saveEditGroupProps()
 {
-  sendMessage( new setgrouppropertiesMessage( editgrouppropsId.innerHTML, editgrouppropsTitle.value ) );
-  closeDialog( "editgroupprops" );
+  sendMessage( new lbultitoolapi.SetGroupPropertiesMessage( 
+          elements.editgrouppropsId.innerHTML, 
+          elements.editgrouppropsTitle.value ) );
+  closeDialog( "editgroupProps" );
 }
 
 function addGroup()
 {
-  sendMessage( new addgroupMessage() );
+  sendMessage( new lbultitoolapi.AddGroupMessage() );
 }
 
 function addMembership( gid )
 {
-  var pids = [];
+  let pids = [];
   pids[0] = {};
   pids[0].ltiId = myid;
   pids[0].name  = myname;
 
-  sendMessage( new membershipMessage( gid, pids ) );
+  sendMessage( new lbultitoolapi.MembershipMessage( gid, pids ) );
 }
 
 function stringToMessage( str )
 {
-  var sig = "toolmessageversion1.0";
-  var header, linesplit, name, value;
-  var message = new Object();
-  var started = false;
+  let sig = "toolmessageversion1.0";
+  let header, linesplit, name, value;
+  let message = new Object();
+  let started = false;
   const regex = RegExp('(.*)[\n\r]+', 'gm');
 
   message.valid = false;
@@ -401,7 +433,7 @@ function stringToMessage( str )
       else
         return message;
     }
-    n = header.indexOf( ":" );
+    let n = header.indexOf( ":" );
     if ( n > 0 )
     {
       name = header.substring( 0, n );
@@ -416,7 +448,7 @@ function stringToMessage( str )
         message.payloadType = value;
       else if ( name === "payload" )
       {
-        var payload = str.substring( regex.lastIndex );
+        let payload = str.substring( regex.lastIndex );
         message.payload = JSON.parse( payload );
         break;
       }
@@ -429,4 +461,4 @@ function stringToMessage( str )
   return message;
 }
 
-
+init();

@@ -4,8 +4,8 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.data.PeerGroupResource;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.PeerGroupAssessmentStore;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,13 +21,13 @@ import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
  * Support class for PeerGroupPage related JSP pages.
  * @author jon
  */
-public class PeerGroupPageSupport extends ToolPageSupport
+public class PgaPageSupport extends ToolPageSupport
 {
-  static final Logger logger = Logger.getLogger( PeerGroupPageSupport.class.getName() );
+  static final Logger logger = Logger.getLogger(PgaPageSupport.class.getName() );
   
   PeerGroupAssessmentTool tool;
-  PeerGroupAssessmentStore store;
-  PeerGroupAssessmentState pgaState;
+  StoreCluster store;
+  PgaToolLaunchState pgaState;
   PeerGroupResource pgaResource;
   String websocketuri;
   
@@ -36,14 +36,14 @@ public class PeerGroupPageSupport extends ToolPageSupport
   {
     super.setRequest( request );
     logger.log( Level.FINE, "setRequest() state id = {0}", state.getId() );
-    pgaState = (PeerGroupAssessmentState)state.getAppSessionState();
+    pgaState = (PgaToolLaunchState)state.getAppSessionState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
     tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolKey() );
     store = tool.getPeerGroupAssessmentStore();
     pgaResource = store.getResource( pgaState.getResourceKey(), true );
 
-    String base = computeWebSocketUri( PeerGroupAssessmentEndpoint.class.getAnnotation( ServerEndpoint.class ) );
+    String base = computeWebSocketUri( PgaEndpoint.class.getAnnotation( ServerEndpoint.class ) );
     websocketuri = base + "?state=" + state.getId();
   }
 

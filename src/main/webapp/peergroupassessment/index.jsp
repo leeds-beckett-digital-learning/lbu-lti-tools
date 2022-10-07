@@ -12,7 +12,7 @@
 <!DOCTYPE html>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<jsp:useBean id="support" class="uk.ac.leedsbeckett.ltitools.peergroupassessment.PeerGroupPageSupport" scope="request"/>
+<jsp:useBean id="support" class="uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaPageSupport" scope="request"/>
 <% support.setRequest( request ); %>
 
 <html>
@@ -53,89 +53,82 @@ const wsuri       = '${support.websocketUri}';
 
         
     </script>
-    <script lang="JavaScript" src="../gen/websocket.js"></script>
-    <script lang="JavaScript" src="index.js"></script>
+    <script type="module" src="index.js" defer></script>
   </head>
   <body>
-    <div id="loadingdialog" class="dialog">
-      <div class="dialogcontent">
-        <h3>Loading...</h3>
-        <p><button onclick="closeDialog('editprops');" value="Close">Close</button></p>
-      </div>
-    </div>
     <div id="editprops" class="dialog">
       <div class="dialogcontent">
         <h3>Edit Properties</h3>
-        <p><button onclick="saveEditProps();" value="Save">Save</button>
-          <button onclick="closeDialog('editprops');" value="Close">Close</button></p>
+        <p><button id="editpropsSaveButtonTop" value="Save">Save</button>
+          <button id="editpropsCloseButtonTop" value="Close">Close</button></p>
         <h4>Title</h4>
-        <p><input id="editprops-title" size="30" value="loading..."/></p>
+        <p><input id="editpropsTitle" size="30" value="loading..."/></p>
         <h4>Description</h4>
-        <p><textarea id="editprops-description" cols="40" rows="10">...loading</textarea></p>
+        <p><textarea id="editpropsDescription" cols="40" rows="10">...loading</textarea></p>
         <h4>Stage</h4>
         <p>
-          <select id="editprops-stage">
+          <select id="editpropsStage">
             <option value="SETUP">Set Up</option>
             <option value="JOIN">Join Groups</option>
             <option value="DATAENTRY">Enter Data</option>
             <option value="RESULTS">Results Frozen</option>
           </select>
         </p>
-        <p><button onclick="saveEditProps();" value="Save">Save</button>
-          <button onclick="closeDialog('editprops');" value="Close">Close</button></p>
+        <p><button id="editpropsSaveButtonBottom" value="Save">Save</button>
+          <button id="editpropsCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
-    <div id="editgroupprops" class="dialog">
+    <div id="editgroupProps" class="dialog">
       <div class="dialogcontent">
         <h3>Edit Group Properties</h3>
-        <p><button onclick="saveEditGroupProps();" value="Save">Save</button>
-          <button onclick="closeDialog('editgroupprops');" value="Close">Close</button></p>
+        <p><button id="editgrouppropsSaveButtonTop" value="Save">Save</button>
+          <button id="editgrouppropsCloseButtonTop" value="Close">Close</button></p>
         <h4>ID</h4>
-        <p id="editgroupprops-id">Loading...</p>
+        <p id="editgrouppropsId">Loading...</p>
         <h4>Title</h4>
-        <p><input id="editgroupprops-title" size="30" value="loading..."/></p>
-        <p><button onclick="saveEditGroupProps();" value="Save">Save</button>
-          <button onclick="closeDialog('editgroupprops');" value="Close">Close</button></p>
+        <p><input id="editgrouppropsTitle" size="30" value="loading..."/></p>
+        <p><button id="editgrouppropsSaveButtonBottom" value="Save">Save</button>
+          <button id="editgrouppropsCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
 
     <div id="dataentry" class="dialog">
       <div class="dialogcontent">
         <h3>Data Entry</h3>
-        <p><button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+        <p><button id="dataentryCloseButtonTop" value="Close">Close</button></p>
         <table>
           <thead>
-            <tr id="dataentry-headrow"><th></th></tr>
+            <tr id="dataentryheadrow"><th></th></tr>
           </thead>
-          <tbody id="dataentry-tablebody">
+          <tbody id="dataentrytablebody">
           </tbody>
         </table>
-        <p><button onclick="closeDialog('dataentry');" value="Close">Close</button></p>
+        <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
 
     <div id="debugdialog" class="dialog">
       <div class="dialogcontent">
         <h3>Debug Information</h3>
-        <p><button onclick="closeDialog('debugdialog');" value="Close">Close</button></p>
+        <p><button id="debugdialogCloseButtonTop" value="Close">Close</button></p>
         <pre id="debugtext"></pre>
-        <p><button onclick="closeDialog('debugdialog');" value="Close">Close</button></p>
+        <p><button id="debugdialogCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
 
 
     <h1>Peer Group Assessment Tool</h1>
     <p class="important">${support.importantMessage}</p>
-    <h2 id="main-title">...loading</h2>
-    <p id="main-description">...loading</p>
-    <p class="stage"><span class="stage-label">Stage:</span> <span id="main-stage"></span></p>
+    <h2 id="mainTitle">...loading</h2>
+    <p id="mainDescription">...loading</p>
+    <p class="stage"><span class="stage-label">Stage:</span> <span id="mainStage"></span></p>
     
     <p>${support.personId} - ${support.personName}</p>
     
     <c:choose>
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
         <c:if test="${support.allowedToManage}">
-          <p><button onclick="openDialog( 'editprops' )">Edit Properties</button></p>          
+          <p><button id="editpropertiesButton">Edit Properties</button></p>          
           <p>You can manage this resource.</p>
         </c:if>
         
@@ -156,7 +149,7 @@ const wsuri       = '${support.websocketUri}';
       </c:otherwise>
     </c:choose>
     
-    <p><button onclick="openDebugDialog()">Debug Dialog</button></p>          
+    <p><button id="debugdialogButton">Debug Dialog</button></p>          
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">
@@ -164,9 +157,6 @@ const wsuri       = '${support.websocketUri}';
         <div><tt><pre>${support.dump}</pre></tt></div>
       </div>
     </c:if>
-
-    <script>
-      init();
-    </script>
+    
   </body>
 </html>

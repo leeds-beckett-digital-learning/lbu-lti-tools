@@ -13,33 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.leedsbeckett.ltitools.peergroupassessment.data;
+package uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata;
 
-import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
  * @author maber01
  */
-public enum Stage implements Serializable
+public class Id
 {
-  /**
-   * Instructor is setting up the resource and students must wait.
-   */
-  SETUP,
+  final String id;
 
-  /**
-   * Students can join groups.
-   */
-  JOIN,
+  public Id( @JsonProperty("id") String id )
+  {
+    this.id = id;
+  }
 
-  /**
-   * Students in groups can enter data.
-   */
-  DATAENTRY,
-
-  /**
-   * Data in the resource is frozen.
-   */
-  RESULTS  
+  public String getId()
+  {
+    return id;
+  }
 }

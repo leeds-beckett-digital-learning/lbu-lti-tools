@@ -17,18 +17,18 @@ package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
 import java.nio.file.Paths;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
 
 /**
- *
+ * This class helps set up websocket endpoints and page requests based on
+ * an LTI launch.
+ * 
  * @author maber01
  */
 @ToolMapping( name = "peergrpassess", type = "coursecontent", launchURI = "/peergroupassessment/index.jsp" )
@@ -39,19 +39,29 @@ public class PeerGroupAssessmentTool extends Tool
   ServletContext context;
   StoreCluster pgaStore;
 
+  /**
+   * Empty constructor at present.
+   */
   public PeerGroupAssessmentTool()
   {
   }
   
+  /**
+   * This initializes the tool. The toolapi tool coordinator calls this when
+   * the server context loads.
+   * 
+   * @param context The servlet context that is starting.
+   */
   @Override
   public void init( ServletContext context )
   {
     this.context = context;
+    // Sets up a store for all data relating to this tool.
     pgaStore = new StoreCluster( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
   }
   
   /**
-   * Fetch the application-wide ResourceStore
+   * Fetch the ResourceStore that this tool will use.
    * 
    * @return The instance.
    */
@@ -60,13 +70,27 @@ public class PeerGroupAssessmentTool extends Tool
     return pgaStore;
   }
   
+  /**
+   * Instantiate the PgaToolLaunchState. The API's launch servlet will call
+   * this when a new launch occurs and maps onto this tool.
+   * 
+   * @return The instantiated sub-class of ToolLaunchState.
+   */
   @Override
-  public ToolLaunchState supplyToolLaunchState( LtiClaims lticlaims, ToolSetLtiState state )
+  public ToolLaunchState supplyToolLaunchState()
   {
     PgaToolLaunchState pgastate = new PgaToolLaunchState();
     return pgastate;
   }
   
+  /**
+   * Initialize the PgaToolLaunchState. It is important to call the super-class
+   * to ensure that the tool launch state sub-class fields are set up first.
+   * 
+   * @param toolstate The tool state that needs initializing.
+   * @param lticlaims The validated LTI claims.
+   * @param state The general LTI state.
+   */
   @Override
   public void initToolLaunchState( ToolLaunchState toolstate, LtiClaims lticlaims, ToolSetLtiState state )
   {

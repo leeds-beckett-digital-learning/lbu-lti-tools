@@ -23,32 +23,81 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaPropertie
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
 
 /**
- *
+ * This enum represents all the types of message that this tool sends from 
+ * the server end of its web socket to the client. This class will be used
+ * to generate javascript.
+ * 
  * @author maber01
  */
 public enum PgaServerMessageName implements ToolMessageName
 {
+  /**
+   * Message contains the PGA as created by the manager(s).
+   */
   Resource(           "Resource",           PeerGroupResource.class ),
+  
+  /**
+   * Message contains only the basic properties of the PGA.
+   */
   ResourceProperties( "ResourceProperties", PgaProperties.class     ),
+  
+  /**
+   * Message contains on the part of the PGA relating to a specific group.
+   */
   Group(              "Group",              PgaChangeGroup.class    ),
+  
+  /**
+   * Message contains the PGA resource and the resource's selected form.
+   */
   FormAndData(        "FormAndData",        PgaFormAndData.class    ),
+  
+  /**
+   * Message contains data from participants relating to a specific
+   * group.
+   */
   Data(               "Data",               PeerGroupData.class     );
   
+  /**
+   * Each constant has a name which can be used in encoded messages passing
+   * through the web socket.
+   */
   private final String name;
-  private final Class payloadClass;
   
+  /**
+   * The class of the payload for this message. Note that multiple
+   * message names can use the same payload class.
+   */
+  private final Class payloadClass;
+
+  /**
+   * Simple constructor. Not public - only used to create the defined
+   * constants.
+   * 
+   * @param name The name.
+   * @param payloadClass The payload class.
+   */
   PgaServerMessageName( String name, Class payloadClass )
   {
     this.name = name;
     this.payloadClass = payloadClass;
   }
 
+  /**
+   * Get the name of the message.
+   * 
+   * @return The name.
+   */
   @Override
   public String getName()
   {
     return name;
   }
 
+  /**
+   * Get the payload class for this message.
+   * 
+   * @return The payload class.
+   */
   @Override
   public Class getPayloadClass()
   {

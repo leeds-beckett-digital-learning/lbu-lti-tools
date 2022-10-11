@@ -21,10 +21,8 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 
 
 /**
- * State information which is needed by the CourseResourceServlet
- * 
- * course.
- * 
+ * State information which is needed by the PGA tool's JSP and endpoints.
+.* 
  * @author jon
  */
 public class PgaToolLaunchState extends ToolLaunchState implements Serializable

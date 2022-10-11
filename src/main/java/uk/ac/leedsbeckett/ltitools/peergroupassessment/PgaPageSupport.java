@@ -1,6 +1,17 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Copyright 2022 maber01.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
@@ -19,6 +30,7 @@ import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
 
 /**
  * Support class for PeerGroupPage related JSP pages.
+ * 
  * @author jon
  */
 public class PgaPageSupport extends ToolPageSupport
@@ -31,6 +43,12 @@ public class PgaPageSupport extends ToolPageSupport
   PeerGroupResource pgaResource;
   String websocketuri;
   
+  /**
+   * Get ready to provide services for the java server page.
+   * 
+   * @param request The request behind this JSP delivery.
+   * @throws ServletException Thrown when the request is aborted.
+   */
   @Override
   public void setRequest(HttpServletRequest request) throws ServletException
   {
@@ -58,42 +76,85 @@ public class PgaPageSupport extends ToolPageSupport
     websocketuri = base + "?state=" + state.getId();
   }
 
+  /**
+   * Gets the PGA resource. Bear in mind that the resource is likely to change
+   * while the user is still working on the page.
+   * 
+   * @return The resource in its state when the page loads.
+   */
   public PeerGroupResource getPgaResource()
   {
     return pgaResource;
   }
  
+  /**
+   * The ID of the user who launched the page.
+   * 
+   * @return The ID according the to the launching platform.
+   */
   public String getPersonId()
   {
     return pgaState.getPersonId();
   }
   
+  /**
+   * The human name of the usre who launched the page.
+   * 
+   * @return The name.
+   */
   public String getPersonName()
   {
     return pgaState.getPersonName();
   }
   
+  /**
+   * Is the user allowed to participate by joining a group and entering data?
+   * Derived from LTI role claims.
+   * 
+   * @return True if the user is a participant.
+   */
   public boolean isAllowedToParticipate()
   {
     return pgaState.isAllowedToParticipate();
   }
 
+  /**
+   * Is the user allowed to manage the PGA? Derived from LTI role claims.
+   * 
+   * @return True if the user is a manager.
+   */
   public boolean isAllowedToManage()
   {
     return pgaState.isAllowedToManage();
   }
   
-  
+  /**
+   * Gets the URI of the web socket that implements all the logic of
+   * this tool.
+   * 
+   * @return The URI.
+   */
   public String getWebsocketUri()
   {
     return websocketuri;
   }
 
+  /**
+   * Used by JSP page to find out if the page support has logging level set
+   * to FINE or even more detailed.
+   * 
+   * @return True if FINE or finer.
+   */
   public boolean isDebugging()
   {
     return logger.isLoggable( Level.FINE );
   }
   
+  /**
+   * Builds a dump of debugging information.
+   * 
+   * @return A long plain text string.
+   */
   public String getDump()
   {
     StringBuilder sb = new StringBuilder();

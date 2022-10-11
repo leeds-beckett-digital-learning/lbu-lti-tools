@@ -44,7 +44,11 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupRes
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
 /**
- *
+ * The web socket server endpoint that implements all the logic of this tool.
+ * It is annotated in two ways - so that the container (e.g. tomcat) will map
+ * URLs on to the class - and so that the build process can create javascript
+ * for the client side of the web socket.
+ * 
  * @author maber01
  */
 @ServerEndpoint( 
@@ -67,6 +71,13 @@ public class PgaEndpoint extends ToolEndpoint
   PeerGroupResource pgaResource;
   
 
+  /**
+   * Most work is done by the super-class. This sub-class fetches references
+   * to tool specific objects.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @throws IOException If opening should be aborted.
+   */
   @OnOpen
   @Override
   public void onOpen(Session session) throws IOException
@@ -80,6 +91,12 @@ public class PgaEndpoint extends ToolEndpoint
     defaultForm = store.getDefaultForm();
   }
   
+  /**
+   * Simply invokes super-class.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @throws IOException Unlikely to be thrown.
+   */
   @OnClose
   @Override
   public void onClose(Session session) throws IOException
@@ -87,22 +104,39 @@ public class PgaEndpoint extends ToolEndpoint
     super.onClose( session );
   }
 
+  /**
+   * At present justs puts a line in the log.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param throwable The throwable that caused the issue.
+   */
   @OnError
   public void onError(Session session, Throwable throwable)
   {
     logger.log( Level.SEVERE, "Web socket error.", throwable );
   }  
 
-  
-
-  
+  /**
+   * Simply passes on responsibility for processing to the super-class.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process.
+   */
   @OnMessage
+  @Override
   public void onMessage(Session session, ToolMessage message) throws IOException
   {
     super.onMessage( session, message );
   }
 
-
+  /**
+   * Client requested the resource data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
@@ -110,6 +144,15 @@ public class PgaEndpoint extends ToolEndpoint
     sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource ) );
   }
   
+  /**
+   * The client wants to set the basic properties of the peer group assessment
+   * resource.
+   * 
+   * @param session  The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param p The PGA properties. (Title etc...)
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleSetResourceProperties( Session session, ToolMessage message, PgaProperties p ) throws IOException
   {
@@ -129,6 +172,14 @@ public class PgaEndpoint extends ToolEndpoint
     }
   }  
 
+  /**
+   * The client wants to change the properties of a group.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param p The group id and desired group properties.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleSetGroupProperties( Session session, ToolMessage message, PgaChangeGroup p ) throws IOException
   {
@@ -155,6 +206,13 @@ public class PgaEndpoint extends ToolEndpoint
     }
   }
   
+  /**
+   * The client wants a new group to be created within the PGA.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleAddGroup( Session session, ToolMessage message ) throws IOException
   {
@@ -175,7 +233,16 @@ public class PgaEndpoint extends ToolEndpoint
     }
   }  
   
-  
+  /**
+   * The client wants to add participants to a specified group. Participants
+   * will be removed from any other groups. Should be possible to use this to
+   * move people into the 'unattached' group. (To do).
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param m The ID of the group and the IDs of participants.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleMembership( Session session, ToolMessage message, PgaAddMembership m ) throws IOException
   {
@@ -194,6 +261,15 @@ public class PgaEndpoint extends ToolEndpoint
     }
   }
   
+  /**
+   * The user wants copies of the form associated with this PGA and the 
+   * user data for a specific group.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param gid The ID of the desired group.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleGetFormAndData( Session session, ToolMessage message, Id gid ) throws IOException
   {
@@ -203,6 +279,14 @@ public class PgaEndpoint extends ToolEndpoint
     sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.FormAndData, fad ) );
   }
   
+  /**
+   * The client wants to record user data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param datum IDs that identify where to change data and the data value.
+   * @throws IOException Indicates failure to process. 
+   */
   @EndpointMessageHandler()
   public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum ) throws IOException
   {
@@ -215,6 +299,9 @@ public class PgaEndpoint extends ToolEndpoint
     PeerGroupData data = store.getData( key, true );
     data.setParticipantDatum( datum );
     store.updateData( data );
+    
+    // Tell all current clients the data for this group. (Even though most of them
+    // will not be interested in this group.)
     ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
     sendToolMessageToResourceUsers( tm );
   }  

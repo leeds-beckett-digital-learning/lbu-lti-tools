@@ -32,7 +32,7 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
  * @author maber01
  */
 @ToolMapping( name = "peergrpassess", type = "coursecontent", launchURI = "/peergroupassessment/index.jsp" )
-public class PeerGroupAssessmentTool implements Tool
+public class PeerGroupAssessmentTool extends Tool
 {
   static final Logger logger = Logger.getLogger( PeerGroupAssessmentTool.class.getName() );
   
@@ -61,21 +61,20 @@ public class PeerGroupAssessmentTool implements Tool
   }
   
   @Override
-  public ToolLaunchState createToolLaunchState( LtiClaims lticlaims, ToolSetLtiState state )
+  public ToolLaunchState supplyToolLaunchState( LtiClaims lticlaims, ToolSetLtiState state )
   {
     PgaToolLaunchState pgastate = new PgaToolLaunchState();
-    pgastate.setPersonId( state.getPersonId() );
-    pgastate.setPersonName( state.getPersonName() );
-    pgastate.setCourseId( lticlaims.getLtiContext().getId() );
-    pgastate.setCourseTitle( lticlaims.getLtiContext().getLabel() );
-    ResourceKey rk = new ResourceKey( state.getPlatformName(), lticlaims.getLtiResource().getId() );
-    pgastate.setResourceKey( rk );
+    return pgastate;
+  }
+  
+  @Override
+  public void initToolLaunchState( ToolLaunchState toolstate, LtiClaims lticlaims, ToolSetLtiState state )
+  {
+    super.initToolLaunchState( toolstate, lticlaims, state );
+    PgaToolLaunchState pgastate = (PgaToolLaunchState)toolstate;
     if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
       pgastate.setAllowedToManage( true );
     if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
       pgastate.setAllowedToParticipate( true );
-    logger.log( Level.FINE, "Created PeerGroupAssessmentState with resource key = {0}",  pgastate.getResourceKey() );    
-    logger.log( Level.FINE, "Calling setPeerGroupAssessmentState() with state id = {0}", state.getId()             );    
-    return pgastate;
   }
 }

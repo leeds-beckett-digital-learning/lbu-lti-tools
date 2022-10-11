@@ -36,9 +36,20 @@ public class PgaPageSupport extends ToolPageSupport
   {
     super.setRequest( request );
     logger.log( Level.FINE, "setRequest() state id = {0}", state.getId() );
-    pgaState = (PgaToolLaunchState)state.getAppSessionState();
+    if ( logger.isLoggable( Level.FINE ) )
+    {
+      ObjectMapper mapper = new ObjectMapper();
+      logger.fine( "Launch State" );
+      try
+      { logger.fine( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( state ) ); }
+      catch ( JsonProcessingException ex )
+      { logger.log( Level.SEVERE, "Problem dumping state.", ex ); }
+    }
+    
+    pgaState = (PgaToolLaunchState)state.getToolLaunchState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
+    logger.log( Level.FINE, "resource key = {0}", pgaState.getResourceKey() );
     tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolKey() );
     store = tool.getPeerGroupAssessmentStore();
     pgaResource = store.getResource( pgaState.getResourceKey(), true );

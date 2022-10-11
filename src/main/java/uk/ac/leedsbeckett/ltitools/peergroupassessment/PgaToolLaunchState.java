@@ -17,7 +17,6 @@
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
 import java.io.Serializable;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 
 
@@ -28,103 +27,10 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
  * 
  * @author jon
  */
-public class PgaToolLaunchState implements Serializable, ToolLaunchState
+public class PgaToolLaunchState extends ToolLaunchState implements Serializable
 {
-  /**
-   * Many users (many states) may reference the same resource. It is 
-   * important that it doesn't hold a reference to the resource. So, it 
-   * holds a unique key to the resource. The resources themselves are
-   * put in a different cache.
-   */
-  private ResourceKey resourceKey;
-  
-  private String personId;
-  private String personName;
-  private String courseId;
-  private String courseTitle;
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
-
-  /**
-   * Get the key of the resource that this state relates to.
-   * 
-   * @return 
-   */
-  public ResourceKey getResourceKey()
-  {
-    return resourceKey;
-  }
-
-  /**
-   * This state object relates to a resource on the server. This method
-   * sets the key for that resource.
-   * 
-   * @param resourceKey 
-   */
-  public void setResourceKey(ResourceKey resourceKey)
-  {
-    this.resourceKey = resourceKey;
-  }
-
-  public String getPersonId()
-  {
-    return personId;
-  }
-
-  public void setPersonId( String personId )
-  {
-    this.personId = personId;
-  }
-
-  public String getPersonName()
-  {
-    return personName;
-  }
-
-  public void setPersonName( String personName )
-  {
-    this.personName = personName;
-  }
-
-  /**
-   * Simple getter.
-   * 
-   * @return The LTI course ID.
-   */
-  public String getCourseId()
-  {
-    return courseId;
-  }
-
-  /**
-   * Simple setter.
-   * 
-   * @param courseId The LTI course ID.
-   */
-  public void setCourseId( String courseId )
-  {
-    this.courseId = courseId;
-  }
-  
-  /**
-   * Simple getter.
-   * 
-   * @return The LTI title of the course.
-   */
-  public String getCourseTitle()
-  {
-    return courseTitle;
-  }
-
-  /**
-   * Simple setter.
-   * 
-   * @param courseTitle The LTI title of the course.
-   */
-  public void setCourseTitle( String courseTitle )
-  {
-    this.courseTitle = courseTitle;
-  }
 
   /**
    * Is the user connected to this state object allowed to manage the resource?

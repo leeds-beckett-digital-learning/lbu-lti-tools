@@ -26,7 +26,6 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembers
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -35,8 +34,6 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-import uk.ac.leedsbeckett.ltitoolset.ToolCoordinator;
-import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -63,8 +60,6 @@ public class PgaEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger(PgaEndpoint.class.getName() );
   
-  ToolSetLtiState state;
-  ToolCoordinator toolCoordinator;
   PeerGroupAssessmentTool tool;
   PgaToolLaunchState pgaState;
   StoreCluster store;
@@ -73,31 +68,23 @@ public class PgaEndpoint extends ToolEndpoint
   
 
   @OnOpen
+  @Override
   public void onOpen(Session session) throws IOException
   {
-    logger.info( "Opened websocket session uri = " + session.getRequestURI().toASCIIString() );        
-    toolCoordinator = ToolCoordinator.get( session.getContainer() );
-    List<String> list = session.getRequestParameterMap().get( "state" );
-    if ( list != null )
-    {
-      String stateid = list.get( 0 );
-      logger.log(Level.INFO, "State ID = {0}", stateid);
-      state = toolCoordinator.getLtiStateStore().getState( stateid );
-      logger.info( state.getPersonName() );
-      pgaState = (PgaToolLaunchState)state.getAppSessionState();
-      tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolKey() );
-      store = tool.getPeerGroupAssessmentStore();
-      pgaResource = store.getResource( pgaState.getResourceKey(), true );
-      toolCoordinator.addWsSession( pgaState.getResourceKey(), session );
-      defaultForm = store.getDefaultForm();
-    }
+    super.onOpen( session );
+    
+    pgaState = (PgaToolLaunchState)getState().getToolLaunchState();
+    tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolKey() );
+    store = tool.getPeerGroupAssessmentStore();
+    pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    defaultForm = store.getDefaultForm();
   }
   
   @OnClose
+  @Override
   public void onClose(Session session) throws IOException
   {
-    logger.info( "Closed websocket session " );
-    toolCoordinator.removeWsSession( pgaState.getResourceKey(), session );
+    super.onClose( session );
   }
 
   @OnError
@@ -112,18 +99,7 @@ public class PgaEndpoint extends ToolEndpoint
   @OnMessage
   public void onMessage(Session session, ToolMessage message) throws IOException
   {
-    logger.info( "Rx Message" );
-    if ( !message.isValid() )
-    {
-      logger.severe( "Endpoint received invalid message: " + message.getRaw() );
-      return;
-    }
-    logger.info( message.getRaw() );
-    
-    if ( dispatchMessage( session, message ) )
-      return;
-
-    logger.log( Level.INFO, "Did not find handler for message." );
+    super.onMessage( session, message );
   }
 
 
@@ -131,8 +107,7 @@ public class PgaEndpoint extends ToolEndpoint
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
     logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
-    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
-    session.getAsyncRemote().sendObject( tm );
+    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource ) );
   }
   
   @EndpointMessageHandler()
@@ -225,8 +200,7 @@ public class PgaEndpoint extends ToolEndpoint
     logger.log( Level.INFO, "handleGetFormAndData" );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid.getId() );
     PgaFormAndData fad = new PgaFormAndData( defaultForm, store.getData( key, true ) );
-    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.FormAndData, fad );
-    session.getAsyncRemote().sendObject( tm );
+    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.FormAndData, fad ) );
   }
   
   @EndpointMessageHandler()
@@ -243,15 +217,5 @@ public class PgaEndpoint extends ToolEndpoint
     store.updateData( data );
     ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
     sendToolMessageToResourceUsers( tm );
-  }
-  
-  public void sendToolMessageToResourceUsers( ToolMessage tm )
-  {
-    for ( Session s : toolCoordinator.getWsSessionsForResource( pgaResource.getKey() ) )
-    {
-      logger.info( "Telling a client." );
-      s.getAsyncRemote().sendObject( tm );
-    }
-  }
-  
+  }  
 }

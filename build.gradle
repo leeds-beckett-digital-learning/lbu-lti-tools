@@ -21,7 +21,7 @@ task generateJavascript( type: JavaExec ) {
   dependsOn compileJava
   classpath = sourceSets.main.runtimeClasspath
   main = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
-  args 'uk.ac.leedsbeckett', webAppDirName + '/gen/websocket.js'
+  args 'uk.ac.leedsbeckett', webAppDirName + '/gen'
 }
 
 war {

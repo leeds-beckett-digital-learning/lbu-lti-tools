@@ -45,12 +45,14 @@
     </style>
     <script lang="JavaScript">
       
-const myid        = '${support.personId}';
-const myname      = '${support.personName}';
-const manager     = ${support.allowedToManage};
-const participant = ${support.allowedToParticipate};
-const wsuri       = '${support.websocketUri}';
-
+const gendata = 
+{
+  myid:         '${support.personId}',
+  myname:       '${support.personName}',
+  manager:      ${support.allowedToManage},
+  participant:  ${support.allowedToParticipate},
+  wsuri:        '${support.websocketUri}'
+};
         
     </script>
     <script type="module" src="index.js" defer></script>

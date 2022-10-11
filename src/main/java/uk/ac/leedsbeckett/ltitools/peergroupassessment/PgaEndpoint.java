@@ -44,6 +44,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
 /**
  *
@@ -53,10 +54,15 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupRes
         value="/socket/peergroupassessment", 
         decoders=ToolMessageDecoder.class, 
         encoders=ToolMessageEncoder.class )
+@EndpointJavascriptProperties(
+        module="peergroupassessment",
+        prefix="Pga",
+        messageEnum="uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaServerMessageName"
+)
 public class PgaEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger(PgaEndpoint.class.getName() );
-
+  
   ToolSetLtiState state;
   ToolCoordinator toolCoordinator;
   PeerGroupAssessmentTool tool;
@@ -65,7 +71,7 @@ public class PgaEndpoint extends ToolEndpoint
   PeerGroupForm defaultForm;
   PeerGroupResource pgaResource;
   
-  
+
   @OnOpen
   public void onOpen(Session session) throws IOException
   {
@@ -125,7 +131,7 @@ public class PgaEndpoint extends ToolEndpoint
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
     logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
-    ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
     session.getAsyncRemote().sendObject( tm );
   }
   
@@ -139,7 +145,7 @@ public class PgaEndpoint extends ToolEndpoint
     try
     {
       store.updateResource( pgaResource );
-      ToolMessage tm = new ToolMessage( message.getId(), "resourceproperties", pgaResource.getProperties() );
+      ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.ResourceProperties, pgaResource.getProperties() );
       sendToolMessageToResourceUsers( tm );
     }
     catch ( IOException e )
@@ -163,7 +169,8 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( pgaResource );
         logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
-        ToolMessage tm = new ToolMessage( message.getId(), "group", g );
+        PgaChangeGroup change = new PgaChangeGroup( g.getId(), g.getTitle() );
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Group, change );
         sendToolMessageToResourceUsers( tm );
       }
       catch ( IOException e )
@@ -183,7 +190,7 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( pgaResource );
         PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
-        ToolMessage tm = new ToolMessage( message.getId(), "group", p );
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Group, p );
         sendToolMessageToResourceUsers( tm );
       }
       catch ( IOException e )
@@ -203,7 +210,7 @@ public class PgaEndpoint extends ToolEndpoint
       pgaResource.addMemberships( m );
       store.updateResource( pgaResource );
       logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
-      ToolMessage tm = new ToolMessage( message.getId(), "resource", pgaResource );
+      ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
       sendToolMessageToResourceUsers( tm );
     }
     catch ( IOException e )
@@ -218,7 +225,7 @@ public class PgaEndpoint extends ToolEndpoint
     logger.log( Level.INFO, "handleGetFormAndData" );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid.getId() );
     PgaFormAndData fad = new PgaFormAndData( defaultForm, store.getData( key, true ) );
-    ToolMessage tm = new ToolMessage( message.getId(), "formanddata", fad );
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.FormAndData, fad );
     session.getAsyncRemote().sendObject( tm );
   }
   
@@ -234,7 +241,7 @@ public class PgaEndpoint extends ToolEndpoint
     PeerGroupData data = store.getData( key, true );
     data.setParticipantDatum( datum );
     store.updateData( data );
-    ToolMessage tm = new ToolMessage( message.getId(), "data", data );
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
     sendToolMessageToResourceUsers( tm );
   }
   

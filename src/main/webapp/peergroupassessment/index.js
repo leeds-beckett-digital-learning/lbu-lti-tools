@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-import lbultitoolapi from "../gen/websocket.js";
+import peergroupassessment from "../gen/peergroupassessment.js";
+
+let dyndata = gendata;
+
+let toolsocket;
+
+let loading;
 
 
-var socket;
-var loading;
-var nextid = 100000000;
+let elements = {};
 
-var elements = {};
-
-var resource = 
+let resource = 
         {
           "resourceKey":{"platformId":"https://my-test.leedsbeckett.ac.uk/","resourceId":"_137_1"},
           "properties":{"title":"","description":"","stage":"SETUP"},
@@ -31,10 +33,10 @@ var resource =
           "groupOfUnattached":{"id":null,"title":null,"membersbyid":{}},
           "groupIdsByMember":{}
         };
-var form;
-var data;
+let form;
+let data;
 
-var selectedgroupid;
+let selectedgroupid;
 
 function init()
 {
@@ -69,80 +71,65 @@ function init()
   elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
   elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
   
-  console.log( wsuri );
-  socket = new WebSocket( wsuri );
-  socket.addEventListener( 'open',    (event) => 
+  console.log( dyndata.wsuri );
+  
+  let handler =
   {
-    sendMessage( new lbultitoolapi.GetResourceMessage() );
-  });
-
-  socket.addEventListener( 'close', (event) => 
-  {
-    if ( event.wasClean )
-      alert( `Connection to service was closed with code = ${event.code} reason = ${event.reason}` );
-    else
-      alert( "Connection to service was closed abruptly." );
-  });
-
-  socket.addEventListener( 'error', (event) => 
-  {
-    alert( `Web Socket error. ${event.message}` );
-  });
-
-  socket.addEventListener( 'message', (event) => 
-  {
-    console.log( 'Message from server: ', event.data);
-    let message = stringToMessage( event.data );
-    console.log( message );
-    if ( message.valid )
+    open()
     {
-      switch ( message.messageType )
+      toolsocket.sendMessage( new peergroupassessment.GetResourceMessage() );
+    },
+    
+    handleResource( message )
+    {
+      resource = message.payload;
+      updateResource( resource.properties );
+      updateGroups();
+      updateSelf();      
+    },
+    
+    handleResourceProperties( message )
+    {
+      resource.properties = message.payload;
+      updateResource( resource.properties );
+    },
+    
+    handleGroup( message )
+    {
+      updateGroup( message.payload );      
+    },
+    
+    handleFormAndData( message )
+    {
+      form = message.payload.form;
+      if ( message.payload.data.key.groupId === selectedgroupid )
+        data = message.payload.data;
+      console.log( form );
+      console.log( data );
+      updateForm();      
+    },
+    
+    handleData( message )
+    {
+      if ( message.payload.key.groupId === selectedgroupid )
       {
-        case "resource":
-          resource = message.payload;
-          updateResource( resource.properties );
-          updateGroups();
-          updateSelf();
-          break;
-        case "resourceproperties":
-          resource.properties = message.payload;
-          updateResource( resource.properties );
-          break;
-        case "group":
-          updateGroup( message.payload );
-          break;
-        case "formanddata":
-          form = message.payload.form;
-          if ( message.payload.data.key.groupId === selectedgroupid )
-            data = message.payload.data;
-          console.log( form );
-          console.log( data );
-          updateForm();
-          break;
-        case "data":
-          if ( message.payload.key.groupId === selectedgroupid )
-          {
-            data = message.payload;
-            console.log( data );
-            updateForm();
-          }
-          break;
-      }
+        data = message.payload;
+        console.log( data );
+        updateForm();
+      }      
     }
-  });
+  };
+  
+  toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
 }
 
-function sendMessage( message )
-{
-  socket.send( message.toString() );
-}
 
 function updateSelf()
 {
-  if ( !participant )
+  if ( !dyndata.participant )
     return;
   
-  let gid = resource.groupIdsByMember[myid];
+  let gid = resource.groupIdsByMember[dyndata.myid];
   console.log( "updateSelf() " + gid );
   if ( gid === undefined )
     console.log( "Need to add self." );
@@ -186,12 +173,13 @@ function updateGroups()
     console.log( g );
     updateGroup( g );
   }
-  if ( manager )
+  if ( dyndata.manager )
   {
     let row = document.createElement( "tr" );
     row.innerHTML = "<tr><td colspan=\"3\"><button id=\"addgroupButton\">Add Group</button></td></tr>\n";
     elements.grouptable.appendChild( row );
-    document.getElementById("addgroupButton").addEventListener( 'click', () => addGroup() );
+    let button = document.getElementById("addgroupButton");
+    button.addEventListener( 'click', () => addGroup() );
   }  
 }
 
@@ -228,7 +216,7 @@ function updateGroup( g )
     else
       html += "<br>\n";
     let m = g.membersbyid[mid];
-    if ( m.ltiId === myid )
+    if ( m.ltiId === dyndata.myid )
       ingroup = true;
     html += m.name;
   }
@@ -270,7 +258,7 @@ function processFormInputEvent( e, gid, f, m )
   console.log( e );
   console.log( f );
   console.log( m );
-  sendMessage( new lbultitoolapi.ChangeDatumMessage( gid, f.id, m.ltiId, e.value ) );
+  toolsocket.sendMessage( new peergroupassessment.ChangeDatumMessage( gid, f.id, m.ltiId, e.value ) );
 }
 
 function addFormInputListener( e, gid, f, m )
@@ -284,7 +272,7 @@ function updateForm()
   
   let groupid = selectedgroupid;
   if ( !groupid )
-    groupid = resource.groupIdsByMember[myid];
+    groupid = resource.groupIdsByMember[dyndata.myid];
   console.log( "group id = " + groupid );
   if ( !groupid )
     return;
@@ -363,7 +351,7 @@ function openGroupEditDialog( gid )
 function openDataEntryDialog( gid )
 {
   selectedgroupid = gid;
-  sendMessage( new lbultitoolapi.GetFormAndDataMessage( gid ) );
+  toolsocket.sendMessage( new peergroupassessment.GetFormAndDataMessage( gid ) );
       
   clearForm();
   openDialog( 'dataentry' );
@@ -378,7 +366,7 @@ function openDebugDialog()
 
 function saveEditProps()
 {
-  sendMessage( new lbultitoolapi.SetResourcePropertiesMessage( 
+  toolsocket.sendMessage( new peergroupassessment.SetResourcePropertiesMessage( 
           elements.editpropsTitle.value, 
           elements.editpropsDescription.value, 
           elements.editpropsStage.value ) );
@@ -387,7 +375,7 @@ function saveEditProps()
 
 function saveEditGroupProps()
 {
-  sendMessage( new lbultitoolapi.SetGroupPropertiesMessage( 
+  toolsocket.sendMessage( new peergroupassessment.SetGroupPropertiesMessage( 
           elements.editgrouppropsId.innerHTML, 
           elements.editgrouppropsTitle.value ) );
   closeDialog( "editgroupProps" );
@@ -395,70 +383,18 @@ function saveEditGroupProps()
 
 function addGroup()
 {
-  sendMessage( new lbultitoolapi.AddGroupMessage() );
+  toolsocket.sendMessage( new peergroupassessment.AddGroupMessage() );
 }
 
 function addMembership( gid )
 {
   let pids = [];
   pids[0] = {};
-  pids[0].ltiId = myid;
-  pids[0].name  = myname;
+  pids[0].ltiId = dyndata.myid;
+  pids[0].name  = dyndata.myname;
 
-  sendMessage( new lbultitoolapi.MembershipMessage( gid, pids ) );
+  toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
 }
 
-function stringToMessage( str )
-{
-  let sig = "toolmessageversion1.0";
-  let header, linesplit, name, value;
-  let message = new Object();
-  let started = false;
-  const regex = RegExp('(.*)[\n\r]+', 'gm');
-
-  message.valid = false;
-  console.log( message );
-  while ( true )
-  {
-    linesplit = regex.exec( str );
-    if ( linesplit )
-      header = linesplit[1];
-    else
-      break;          
-    if ( !started )
-    {
-      started = true;
-      if ( sig === header )
-        continue;
-      else
-        return message;
-    }
-    let n = header.indexOf( ":" );
-    if ( n > 0 )
-    {
-      name = header.substring( 0, n );
-      value = header.substring( n+1 );
-      if ( name === "id" )
-        message.id = value;
-      else if ( name === "replytoid" )
-        message.replyToId = value;
-      else if ( name === "messagetype" )
-        message.messageType = value;
-      else if ( name === "payloadtype" )
-        message.payloadType = value;
-      else if ( name === "payload" )
-      {
-        let payload = str.substring( regex.lastIndex );
-        message.payload = JSON.parse( payload );
-        break;
-      }
-    }
-  }
-
-  if ( message.id && message.messageType )
-    message.valid = true;
-
-  return message;
-}
 
 init();

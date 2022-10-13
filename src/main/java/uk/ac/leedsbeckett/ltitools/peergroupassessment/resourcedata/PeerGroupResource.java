@@ -22,9 +22,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
 import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
@@ -45,8 +48,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();
-  
-  ArrayList<Group> groupsinorder = null;
+  public ArrayList<String> groupIdsInOrder = new ArrayList<>();
   
   public PeerGroupResource( @JsonProperty("key") ResourceKey key )
   {
@@ -133,20 +135,6 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     
   }
   
-  public List<Group> getGroups()
-  {
-    synchronized ( groupIdsByMember )
-    {
-      if ( groupsinorder == null )
-      {
-        groupsinorder = new ArrayList<>();
-        groupsinorder.addAll(groupsById.values() );
-        groupsinorder.sort(( Group o1, Group o2 ) -> o1.getTitle().compareTo( o2.getTitle() ));
-      }
-      return groupsinorder;
-    }
-  }
-  
   public Group getGroupOfUnattached()
   {
     return groupOfUnattached;
@@ -159,9 +147,20 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   
   public Group getGroupByMemberId( String id )
   {
-    if ( id == null ) return groupOfUnattached;
+    if ( id == null ) return null;
+    if ( !groupIdsByMember.containsKey( id ) ) return null;
     String gid = groupIdsByMember.get( id );
+    if ( gid == null ) return groupOfUnattached;
     return getGroupById( gid );
+  }
+  
+  public int compareGroupsUsingIds( String o1, String o2 )
+  {
+    Group g1 = groupsById.get( o1 );
+    Group g2 = groupsById.get( o2 );
+    int r = g1.title.compareTo( g2.title );
+    if ( r != 0 ) return r;
+    return g1.id.compareTo( g2.id );
   }
   
   public Group addGroup( String gtitle )
@@ -171,14 +170,25 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     g.setId( gid );
     g.setTitle( gtitle );
     groupsById.put( gid, g );
+    groupIdsInOrder.add( g.id );
+    sortGroups();
     return g;
   }
   
-  public void addMember( String gid, String uid, String name )
+  public void sortGroups()
   {
+    groupIdsInOrder.sort( ( String o1, String o2 ) -> compareGroupsUsingIds( o1, o2 ) );    
+  }
+  
+  public Collection<String> addMember( String gid, String uid, String name )
+  {
+    LinkedList<String> affectedGids = new LinkedList<>();
     Group oldgroup = getGroupByMemberId( uid );
     if ( oldgroup != null )
+    {
+      affectedGids.add( oldgroup.getId() );
       oldgroup.removeMember( uid );
+    }
     
     Group g;    
     if ( gid == null )
@@ -186,14 +196,24 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     else
       g = getGroupById( gid );
     g.addMember( uid, name );
-    if ( gid != null )
-      groupIdsByMember.put( uid, gid );
+    groupIdsByMember.put( uid, gid );
+    affectedGids.add( g.getId() );
+    return affectedGids;
   }
 
-  public void addMemberships( PgaAddMembership pgcm )
+  /**
+   * Adds a number of member IDs to a group and removes those members from
+   * any other groups. Returns a collection of groups that changed.
+   * 
+   * @param pgcm
+   * @return 
+   */
+  public Collection<String> addMemberships( PgaAddMembership pgcm )
   {
+    LinkedList<String> affectedGids = new LinkedList<>();
     for ( Member m : pgcm.getPids() )
-      addMember( pgcm.getId(), m.getLtiId(), m.getName() );
+      affectedGids.addAll( addMember( pgcm.getId(), m.getLtiId(), m.getName() ) );
+    return affectedGids;
   }  
 
   @Override

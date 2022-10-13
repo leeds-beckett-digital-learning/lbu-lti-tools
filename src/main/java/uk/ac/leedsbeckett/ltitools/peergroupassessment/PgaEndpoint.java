@@ -26,6 +26,8 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembers
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -34,13 +36,17 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.FieldType;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
 /**
@@ -68,7 +74,12 @@ public class PgaEndpoint extends ToolEndpoint
   PgaToolLaunchState pgaState;
   StoreCluster store;
   PeerGroupForm defaultForm;
-  PeerGroupResource pgaResource;
+  
+  // Don't store a reference to the resource continuously because it will
+  // get out of sync with instances held by other endpoint instances.
+  // Rely on efficient caching and fetch at the start of every transaction.
+  
+  // PeerGroupResource pgaResource;
   
 
   /**
@@ -87,7 +98,6 @@ public class PgaEndpoint extends ToolEndpoint
     pgaState = (PgaToolLaunchState)getState().getToolLaunchState();
     tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolKey() );
     store = tool.getPeerGroupAssessmentStore();
-    pgaResource = store.getResource( pgaState.getResourceKey(), true );
     defaultForm = store.getDefaultForm();
   }
   
@@ -140,8 +150,28 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
-    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource ) );
+    // Check if caller is new participant...
+    boolean groupnotify=false;
+    if ( pgaState.isAllowedToParticipate() )
+    {
+      logger.log( Level.INFO, "User is allowed to participate so check if new user." );
+      Group g = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
+      if ( g == null )
+      {
+        logger.log( Level.INFO, "User was not found in any of the groups. So, add to unattached." );
+        pgaResource.addMember( null, pgaState.getPersonId(), pgaState.getPersonName() );
+        store.updateResource( pgaResource );
+        groupnotify=true;
+      }
+    }
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+    
+    if ( groupnotify )
+      sendToolMessageToResourceUsers( tm );      
+    else
+      sendToolMessage( session, tm );
   }
   
   /**
@@ -156,6 +186,7 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleSetResourceProperties( Session session, ToolMessage message, PgaProperties p ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "State       [{0}]", p.getStage().toString() );
     logger.log( Level.INFO, "Title       [{0}]", p.getTitle() );
     logger.log( Level.INFO, "Description [{0}]", p.getDescription() );
@@ -183,20 +214,20 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleSetGroupProperties( Session session, ToolMessage message, PgaChangeGroup p ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
     logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
     Group g = pgaResource.getGroupById( p.getId() );
     if ( g != null )
     {
-      logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
       g.setTitle( p.getTitle() );
-      logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
+      pgaResource.sortGroups();
       try
       {
         store.updateResource( pgaResource );
-        logger.log( Level.INFO, "Member count [{0}]", Integer.toString( g.getMembers().size() ) );
-        PgaChangeGroup change = new PgaChangeGroup( g.getId(), g.getTitle() );
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Group, change );
+        // PgaChangeGroup change = new PgaChangeGroup( g.getId(), g.getTitle() );
+        // Send whole resource because the order of the groups may have changed.
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
         sendToolMessageToResourceUsers( tm );
       }
       catch ( IOException e )
@@ -216,6 +247,7 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleAddGroup( Session session, ToolMessage message ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     Group g = pgaResource.addGroup( "New Group" );
     if ( g != null )
     {
@@ -246,14 +278,29 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleMembership( Session session, ToolMessage message, PgaAddMembership m ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
     try
     {
-      pgaResource.addMemberships( m );
+      Collection<String> affectedGids = pgaResource.addMemberships( m );
       store.updateResource( pgaResource );
       logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
+      
+      // Tell users about the resource change.
       ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
       sendToolMessageToResourceUsers( tm );
+
+      for ( String gid : affectedGids )
+      {
+        // No data for 'unattached' group
+        if ( gid == null)
+          continue;
+        logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );
+        PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid );
+        PeerGroupData data = store.getData( key, true );
+        ToolMessage tmd = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
+        sendToolMessageToResourceUsers( tmd );
+      }      
     }
     catch ( IOException e )
     {
@@ -273,6 +320,7 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleGetFormAndData( Session session, ToolMessage message, Id gid ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "handleGetFormAndData" );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid.getId() );
     PgaFormAndData fad = new PgaFormAndData( defaultForm, store.getData( key, true ) );
@@ -290,19 +338,97 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum ) throws IOException
   {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( 
             Level.INFO, 
             "handleChangeDatum() {0} {1} {2} {3}", 
             new Object[ ]{ datum.getGroupId(), datum.getFieldId(), datum.getMemberId(), datum.getValue() } );
-    
+  
+    Field field = defaultForm.getFields().get( datum.getFieldId() );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), datum.getGroupId() );
     PeerGroupData data = store.getData( key, true );
-    data.setParticipantDatum( datum );
+    data.setParticipantDatum( datum, field );
     store.updateData( data );
     
     // Tell all current clients the data for this group. (Even though most of them
     // will not be interested in this group.)
     ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
     sendToolMessageToResourceUsers( tm );
-  }  
+  }
+
+  /**
+   * The client wants to record user data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param endorse IDs that identify where to add user endorsement.
+   * @throws IOException Indicates failure to process. 
+   */
+  @EndpointMessageHandler()
+  public void handleEndorseData( Session session, ToolMessage message, PgaEndorseData endorse ) throws IOException
+  {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    logger.log( 
+            Level.INFO, 
+            "handleChangeDatum() {0} {1}", 
+            new Object[ ]{ endorse.getGroupId(), endorse.isManager() } );
+    Date now = new Date();
+    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), endorse.getGroupId() );
+    PeerGroupData data = store.getData( key, true );
+        
+    if ( endorse.isManager() )
+    {
+      for ( Member m : pgaResource.getGroupById( endorse.getGroupId() ).getMembers() )
+        data.setEndorsementDate( m.getLtiId(), now, true);
+    }
+    else
+    {
+      if ( !pgaResource.getGroupById( endorse.getGroupId() ).isMember( pgaState.getPersonId() ) )
+        return;  
+      data.setEndorsementDate( pgaState.getPersonId(), now, false);
+    }
+    
+    store.updateData( data );
+    
+    // Tell all current clients the data for this group. (Even though most of them
+    // will not be interested in this group.)
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
+    sendToolMessageToResourceUsers( tm );
+  }
+
+  /**
+   * The client wants to record user data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param id ID of group.
+   * @throws IOException Indicates failure to process. 
+   */
+  @EndpointMessageHandler()
+  public void handleClearEndorsements( Session session, ToolMessage message, Id id ) throws IOException
+  {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    logger.log( 
+            Level.INFO, 
+            "handleChangeDatum() {0}", 
+            new Object[ ]{ id.getId() } );
+    
+    if ( !pgaState.isAllowedToManage() )
+    {
+      sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Alert, "Cannot clear endorsements, you don't have management access here." ) );
+      return;
+    }
+    
+    PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), id.getId() );
+    PeerGroupData data = store.getData( key, true );
+    data.clearEndorsements();
+    store.updateData( data );
+    
+    // Tell all current clients the data for this group. (Even though most of them
+    // will not be interested in this group.)
+    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Data, data );
+    sendToolMessageToResourceUsers( tm );
+  }
+
+  
 }

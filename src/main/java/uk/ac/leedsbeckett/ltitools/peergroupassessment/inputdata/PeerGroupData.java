@@ -18,7 +18,9 @@ package uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
 
 /**
@@ -62,10 +64,22 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     this.participantData = participantData;
   }
 
-  public void setParticipantDatum( PgaChangeDatum change )
+  public void setParticipantDatum( PgaChangeDatum change, PeerGroupForm.Field field )
   {
     synchronized ( participantData )
     {
+      boolean valid = true;
+      if ( field.getType() == PeerGroupForm.FieldType.INTEGER )
+      {
+        try
+        {
+          valid = true;
+          int n = Integer.parseInt( change.getValue() );
+          if ( n < field.getMinimum() || n > field.getMaximum() ) valid = false;
+        }
+        catch ( NumberFormatException nfe ) { valid = false; }
+      }
+    
       ParticipantData pd = participantData.get( change.getMemberId() );
       if ( pd == null )
       {
@@ -80,7 +94,37 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
         pd.participantData.put( change.getFieldId(), datum );
       }
       datum.value = change.getValue();
-      datum.valid = false;
+      datum.valid = valid;
+    }
+  }
+  
+  public void setEndorsementDate( String memberId, Date value, boolean manager )
+  {
+    synchronized ( participantData )
+    {
+      ParticipantData pd = participantData.get( memberId );
+      if ( pd == null )
+      {
+        pd = new ParticipantData( memberId );
+        participantData.put( memberId, pd );
+        pd.setParticipantData( new HashMap<>() );
+      }
+      if ( manager )
+        pd.setManagerEndorsedDate( value );
+      else
+        pd.setEndorsedDate( value );
+    }
+  }
+
+  public void clearEndorsements()
+  {
+    synchronized ( participantData )
+    {
+      for ( ParticipantData pd : participantData.values() )
+      {
+        pd.endorsedDate        = null;
+        pd.managerEndorsedDate = null;
+      }
     }
   }
   

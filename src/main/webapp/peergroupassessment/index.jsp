@@ -41,6 +41,21 @@
                    box-shadow: 0.5em 0.5em 0.5em 0.25em black;
                    min-height: 10em;
                    background: white; }
+      td {
+                   padding: 0.5em 2em 0.5em 2em;
+      }
+      
+      .emptyinput {
+        background-color: white;
+      }
+
+      .validinput {
+        background-color: greenyellow;
+      }
+
+      .invalidinput {
+        background-color: hotpink;
+      }
       
     </style>
     <script lang="JavaScript">
@@ -105,6 +120,16 @@ const gendata =
           <tbody id="dataentrytablebody">
           </tbody>
         </table>
+        <h3>Endorsement</h3>
+        <p>When marks are entered and agreed, each participant must indicate 
+          their endorsement of the marks using the button below. When the first
+          participant endorses the marks, all the marks become read-only.
+          An instructor can reset all the endorsements so you can edit marks
+          and an instructor can endorse marks on behalf of participants who have
+          been absent.</p>
+        <p><button id="dataentryEndorseButton">Endorse</button>
+        <button id="dataentryManagerEndorseButton">Endorse For All</button>
+        <button id="dataentryClearEndorsementsButton">Reset Endorsements</button></p>
         <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
@@ -139,10 +164,13 @@ const gendata =
         </c:if>
         
         <table id="grouptable">
+          <thead><tr><th></th><th>Group</th><th>Members</th><th></th></tr></thead>
+          <tbody id="grouptablebody"></tbody>
+          <tfoot><tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr></tfoot>
         </table>
 
         <h4>Unplaced Students</h4>
-        <p><c:forEach var="m" items="${support.pgaResource.groupOfUnattached.members}">${m.name}<br></c:forEach></p>
+        <div id="unattachedParticipants"></div>
           
       </c:when>
       <c:otherwise>

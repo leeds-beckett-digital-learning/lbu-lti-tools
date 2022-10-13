@@ -33,10 +33,11 @@ let resource =
           "groupOfUnattached":{"id":null,"title":null,"membersbyid":{}},
           "groupIdsByMember":{}
         };
+        
 let form;
 let data;
-
 let selectedgroupid;
+let formuptodate = false;
 
 function init()
 {
@@ -52,6 +53,8 @@ function init()
   }
   console.log( elements );
 
+  elements.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
+    
   elements.editpropsSaveButtonTop      .addEventListener( 'click', () => saveEditProps()                );
   elements.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
   elements.editpropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editprops')       );
@@ -62,14 +65,19 @@ function init()
   elements.editgrouppropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editgroupProps')       );
   elements.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editgroupProps')       );
   
-  elements.dataentryCloseButtonTop     .addEventListener( 'click', () => closeDialog('dataentry')       );
-  elements.dataentryCloseButtonBottom  .addEventListener( 'click', () => closeDialog('dataentry')       );
+  elements.dataentryCloseButtonTop           .addEventListener( 'click', () => closeDialog('dataentry')       );
+  elements.dataentryCloseButtonBottom        .addEventListener( 'click', () => closeDialog('dataentry')       );
+  elements.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
+  elements.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
+  elements.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
   
   elements.debugdialogCloseButtonTop     .addEventListener( 'click', () => closeDialog('debugdialog')       );
   elements.debugdialogCloseButtonBottom  .addEventListener( 'click', () => closeDialog('debugdialog')       );
-  
-  elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
-  elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
+
+  if ( elements.editpropertiesButton )
+    elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
+  if ( elements.debugdialogButton )
+    elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
   
   console.log( dyndata.wsuri );
   
@@ -80,12 +88,18 @@ function init()
       toolsocket.sendMessage( new peergroupassessment.GetResourceMessage() );
     },
     
+    handleAlert( message )
+    {
+      alert( message.payload );
+    },
+    
     handleResource( message )
     {
+      formuptodate = false;
       resource = message.payload;
       updateResource( resource.properties );
       updateGroups();
-      updateSelf();      
+      updateSelf();
     },
     
     handleResourceProperties( message )
@@ -96,17 +110,20 @@ function init()
     
     handleGroup( message )
     {
+      formuptodate = false;
       updateGroup( message.payload );      
     },
     
     handleFormAndData( message )
     {
+      formuptodate = false;
       form = message.payload.form;
       if ( message.payload.data.key.groupId === selectedgroupid )
         data = message.payload.data;
       console.log( form );
       console.log( data );
       updateForm();      
+      updateFormData();      
     },
     
     handleData( message )
@@ -115,7 +132,9 @@ function init()
       {
         data = message.payload;
         console.log( data );
-        updateForm();
+        if ( !formuptodate )
+          updateForm();
+        updateFormData();
       }      
     }
   };
@@ -165,45 +184,52 @@ function updateResource( properties )
 
 function updateGroups()
 {
-  let html = "<tr><th colspan=\"4\">Title</th><th colspan=\"3\">Members</th></tr>\n";
-  elements.grouptable.innerHTML = html;
-  for ( const gid in resource.groupsById )
+  let html = "\n";
+  elements.grouptablebody.innerHTML = html;
+  elements.unattachedParticipants.innerHTML = "";
+  for ( const gid of resource.groupIdsInOrder )
   {
     const g = resource.groupsById[gid];
     console.log( g );
     updateGroup( g );
   }
-  if ( dyndata.manager )
+  updateUnattachedGroup();
+}
+
+function updateUnattachedGroup()
+{
+  elements.unattachedParticipants.innerHTML = "";
+  const set = resource.groupOfUnattached.membersbyid;
+  let html = "";
+  for ( let id in set )
   {
-    let row = document.createElement( "tr" );
-    row.innerHTML = "<tr><td colspan=\"3\"><button id=\"addgroupButton\">Add Group</button></td></tr>\n";
-    elements.grouptable.appendChild( row );
-    let button = document.getElementById("addgroupButton");
-    button.addEventListener( 'click', () => addGroup() );
-  }  
+    html += set[id].name;
+    html += "<br>";
+  }
+  elements.unattachedParticipants.innerHTML = html;
 }
 
 function updateGroup( g )
 {
   if ( !g.id )
   {
-    alert( "Trying to update unattached group but not implemented." );
+    updateUnattachedGroup();
     return;
   }
+  
   resource.groupsById[g.id] = g;
   let row = document.getElementById( "group-" + g.id );
   if ( !row )
   {
     row = document.createElement( "tr" );
     row.id = "group-" + g.id;
-    elements.grouptable.appendChild( row );
+    elements.grouptablebody.appendChild( row );
   }
 
   let html = "";
-  html += "<td><button id=\"groupDeleteButton" + g.id + "\">Delete</button></td>\n";
-  html += "<td><button id=\"groupEditButton"   + g.id + "\">Edit</button></td>\n";
-  //if ( participant && resource.properties.stage === "DATAENTRY" && ingroup )
-  html += "<td><button id=\"groupViewButton"   + g.id + "\">View</button></td>\n";
+  html += "<td><button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
+  html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
+  html +=     "<button id=\"groupViewButton"   + g.id + "\">View</button></td>\n";
   html += "<td><span>" + g.title + "</span></td>\n";
 
   html += "<td>";
@@ -212,7 +238,7 @@ function updateGroup( g )
   for ( const mid in g.membersbyid )
   {
     if ( first )
-      first = true;
+      first = false;
     else
       html += "<br>\n";
     let m = g.membersbyid[mid];
@@ -221,7 +247,6 @@ function updateGroup( g )
     html += m.name;
   }
   html += "</td>\n";
-  //if ( participant && resource.properties.stage === "JOIN" && !ingroup )
   html += "<td><button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button></td>";
 
   row.innerHTML = html;
@@ -299,25 +324,115 @@ function updateForm()
     row.append( td );
     for ( let m in group.membersbyid )
     {
+      td = document.createElement( "td" );
+      row.append( td );
+      let inputid = "dataentrycell_" + fieldid + "_" + groupid + "_" + m;
+      let input = document.createElement( "input" );
+      input.size = 5;
+      input.id = inputid;
+      td.append( input );
+      addFormInputListener( input, groupid, field, group.membersbyid[m] );      
+    }
+    elements.dataentrytablebody.append( row );
+  }
+  
+  // Row at bottom with endorsement buttons...
+  let endorserow = document.createElement( "tr" );
+  endorserow.className = "dataentry-formrow";
+  let managerendorserow = document.createElement( "tr" );
+  managerendorserow.className = "dataentry-formrow";
+  let td, tdm;
+  td = document.createElement( "td" );
+  td.innerHTML = "Participant Endorsement";
+  endorserow.append( td );
+  tdm = document.createElement( "td" );
+  let p = document.createElement( "p" );
+  p.innerHTML = "Endorsement Override";
+  tdm.append( p );
+  p = document.createElement( "p" );
+  tdm.append( p );
+  managerendorserow.append( tdm );
+  
+  for ( let m in group.membersbyid )
+  {
+    td = document.createElement( "td" );
+    td.className = "dataentry-formcell";
+    p = document.createElement( "p" );
+    p.id = "dataentry-endorsedate-" + m;
+    td.append( p );
+    endorserow.append( td );
+    tdm = document.createElement( "td" );
+    tdm.className = "dataentry-formcell";
+    p = document.createElement( "p" );
+    p.id = "dataentry-managerendorsedate-" + m;
+    tdm.append( p );
+    managerendorserow.append( tdm );  
+  }
+  elements.dataentrytablebody.append( endorserow );
+  elements.dataentrytablebody.append( managerendorserow );  
+  formuptodate = true;
+}
+
+function updateFormData()
+{  
+  let groupid = selectedgroupid;
+  if ( !groupid )
+    groupid = resource.groupIdsByMember[dyndata.myid];
+  console.log( "group id = " + groupid );
+  if ( !groupid )
+    return;
+  let group = resource.groupsById[groupid];
+  
+  for ( let i=0; i<form.fieldIds.length; i++ )
+  {
+    let fieldid = form.fieldIds[i];
+    let field = form.fields[fieldid];
+    if ( !field ) continue;
+    for ( let m in group.membersbyid )
+    {
       let memberdata = undefined;
       let memberdatum = undefined;
       if ( data ) memberdata = data.participantData[m];
       if ( memberdata ) memberdatum = memberdata.participantData[fieldid];
-      td = document.createElement( "td" );
-      row.append( td );
-      let inputid = "dataentrycell_" + groupid + "_" + m;
-      let input = document.createElement( "input" );
-      input.size = 5;
-      input.id = inputid;
-      if ( memberdatum && memberdatum.value )
-        input.value = memberdatum.value;
-      td.append( input );
-      addFormInputListener( input, groupid, field, group.membersbyid[m] );
-      
+      let inputid = "dataentrycell_" + fieldid + "_" + groupid + "_" + m;
+      let input = document.getElementById( inputid );
+      if ( !input )
+        continue;      
+      if ( memberdatum )
+      {
+        if ( memberdatum.value === '' )
+          input.className = 'emptyinput';
+        else if ( memberdatum.valid )
+          input.className = 'validinput';
+        else
+          input.className = 'invalidinput';
+        if ( memberdatum.value && input.value !== memberdatum.value )
+          input.value = memberdatum.value;
+      }
     }
-    elements.dataentrytablebody.append( row );
   }
+  
+  for ( let m in group.membersbyid )
+  {
+    let p;
+    let memberdata = undefined;
+    if ( data ) memberdata = data.participantData[m];
+    p = document.getElementById("dataentry-endorsedate-" + m);
+    if ( memberdata && memberdata.endorsedDate )
+      p.innerHTML = memberdata.endorsedDate.replace( " ", "<br>" );
+    else
+      p.innerHTML = 'Not Endorsed';
+    p = document.getElementById("dataentry-managerendorsedate-" + m);
+    if ( memberdata && memberdata.managerEndorsedDate )
+      p.innerHTML = memberdata.managerEndorsedDate.replace( " ", "<br>" );
+    else
+      p.innerHTML = '';
+  }
+  
+  
 }
+
+
 
 function openDialog( id )
 {
@@ -379,6 +494,22 @@ function saveEditGroupProps()
           elements.editgrouppropsId.innerHTML, 
           elements.editgrouppropsTitle.value ) );
   closeDialog( "editgroupProps" );
+}
+
+function endorseData( manager )
+{
+  let groupid = selectedgroupid;
+  if ( !groupid )
+    groupid = resource.groupIdsByMember[dyndata.myid];
+  toolsocket.sendMessage( new peergroupassessment.EndorseDataMessage( groupid, manager ) );  
+}
+
+function clearEndorsements()
+{
+  let groupid = selectedgroupid;
+  if ( !groupid )
+    groupid = resource.groupIdsByMember[dyndata.myid];
+  toolsocket.sendMessage( new peergroupassessment.ClearEndorsementsMessage( groupid ) );  
 }
 
 function addGroup()

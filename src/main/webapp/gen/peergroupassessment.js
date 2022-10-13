@@ -30,6 +30,10 @@ const peergroupassessment = (function () {
   let servermessagenames =
   [
 {
+  name:"Alert",
+  class:"class java.lang.String"
+},
+{
   name:"Resource",
   class:"class uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource"
 },
@@ -96,6 +100,16 @@ lib.AddGroupMessage = class extends lbultitoolapi.ClientMessage
 };
     
 
+lib.ClearEndorsementsMessage = class extends lbultitoolapi.ClientMessage 
+{ 
+  constructor( id )
+  {
+    super( "ClearEndorsements", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id" );
+    this.payload = { "id": id };
+  }
+};
+    
+
 lib.SetResourcePropertiesMessage = class extends lbultitoolapi.ClientMessage 
 { 
   constructor( title, description, stage )
@@ -122,6 +136,16 @@ lib.ChangeDatumMessage = class extends lbultitoolapi.ClientMessage
   {
     super( "ChangeDatum", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum" );
     this.payload = { "groupId": groupId, "fieldId": fieldId, "memberId": memberId, "value": value };
+  }
+};
+    
+
+lib.EndorseDataMessage = class extends lbultitoolapi.ClientMessage 
+{ 
+  constructor( groupId, manager )
+  {
+    super( "EndorseData", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData" );
+    this.payload = { "groupId": groupId, "manager": manager };
   }
 };
     

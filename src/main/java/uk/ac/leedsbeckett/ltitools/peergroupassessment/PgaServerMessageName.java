@@ -32,6 +32,11 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
 public enum PgaServerMessageName implements ToolMessageName
 {
   /**
+   * Message contains a simple alert message for the user.
+   */
+  Alert(              "Alert",              String.class ),
+  
+  /**
    * Message contains the PGA as created by the manager(s).
    */
   Resource(           "Resource",           PeerGroupResource.class ),

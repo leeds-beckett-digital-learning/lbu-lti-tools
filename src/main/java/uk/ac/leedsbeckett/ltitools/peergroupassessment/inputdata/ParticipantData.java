@@ -15,8 +15,10 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -26,7 +28,8 @@ import java.util.HashMap;
 public class ParticipantData implements Serializable
 {
     final String participantId;
-    boolean endorsed;
+    Date endorsedDate;
+    Date managerEndorsedDate;
     HashMap<String,ParticipantDatum> participantData;
     
     public ParticipantData( @JsonProperty("participantId") String participantId )
@@ -37,13 +40,23 @@ public class ParticipantData implements Serializable
     {
       return participantId;
     }
-    public boolean isEndorsed()
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    public Date getEndorsedDate()
     {
-      return endorsed;
+      return endorsedDate;
     }
-    public void setEndorsed( boolean endorsed )
+    public void setEndorsedDate( Date endorsedDate )
     {
-      this.endorsed = endorsed;
+      this.endorsedDate = endorsedDate;
+    }
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy hh:mm:ss")
+    public Date getManagerEndorsedDate()
+    {
+      return managerEndorsedDate;
+    }
+    public void setManagerEndorsedDate( Date managerEndorsedDate )
+    {
+      this.managerEndorsedDate = managerEndorsedDate;
     }
     public HashMap<String, ParticipantDatum> getParticipantData()
     {

@@ -21,6 +21,9 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
 
 /**
@@ -126,6 +129,46 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
         pd.managerEndorsedDate = null;
       }
     }
+  }
+
+  public boolean isEndorsed( Group group, PeerGroupForm form )
+  {
+    for ( Member member : group.getMembers() )
+    {
+      ParticipantData pd = this.getParticipantData().get( member.getLtiId() );
+      if ( pd == null ) continue;
+      if ( pd.getEndorsedDate() != null ) return true;
+      if ( pd.getManagerEndorsedDate() != null ) return true;
+    }
+    return false;
+  }
+  
+  public boolean isFullyEndorsed( Group group, PeerGroupForm form )
+  {
+    for ( Member member : group.getMembers() )
+    {
+      ParticipantData pd = this.getParticipantData().get( member.getLtiId() );
+      if ( pd == null ) return false;
+      if ( pd.getEndorsedDate() == null && 
+           pd.getManagerEndorsedDate() == null ) return false;
+    }
+    return true;
+  }
+  
+  public boolean isAllDataValid( Group group, PeerGroupForm form )
+  {
+    for ( Member member : group.getMembers() )
+    {
+      ParticipantData pd = this.getParticipantData().get( member.getLtiId() );
+      if ( pd == null ) return false;
+      for ( Field field : form.getFields().values() )
+      {
+        ParticipantDatum datum = pd.getParticipantData().get( field.getId() );
+        if ( datum == null ) return false;
+        if ( !datum.isValid() ) return false;
+      }
+    }
+    return true;
   }
   
   @Override

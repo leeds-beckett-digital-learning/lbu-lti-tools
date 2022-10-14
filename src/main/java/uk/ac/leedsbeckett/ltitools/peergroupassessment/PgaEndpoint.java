@@ -47,6 +47,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseDat
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
@@ -146,6 +147,7 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
+    // All users can have the resource at all stages.
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
     // Check if caller is new participant...
@@ -178,10 +180,11 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param p The PGA properties. (Title etc...)
    * @throws IOException Indicates failure to process. 
-   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense.
    */
   @EndpointMessageHandler()
-  public void handleSetResourceProperties( Session session, ToolMessage message, PgaProperties p ) throws IOException, HandlerAlertException
+  public void handleSetResourceProperties( Session session, ToolMessage message, PgaProperties p ) 
+          throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot set resource properties, you don't have management access here.", message.getId() );
@@ -209,15 +212,16 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param p The group id and desired group properties.
    * @throws IOException Indicates failure to process. 
-   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   * @throws HandlerAlertException  Thrown when the request is not allowed or doesn't make sense.
    */
   @EndpointMessageHandler()
   public void handleSetGroupProperties( Session session, ToolMessage message, PgaChangeGroup p ) throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot set group properties, you don't have management access here.", message.getId() );
-    
+      throw new HandlerAlertException( "Cannot set group properties, you don't have management access here.", message.getId() );    
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    if ( !pgaResource.getStage().equals( Stage.SETUP ) )
+      throw new HandlerAlertException( "Can only change group properties during the set-up stage.", message.getId() );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
     logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
     Group g = pgaResource.getGroupById( p.getId() );
@@ -246,14 +250,18 @@ public class PgaEndpoint extends ToolEndpoint
    * @param session The session this endpoint belongs to.
    * @param message The incoming message from the client end.
    * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense.
    */
   @EndpointMessageHandler()
-  public void handleAddGroup( Session session, ToolMessage message ) throws IOException, HandlerAlertException
+  public void handleAddGroup( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot add a group, you don't have management access here.", message.getId() );
     
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    if ( !pgaResource.getStage().equals( Stage.SETUP ) )
+      throw new HandlerAlertException( "Can only add groups during the set-up stage.", message.getId() );
     Group g = pgaResource.addGroup( "New Group" );
     if ( g != null )
     {
@@ -272,20 +280,30 @@ public class PgaEndpoint extends ToolEndpoint
   }  
   
   /**
-   * The client wants to add participants to a specified group. Participants
-   * will be removed from any other groups. Should be possible to use this to
-   * move people into the 'unattached' group. (To do).
+   * The client wants to add participants to a specified group.Participants
+ will be removed from any other groups. Should be possible to use this to
+ move people into the 'unattached' group. (To do).
    * 
    * @param session The session this endpoint belongs to.
    * @param message The incoming message from the client end.
    * @param m The ID of the group and the IDs of participants.
    * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
    */
   @EndpointMessageHandler()
-  public void handleMembership( Session session, ToolMessage message, PgaAddMembership m ) throws IOException
+  public void handleMembership( Session session, ToolMessage message, PgaAddMembership m )
+          throws IOException, HandlerAlertException
   {
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
-    Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
+
+    if ( !pgaResource.getStage().equals( Stage.JOIN ) )
+      throw new HandlerAlertException( "Can only change group membership during the 'joining' stage.", message.getId() );
+    
+    if ( !pgaState.isAllowedToAccess() )
+      throw new HandlerAlertException( "As a non-participant you cannot change group membership.", message.getId() );
+
+    if ( !pgaState.isAllowedToManage() && !m.isOnlySelf( pgaState.getPersonId() ) )
+      throw new HandlerAlertException( "You can only change your own group membership.", message.getId() );
     
     logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
     try
@@ -325,10 +343,11 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param gidObject
    * @throws IOException Indicates failure to process. 
-   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
    */
   @EndpointMessageHandler()
-  public void handleGetFormAndData( Session session, ToolMessage message, Id gidObject ) throws IOException, HandlerAlertException
+  public void handleGetFormAndData( Session session, ToolMessage message, Id gidObject )
+          throws IOException, HandlerAlertException
   {
     String gid = gidObject.getId();
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
@@ -361,9 +380,11 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param datum IDs that identify where to change data and the data value.
    * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
    */
   @EndpointMessageHandler()
-  public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum ) throws IOException
+  public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum )
+          throws IOException, HandlerAlertException
   {
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
@@ -373,10 +394,27 @@ public class PgaEndpoint extends ToolEndpoint
             Level.INFO, 
             "handleChangeDatum() {0} {1} {2} {3}", 
             new Object[ ]{ datum.getGroupId(), datum.getFieldId(), datum.getMemberId(), datum.getValue() } );
-  
+
+    if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) )
+      throw new HandlerAlertException( "Can only edit data during the 'data entry' stage.", message.getId() );
+    if (  datum.getGroupId() == null )
+      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+    Group group = pgaResource.getGroupById( datum.getGroupId() );
+    if ( group == null )
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+    if ( !pgaState.isAllowedToParticipate() )
+      throw new HandlerAlertException( "You don't have permission to change data here.", message.getId() );      
+    if ( !datum.getGroupId().equals( myGroup.getId() ) )
+      throw new HandlerAlertException( "You cannot change data in a group you don't belong to.", message.getId() );
+
+    
     Field field = form.getFields().get( datum.getFieldId() );
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), datum.getGroupId() );
     PeerGroupData data = store.getData( key, true );
+
+    if ( data.isEndorsed( group, form ) )
+      throw new HandlerAlertException( "You cannot change data values after endorsements have been made.", message.getId() );    
+
     data.setParticipantDatum( datum, field );
     store.updateData( data );
     
@@ -392,9 +430,11 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param endorse IDs that identify where to add user endorsement.
    * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
    */
   @EndpointMessageHandler()
-  public void handleEndorseData( Session session, ToolMessage message, PgaEndorseData endorse ) throws IOException
+  public void handleEndorseData( Session session, ToolMessage message, PgaEndorseData endorse )
+          throws IOException, HandlerAlertException
   {
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
@@ -405,16 +445,45 @@ public class PgaEndpoint extends ToolEndpoint
     Date now = new Date();
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), endorse.getGroupId() );
     PeerGroupData data = store.getData( key, true );
-        
+
+    if ( pgaState.isAllowedToManage() )
+    {
+      if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) && !pgaResource.getStage().equals( Stage.RESULTS ) )
+        throw new HandlerAlertException( "Can only change endorsement overrides during the 'data entry' or 'results' stage.", message.getId() );
+    }
+    else
+    {
+      if ( !pgaState.isAllowedToParticipate() )
+        throw new HandlerAlertException( "You aren't a participant in this resource so you can't endorse data.", message.getId() );
+      if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) )
+        throw new HandlerAlertException( "Can only endorse data entry during the 'data entry' stage.", message.getId() );     
+    }
+
+    if (  endorse.getGroupId() == null )
+      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+    Group group = pgaResource.getGroupById( endorse.getGroupId() );
+    if ( group == null )
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+
+    PeerGroupForm form = store.getForm( pgaResource.getFormId() );
+    if ( !data.isAllDataValid( group, form ) )
+      throw new HandlerAlertException( "You can only endorse data when all fields contain valid values.", message.getId() );    
+    
     if ( endorse.isManager() )
     {
+      if ( !pgaState.isAllowedToManage() )
+        throw new HandlerAlertException( "You don't have permission to override endorsements here.", message.getId() );      
       for ( Member m : pgaResource.getGroupById( endorse.getGroupId() ).getMembers() )
         data.setEndorsementDate( m.getLtiId(), now, true);
     }
     else
     {
+      if ( !pgaState.isAllowedToParticipate() )
+        throw new HandlerAlertException( "You don't have permission to endorse data here.", message.getId() );
+      if ( !endorse.getGroupId().equals( myGroup.getId() ) )
+        throw new HandlerAlertException( "You cannot endorse data in a group you don't belong to.", message.getId() );
       if ( !pgaResource.getGroupById( endorse.getGroupId() ).isMember( pgaState.getPersonId() ) )
-        return;  
+        return;
       data.setEndorsementDate( pgaState.getPersonId(), now, false);
     }
     
@@ -432,12 +501,13 @@ public class PgaEndpoint extends ToolEndpoint
    * @param message The incoming message from the client end.
    * @param id ID of group.
    * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException  Thrown when the request is not allowed or doesn't make sense.
    */
   @EndpointMessageHandler()
-  public void handleClearEndorsements( Session session, ToolMessage message, Id id ) throws IOException, HandlerAlertException
+  public void handleClearEndorsements( Session session, ToolMessage message, Id id )
+          throws IOException, HandlerAlertException
   {
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
-    Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
     logger.log( 
             Level.INFO, 
             "handleChangeDatum() {0}", 
@@ -445,6 +515,14 @@ public class PgaEndpoint extends ToolEndpoint
     
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot clear endorsements, you don't have management access here.", message.getId() );
+    if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) && !pgaResource.getStage().equals( Stage.RESULTS ) )
+      throw new HandlerAlertException( "Can only clear endorsements during the 'data entry' or 'results' stage.", message.getId() );
+
+    if (  id.getId() == null )
+      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+    Group group = pgaResource.getGroupById( id.getId() );
+    if ( group == null )
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
     
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), id.getId() );
     PeerGroupData data = store.getData( key, true );
@@ -456,6 +534,14 @@ public class PgaEndpoint extends ToolEndpoint
             new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
   }
 
+  /**
+   * This gets called when a handler throws a HandlerAlertException and decides
+   * how to alert the user.
+   * 
+   * @param session The web socket session.
+   * @param haex The exception that was thrown.
+   * @throws IOException If the attempt to alert the user fails.
+   */
   @Override
   public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
   {

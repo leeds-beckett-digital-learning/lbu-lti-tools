@@ -46,5 +46,13 @@ public class PgaAddMembership implements Serializable
   {
     return pids;
   }
+  
+  public boolean isOnlySelf( String id )
+  {
+    return 
+            pids != null && 
+            pids.size() == 1 && 
+            pids.get( 0 ).getLtiId().equals( id );
+  }
 }
 

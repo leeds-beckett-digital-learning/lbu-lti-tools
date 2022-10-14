@@ -69,4 +69,9 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   {
     this.allowedToParticipate = allowedToParticipate;
   }
+  
+  public boolean isAllowedToAccess()
+  {
+    return allowedToParticipate || allowedToManage;
+  }
 }

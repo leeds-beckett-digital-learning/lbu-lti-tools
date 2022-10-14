@@ -406,7 +406,7 @@ function updateFormData()
           input.className = 'validinput';
         else
           input.className = 'invalidinput';
-        if ( memberdatum.value && input.value !== memberdatum.value )
+        if ( input.value !== memberdatum.value )
           input.value = memberdatum.value;
       }
     }

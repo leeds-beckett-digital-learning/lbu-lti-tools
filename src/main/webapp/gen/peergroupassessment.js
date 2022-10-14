@@ -100,22 +100,22 @@ lib.AddGroupMessage = class extends lbultitoolapi.ClientMessage
 };
     
 
-lib.ClearEndorsementsMessage = class extends lbultitoolapi.ClientMessage 
-{ 
-  constructor( id )
-  {
-    super( "ClearEndorsements", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id" );
-    this.payload = { "id": id };
-  }
-};
-    
-
 lib.SetResourcePropertiesMessage = class extends lbultitoolapi.ClientMessage 
 { 
   constructor( title, description, stage )
   {
     super( "SetResourceProperties", "uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties" );
     this.payload = { "title": title, "description": description, "stage": stage };
+  }
+};
+    
+
+lib.ClearEndorsementsMessage = class extends lbultitoolapi.ClientMessage 
+{ 
+  constructor( id )
+  {
+    super( "ClearEndorsements", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id" );
+    this.payload = { "id": id };
   }
 };
     
@@ -140,22 +140,22 @@ lib.ChangeDatumMessage = class extends lbultitoolapi.ClientMessage
 };
     
 
-lib.EndorseDataMessage = class extends lbultitoolapi.ClientMessage 
-{ 
-  constructor( groupId, manager )
-  {
-    super( "EndorseData", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData" );
-    this.payload = { "groupId": groupId, "manager": manager };
-  }
-};
-    
-
 lib.MembershipMessage = class extends lbultitoolapi.ClientMessage 
 { 
   constructor( id, pids )
   {
     super( "Membership", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembership" );
     this.payload = { "id": id, "pids": pids };
+  }
+};
+    
+
+lib.EndorseDataMessage = class extends lbultitoolapi.ClientMessage 
+{ 
+  constructor( groupId, manager )
+  {
+    super( "EndorseData", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData" );
+    this.payload = { "groupId": groupId, "manager": manager };
   }
 };
     

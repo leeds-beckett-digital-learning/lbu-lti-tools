@@ -54,7 +54,13 @@ public class StoreCluster
     resourceStore.update( r );
   }
   
-  public PeerGroupForm getDefaultForm()
+  /**
+   * Currently ignores the form ID and returns a fixed, default form.
+   * 
+   * @param formid
+   * @return 
+   */
+  public PeerGroupForm getForm( String formid )
   {
     return formstore.getDefault();
   }

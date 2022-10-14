@@ -130,11 +130,12 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     return properties.getStage() == Stage.RESULTS;
   }
   
-  public void registerIfFirstAccess( String id, String name )
+  @JsonIgnore    
+  public String getFormId()
   {
-    
+    return "default";
   }
-  
+
   public Group getGroupOfUnattached()
   {
     return groupOfUnattached;

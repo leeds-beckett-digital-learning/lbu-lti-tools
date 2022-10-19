@@ -42,10 +42,6 @@ const peergroupassessment = (function () {
   class:"class uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties"
 },
 {
-  name:"Group",
-  class:"class uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeGroup"
-},
-{
   name:"FormAndData",
   class:"class uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaFormAndData"
 },
@@ -140,22 +136,22 @@ lib.ChangeDatumMessage = class extends lbultitoolapi.ClientMessage
 };
     
 
-lib.MembershipMessage = class extends lbultitoolapi.ClientMessage 
-{ 
-  constructor( id, pids )
-  {
-    super( "Membership", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembership" );
-    this.payload = { "id": id, "pids": pids };
-  }
-};
-    
-
 lib.EndorseDataMessage = class extends lbultitoolapi.ClientMessage 
 { 
   constructor( groupId, manager )
   {
     super( "EndorseData", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData" );
     this.payload = { "groupId": groupId, "manager": manager };
+  }
+};
+    
+
+lib.MembershipMessage = class extends lbultitoolapi.ClientMessage 
+{ 
+  constructor( id, pids )
+  {
+    super( "Membership", "uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembership" );
+    this.payload = { "id": id, "pids": pids };
   }
 };
     

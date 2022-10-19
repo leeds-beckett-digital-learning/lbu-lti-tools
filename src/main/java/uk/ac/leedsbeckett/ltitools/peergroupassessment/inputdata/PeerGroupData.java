@@ -22,6 +22,9 @@ import java.util.Date;
 import java.util.HashMap;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
+import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.FULLYENDORSED;
+import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.NOTENDORSED;
+import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.PARTLYENDORSED;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
@@ -33,7 +36,7 @@ import uk.ac.leedsbeckett.ltitoolset.store.Entry;
 public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
 {
   PeerGroupDataKey key;
-  Status status;
+  PgaEndorsementStatus status;
   HashMap<String,ParticipantData> participantData;
 
   public PeerGroupData( @JsonProperty("key") PeerGroupDataKey key )
@@ -47,12 +50,12 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     return key;
   }
 
-  public Status getStatus()
+  public PgaEndorsementStatus getStatus()
   {
     return status;
   }
 
-  public void setStatus( Status status )
+  public void setStatus( PgaEndorsementStatus status )
   {
     this.status = status;
   }
@@ -101,6 +104,17 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     }
   }
   
+  public boolean isEndorsedByParticipant( String memberId )
+  {
+    synchronized ( participantData )
+    {
+      ParticipantData pd = participantData.get( memberId );
+      if ( pd == null )
+        return false;
+      return pd.getEndorsedDate() != null;
+    }
+  }
+  
   public void setEndorsementDate( String memberId, Date value, boolean manager )
   {
     synchronized ( participantData )
@@ -116,6 +130,26 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
         pd.setManagerEndorsedDate( value );
       else
         pd.setEndorsedDate( value );
+      
+      boolean hasblanks = false;
+      boolean hasfills  = false;
+      for ( ParticipantData each : participantData.values() )
+      {
+        if ( each.endorsedDate == null && each.managerEndorsedDate == null )
+          hasblanks = true;
+        else
+          hasfills = true;
+      }
+      
+      if ( hasfills )
+      {
+        if ( hasblanks )
+          setStatus( PARTLYENDORSED );
+        else 
+          setStatus( FULLYENDORSED );
+      }
+      else
+        setStatus( NOTENDORSED );
     }
   }
 
@@ -128,6 +162,7 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
         pd.endorsedDate        = null;
         pd.managerEndorsedDate = null;
       }
+      setStatus( NOTENDORSED );
     }
   }
 
@@ -180,16 +215,7 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
   @Override
   public void initialize()
   {
-    status = Status.OPEN;
+    status = PgaEndorsementStatus.NOTENDORSED;
     participantData = new HashMap<>();
-  }
-  
-  
-  public enum Status
-  {
-    OPEN,
-    CLOSED,
-    ENDORSED,
-    LOCKED
   }
 }

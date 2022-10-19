@@ -53,23 +53,34 @@ function init()
   }
   console.log( elements );
 
-  elements.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
+  if ( dyndata.manager )
+    elements.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
     
-  elements.editpropsSaveButtonTop      .addEventListener( 'click', () => saveEditProps()                );
-  elements.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
+  if ( dyndata.manager )
+  {
+    elements.editpropsSaveButtonTop      .addEventListener( 'click', () => saveEditProps()                );
+    elements.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
+  }
   elements.editpropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editprops')       );
   elements.editpropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editprops')       );
   
-  elements.editgrouppropsSaveButtonTop      .addEventListener( 'click', () => saveEditGroupProps()                );
-  elements.editgrouppropsSaveButtonBottom   .addEventListener( 'click', () => saveEditGroupProps()                );
+  if ( dyndata.manager )
+  {
+    elements.editgrouppropsSaveButtonTop      .addEventListener( 'click', () => saveEditGroupProps()                );
+    elements.editgrouppropsSaveButtonBottom   .addEventListener( 'click', () => saveEditGroupProps()                );
+  }
   elements.editgrouppropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editgroupProps')       );
   elements.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editgroupProps')       );
   
   elements.dataentryCloseButtonTop           .addEventListener( 'click', () => closeDialog('dataentry')       );
   elements.dataentryCloseButtonBottom        .addEventListener( 'click', () => closeDialog('dataentry')       );
-  elements.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
-  elements.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
-  elements.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
+  if ( dyndata.participant )
+    elements.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
+  if ( dyndata.manager )
+  {
+    elements.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
+    elements.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
+  }
   
   elements.debugdialogCloseButtonTop     .addEventListener( 'click', () => closeDialog('debugdialog')       );
   elements.debugdialogCloseButtonBottom  .addEventListener( 'click', () => closeDialog('debugdialog')       );
@@ -99,19 +110,20 @@ function init()
       resource = message.payload;
       updateResource( resource.properties );
       updateGroups();
-      updateSelf();
     },
     
     handleResourceProperties( message )
     {
+      let stagechanged = !(message.payload.stage === resource.properties.stage);
       resource.properties = message.payload;
       updateResource( resource.properties );
-    },
-    
-    handleGroup( message )
-    {
-      formuptodate = false;
-      updateGroup( message.payload );      
+      if ( stagechanged )
+      {
+        updateGroups();
+        // because buttons need to be enabled disabled
+        updateForm();      
+        updateFormData();      
+      }
     },
     
     handleFormAndData( message )
@@ -142,17 +154,6 @@ function init()
   toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
 }
 
-
-function updateSelf()
-{
-  if ( !dyndata.participant )
-    return;
-  
-  let gid = resource.groupIdsByMember[dyndata.myid];
-  console.log( "updateSelf() " + gid );
-  if ( gid === undefined )
-    console.log( "Need to add self." );
-}
 
 function updateResource( properties )
 {
@@ -195,7 +196,6 @@ function updateGroups()
   }
   updateUnattachedGroup();
 }
-
 function updateUnattachedGroup()
 {
   elements.unattachedParticipants.innerHTML = "";
@@ -207,6 +207,11 @@ function updateUnattachedGroup()
     html += "<br>";
   }
   elements.unattachedParticipants.innerHTML = html;
+}
+
+function isMemberOf( g )
+{
+  return g.hasOwnProperty( "membersbyid" ) && g.membersbyid.hasOwnProperty( dyndata.myid );
 }
 
 function updateGroup( g )
@@ -227,10 +232,17 @@ function updateGroup( g )
   }
 
   let html = "";
-  html += "<td><button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
-  html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
-  html +=     "<button id=\"groupViewButton"   + g.id + "\">View</button></td>\n";
-  html += "<td><span>" + g.title + "</span></td>\n";
+  html += "<td>";
+  if ( dyndata.manager )
+  {
+    html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
+    html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
+  }
+  
+  if ( dyndata.manager || isMemberOf( g ) )
+    html += "<td><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></td>\n";
+  else
+    html += "<td>" + g.title + "</td>\n";
 
   html += "<td>";
   let ingroup = false;
@@ -247,14 +259,29 @@ function updateGroup( g )
     html += m.name;
   }
   html += "</td>\n";
-  html += "<td><button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button></td>";
+  html += "<td>";
+  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) )
+    html += "<button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button>";
+  html += "</td>";
 
   row.innerHTML = html;
   
-  document.getElementById( "groupDeleteButton" + g.id ).addEventListener( 'click', () => alert( g.id ) );
-  document.getElementById( "groupEditButton"   + g.id ).addEventListener( 'click', () => openGroupEditDialog( g.id ) );
-  document.getElementById( "groupViewButton"   + g.id ).addEventListener( 'click', () => openDataEntryDialog( g.id ) );
-  document.getElementById( "groupJoinButton"   + g.id ).addEventListener( 'click', () => addMembership( g.id ) );
+  if ( dyndata.manager )
+  {
+    document.getElementById( "groupDeleteButton" + g.id ).addEventListener( 'click', () => alert( g.id ) );
+    document.getElementById( "groupEditButton"   + g.id ).addEventListener( 'click', () => openGroupEditDialog( g.id ) );
+  }
+  if ( dyndata.manager || isMemberOf( g ) )
+  {
+    document.getElementById( "groupViewLink"   + g.id ).addEventListener( 'click', ( e ) =>     
+    {
+      e.preventDefault();
+      openDataEntryDialog( g.id ) ;
+    }
+            );
+  }
+  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) )  
+    document.getElementById( "groupJoinButton"   + g.id ).addEventListener( 'click', () => addMembership( g.id ) );
 }
 
 function clearForm()
@@ -330,6 +357,7 @@ function updateForm()
       let input = document.createElement( "input" );
       input.size = 5;
       input.id = inputid;
+      input.disabled = true;
       td.append( input );
       addFormInputListener( input, groupid, field, group.membersbyid[m] );      
     }
@@ -383,6 +411,13 @@ function updateFormData()
     return;
   let group = resource.groupsById[groupid];
   
+  let inputdisabled = 
+          resource.properties.stage !== "DATAENTRY" || 
+          !isMemberOf( group ) || 
+          !data || 
+          data.status !== "NOTENDORSED";
+  
+  
   for ( let i=0; i<form.fieldIds.length; i++ )
   {
     let fieldid = form.fieldIds[i];
@@ -398,6 +433,7 @@ function updateFormData()
       let input = document.getElementById( inputid );
       if ( !input )
         continue;      
+      input.disabled = inputdisabled;
       if ( memberdatum )
       {
         if ( memberdatum.value === '' )

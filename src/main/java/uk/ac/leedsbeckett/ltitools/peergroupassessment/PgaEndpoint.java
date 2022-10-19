@@ -269,7 +269,7 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( pgaResource );
         PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Group, p );
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
         sendToolMessageToResourceUsers( tm );
       }
       catch ( IOException e )
@@ -473,8 +473,11 @@ public class PgaEndpoint extends ToolEndpoint
     {
       if ( !pgaState.isAllowedToManage() )
         throw new HandlerAlertException( "You don't have permission to override endorsements here.", message.getId() );      
-      for ( Member m : pgaResource.getGroupById( endorse.getGroupId() ).getMembers() )
-        data.setEndorsementDate( m.getLtiId(), now, true);
+      for ( Member m : group.getMembers() )
+      {
+        if ( !data.isEndorsedByParticipant( m.getLtiId() ) )
+          data.setEndorsementDate( m.getLtiId(), now, true);
+      }
     }
     else
     {

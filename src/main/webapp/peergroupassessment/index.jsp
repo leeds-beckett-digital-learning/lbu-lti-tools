@@ -127,9 +127,15 @@ const gendata =
           An instructor can reset all the endorsements so you can edit marks
           and an instructor can endorse marks on behalf of participants who have
           been absent.</p>
-        <p><button id="dataentryEndorseButton">Endorse</button>
-        <button id="dataentryManagerEndorseButton">Endorse For All</button>
-        <button id="dataentryClearEndorsementsButton">Reset Endorsements</button></p>
+        <p>
+          <c:if test="${support.allowedToParticipate}">
+            <button id="dataentryEndorseButton">Endorse</button>
+          </c:if>
+          <c:if test="${support.allowedToManage}">
+            <button id="dataentryManagerEndorseButton">Endorse For All</button>
+            <button id="dataentryClearEndorsementsButton">Reset Endorsements</button>
+          </c:if>
+        </p>
         <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
       </div>
     </div>
@@ -150,23 +156,22 @@ const gendata =
     <p id="mainDescription">...loading</p>
     <p class="stage"><span class="stage-label">Stage:</span> <span id="mainStage"></span></p>
     
+    <!--
     <p>${support.personId} - ${support.personName}</p>
+    -->
     
     <c:choose>
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
         <c:if test="${support.allowedToManage}">
           <p><button id="editpropertiesButton">Edit Properties</button></p>          
-          <p>You can manage this resource.</p>
-        </c:if>
-        
-        <c:if test="${support.allowedToParticipate}">
-          <p>You can use this resource by joining a group and participating in peer group assessment.</p>
         </c:if>
         
         <table id="grouptable">
           <thead><tr><th></th><th>Group</th><th>Members</th><th></th></tr></thead>
           <tbody id="grouptablebody"></tbody>
-          <tfoot><tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr></tfoot>
+          <c:if test="${support.allowedToManage}">        
+            <tfoot><tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr></tfoot>
+          </c:if>
         </table>
 
         <h4>Unplaced Students</h4>
@@ -179,11 +184,11 @@ const gendata =
       </c:otherwise>
     </c:choose>
     
-    <p><button id="debugdialogButton">Debug Dialog</button></p>          
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">
         <hr>
+        <p><button id="debugdialogButton">Debug Dialog</button></p>          
         <div><tt><pre>${support.dump}</pre></tt></div>
       </div>
     </c:if>

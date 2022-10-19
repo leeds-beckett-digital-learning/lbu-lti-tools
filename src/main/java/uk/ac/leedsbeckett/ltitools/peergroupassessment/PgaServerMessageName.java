@@ -47,11 +47,6 @@ public enum PgaServerMessageName implements ToolMessageName
   ResourceProperties( "ResourceProperties", PgaProperties.class     ),
   
   /**
-   * Message contains on the part of the PGA relating to a specific group.
-   */
-  Group(              "Group",              PgaChangeGroup.class    ),
-  
-  /**
    * Message contains the PGA resource and the resource's selected form.
    */
   FormAndData(        "FormAndData",        PgaFormAndData.class    ),

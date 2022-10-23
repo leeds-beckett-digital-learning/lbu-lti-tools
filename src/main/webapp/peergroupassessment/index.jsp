@@ -70,7 +70,7 @@ const gendata =
 };
         
     </script>
-    <script type="module" src="index.js" defer></script>
+    <script type="module" src="../javascript/@BUILDTIMESTAMP@/peergroupassessment/index.js" defer></script>
   </head>
   <body>
     <div id="editprops" class="dialog">

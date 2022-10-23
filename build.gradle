@@ -3,6 +3,14 @@ apply plugin: 'jacoco'
 apply plugin: 'war'
 apply plugin: 'maven-publish'
 
+import org.apache.tools.ant.filters.ReplaceTokens
+
+def buildWebappStatic   = project.buildDir.toString() + '/webappstatic'
+def buildWebappDynamic  = project.buildDir.toString() + '/webappdynamic'
+def buildTimestamp      = Long.toHexString( new Date().getTime() )
+def buildJavascriptDir  = buildWebappDynamic + '/javascript/' + buildTimestamp
+def buildJavascriptGen  = buildJavascriptDir + '/generated'
+
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
@@ -17,15 +25,49 @@ java {
     }
 }
 
-task generateJavascript( type: JavaExec ) {
-  dependsOn compileJava
-  classpath = sourceSets.main.runtimeClasspath
-  main = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
-  args 'uk.ac.leedsbeckett', webAppDirName + '/gen'
+task staticWebappMove( type: Copy ) {
+  from 'src/main/webapp'
+  into buildWebappStatic
+  exclude '**/*.js'
+  exclude '**/*.jsp'
+  exclude '**/*.html'
+  includeEmptyDirs = false
 }
 
+
+task moveJavascript( type: Copy ) {
+  from 'src/main/webapp/javascript'
+  into buildJavascriptDir
+  include "**/*.js"
+  doFirst {
+    delete buildWebappDynamic
+  }
+}
+
+task processPages( type: Copy ) {
+  dependsOn moveJavascript
+  from 'src/main/webapp'
+  into buildWebappDynamic
+  include "**/*.jsp"
+  include "**/*.html"
+  includeEmptyDirs = false
+  filter( ReplaceTokens, tokens: [ "BUILDTIMESTAMP" : buildTimestamp ] )
+}
+
+
+task generateJavascript( type: JavaExec ) {
+  dependsOn processPages
+  classpath = sourceSets.main.runtimeClasspath
+  mainClass = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
+  args 'uk.ac.leedsbeckett', buildJavascriptGen
+}
+
+
+
 war {
-  dependsOn generateJavascript
+  dependsOn generateJavascript, staticWebappMove
+  webAppDirectory = file( buildWebappStatic )
+  from buildWebappDynamic
 }
 
 description = 'LBU-LTI-Tools'

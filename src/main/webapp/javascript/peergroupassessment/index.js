@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import peergroupassessment from "../gen/peergroupassessment.js";
+import peergroupassessment from "../generated/peergroupassessment.js";
 
 let dyndata = gendata;
 

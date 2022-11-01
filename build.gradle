@@ -1,30 +1,82 @@
+
+/**
+ *   A slightly complicated build script for several reasons. 
+ *   
+ *   The main complexity is that javascript files are placed into a target 
+ *   directory structure within a base directory that changes name with every 
+ *   build. This helps with development because it counters browsers that cache
+ *   Javascript files agressively and fail to check datestamps.
+ *   
+ *   There is also a complication due to two dependencies not being in
+ *   Maven Central.
+ *   
+ **/
+
+
+/**
+ *  NOTE. If you run gradle from within NetBeans you may see a number of
+ *  warning messages. This is because NetBeans adds unwanted tasks to the
+ *  project before running gradle. The offending task is 'explodedWar'.
+ *  If you don't like these warnings run gradle from the command line instead.
+**/
+
+
+/* This class is used to auto edit refs to Javascript in JSP and HTML. */
+import org.apache.tools.ant.filters.ReplaceTokens
+
+
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'war'
 apply plugin: 'maven-publish'
 
-import org.apache.tools.ant.filters.ReplaceTokens
+/**
+ * Setting values for these two standard variables
+ **/
+description = 'LBU-LTI-Tools'
+group = 'uk.ac.leedsbeckett'
 
+/** A custom defined variable which changes on every build **/
+def buildTimestamp      = Long.toHexString( new Date().getTime() )
+
+/**
+ * These new variables relate to the process of assembling files into 
+ * two intermediate directories which will later be joined together
+ * into the war file.
+ **/
 def buildWebappStatic   = project.buildDir.toString() + '/webappstatic'
 def buildWebappDynamic  = project.buildDir.toString() + '/webappdynamic'
-def buildTimestamp      = Long.toHexString( new Date().getTime() )
 def buildJavascriptDir  = buildWebappDynamic + '/javascript/' + buildTimestamp
 def buildJavascriptGen  = buildJavascriptDir + '/generated'
 
+/**
+ * This is here because the ToolApi dependency may be a snapshot version.
+ * Changing the resolution strategy means the ToolApi will be updated even
+ * when the snapshot version hasn't changed.
+ **/
 configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
+/** More detailed warnings from compiler. **/
 compileJava {
     options.compilerArgs << '-Xlint:unchecked' 
 }
 
+/** Make sure code runs on Java 11 even though compiler is more recent. **/
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(11))
     }
 }
 
+
+/** Custom tasks for building webapp. **/
+
+/** 
+ * Copy source webapp to a holding directory, filtering out the files
+ * that will need processing (HTML, JSP) or relocating (JS).
+ **/
 task staticWebappMove( type: Copy ) {
   from 'src/main/webapp'
   into buildWebappStatic
@@ -34,7 +86,10 @@ task staticWebappMove( type: Copy ) {
   includeEmptyDirs = false
 }
 
-
+/**
+ * Relocate source javascript into the build specific directory.
+ * (But delete the entire dynamic directory first.)
+ **/
 task moveJavascript( type: Copy ) {
   from 'src/main/webapp/javascript'
   into buildJavascriptDir
@@ -44,6 +99,11 @@ task moveJavascript( type: Copy ) {
   }
 }
 
+/**
+ * Prepare the files that need to point at Javascript. Start by calling the
+ * move javascript task, which itself deletes the whole build directory structure.
+ * Then source JSP and HTML is run through filter to fix links to scripts.
+ **/
 task processPages( type: Copy ) {
   dependsOn moveJavascript
   from 'src/main/webapp'
@@ -54,24 +114,44 @@ task processPages( type: Copy ) {
   filter( ReplaceTokens, tokens: [ "BUILDTIMESTAMP" : buildTimestamp ] )
 }
 
-
+/**
+ * Build javascript libraries that will help programmers access the WebSocket
+ * endpoints on the server from the web pages. These will be placed into a
+ * subfolder of the webapp.
+*/
 task generateJavascript( type: JavaExec ) {
-  dependsOn processPages
+  dependsOn processPages, compileJava
   classpath = sourceSets.main.runtimeClasspath
   mainClass = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
   args 'uk.ac.leedsbeckett', buildJavascriptGen
 }
 
 
-
+/**
+  *  The standard war task (provided by the war plugin) is customised
+  *  because we build the webapp files differently. There are two 'dependsOn'.
+  *  One processes webapp source files that don't need to be edited and the
+  *  other is a chain of dependent tasks that process webapp files that need
+  *  to be relocated, filtered or generated.
+  *  
+  *  The main source of web files is changed from the normal source folder
+  *  to the static directory containing a subset of files. Then, the directory
+  *  containing the processed web files is added with a 'from' statement.
+  */
 war {
   dependsOn generateJavascript, staticWebappMove
   webAppDirectory = file( buildWebappStatic )
   from buildWebappDynamic
 }
 
-description = 'LBU-LTI-Tools'
-    group = 'uk.ac.leedsbeckett'
+/**
+ * Maven central is where all 3rd party libraries come from.
+ * Maven local will be used for snapshot builds of our own libraries.
+ * Non-snapshot versions of our own libraries will be on Github which
+ * means authentication is required. The builders own credentials need
+ * to be defined in the builders own personal gradle configuration. E.g.
+ * by setting variables in ~/.gradle/gradle.properties
+**/
 repositories {
     mavenCentral()
     mavenLocal()
@@ -92,37 +172,45 @@ repositories {
 }
 
 dependencies {
-    // providedCompile 'javax:javaee-web-api:7.0'
+    // There are two dependencies from leedsbeckett - the basic LTI library
+    // and the toolapi library.
+    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.22'
+    
+    // If using a snapshot of toolapi, set changing to true otherwise set it to 
+    // false. This makes it possible to rebuild toolapi repeatedly with the
+    // same version no. and publish to local repo. This project will refetch it 
+    // from local maven repository every time. For
+    // non-snapshot versions, the build will be speeded up by fetching
+    // the library from remote repo. only if an official new version is referenced.
+    implementation( 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.8' )
+    { changing = false }
+  
     providedCompile 'javax.servlet:javax.servlet-api:4.0.0'
     providedCompile 'javax.websocket:javax.websocket-api:1.1'
-
     implementation 'commons-io:commons-io:2.11.0'
     implementation 'org.apache.commons:commons-text:1.9'
     // implementation 'org.apache.httpcomponents.core5:httpcore5:5.1.2'
     implementation 'javax.cache:cache-api:1.1.1'
     implementation 'org.ehcache:ehcache:3.10.0'
-
     // For logging from ehcache
     implementation 'ch.qos.logback:logback-classic:1.2.11'
-
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.13.0'
-    
     implementation 'jstl:jstl:1.2'
-    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.22'
-    //implementation 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.7'
-    implementation changing: true, group: 'uk.ac.leedsbeckett', name: 'lbu-lti-toolapi', version: '0.0.8-SNAPSHOT'
-
     implementation 'org.reflections:reflections:0.10.2'
-
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2',
-            // Uncomment the next line if you want to use RSASSA-PSS (PS256, PS384, PS512) algorithms:
-            'org.bouncycastle:bcprov-jdk15on:1.60',
-            'io.jsonwebtoken:jjwt-jackson:0.11.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
+    // This line enables use of RSASSA-PSS (PS256, PS384, PS512) algorithms:
+    runtimeOnly 'org.bouncycastle:bcprov-jdk15on:1.60'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'
 
     testImplementation     'junit:junit:4.13'
 }
 
+
+/**
+ *  Set up to publish into github. Requires credentials to be set in builder's
+ *  own gradle configuration.
+**/
 publishing {
   publications {
     mavenWeb(MavenPublication) {

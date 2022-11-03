@@ -27,6 +27,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatu
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -36,6 +37,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -538,7 +541,7 @@ public class PgaEndpoint extends ToolEndpoint
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
     logger.log( 
             Level.INFO, 
-            "handleChangeDatum() {0}", 
+            "handleClearEndorsements() {0}", 
             new Object[ ]{ id.getId() } );
     
     if ( !pgaState.isAllowedToManage() )
@@ -562,6 +565,110 @@ public class PgaEndpoint extends ToolEndpoint
             new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
   }
 
+  /**
+   * The user wants a string containing the resource's complete data set for
+   * export.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
+   */
+  @EndpointMessageHandler()
+  public void handleGetExport( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to export all data.", message.getId() );
+    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupForm form = store.getForm( resource.getFormId() );
+    HashMap<String,String>    memberscore = new HashMap<>();
+    HashMap<String,String>  memberendorse = new HashMap<>();
+
+    StringBuilder sb = new StringBuilder();
+    sb.append( "Group\tName\tScore\tEndorsed\tGroupCount\tGroupTotal\n" );
+    
+    for ( String gid : resource.groupIdsInOrder )
+    {
+      Group g = resource.getGroupById( gid );
+      PeerGroupDataKey dk = new PeerGroupDataKey( resource.getKey(), gid );
+      PeerGroupData data = store.getData( dk, false );
+      int groupcount=0;
+      int grouptotal=0;
+      boolean groupcomplete=true;
+      for ( Member m : g.getMembers() )
+      {
+        groupcount++;
+        ParticipantData pdata=null;
+        if ( data != null )
+          pdata = data.getParticipantData().get( m.getLtiId() );
+        if ( pdata == null )
+        {
+          memberscore.put( m.getLtiId(), "\"None\"" );
+          memberendorse.put( m.getLtiId(), "\"No\"" );
+          groupcomplete=false;
+          continue;
+        }
+        
+        int total=0;
+        boolean complete=true;
+        for ( Field field : form.getFields().values() )
+        {
+          ParticipantDatum datum = pdata.getParticipantData().get( field.getId() );
+          if ( datum != null && datum.isValid() )
+            total += Integer.parseInt( datum.getValue() );
+          else
+            complete = false;
+        }
+        if ( complete )
+        {
+          memberscore.put( m.getLtiId(), Integer.toString( total ) );
+          grouptotal += total;
+        }
+        else
+        {
+          memberscore.put( m.getLtiId(), "\"Incomplete\"" );
+          groupcomplete = false;
+        }
+        
+
+        String endorse;
+        if ( pdata.getEndorsedDate() != null )
+          endorse = "\"Yes\"";
+        else if ( pdata.getManagerEndorsedDate() != null )
+          endorse = "\"Override\"";
+        else
+          endorse = "\"No\"";
+        memberendorse.put( m.getLtiId(), endorse );        
+      }
+      
+      for ( Member m : g.getMembers() )
+      {
+        String score = memberscore.get( m.getLtiId() );
+        if ( score == null ) score = "";
+        String endorse = memberendorse.get( m.getLtiId() );
+        if ( endorse == null ) endorse = "";
+        sb.append( "\"" );
+        sb.append( g.getTitle() );
+        sb.append( "\"\t\"" );
+        sb.append( m.getName() );
+        sb.append( "\"\t" );
+        sb.append( score );
+        sb.append( "\t" );
+        sb.append( endorse );
+        sb.append( "\t" );
+        sb.append( groupcount );
+        sb.append( "\t" );
+        if ( groupcomplete )
+          sb.append( grouptotal );
+        else
+          sb.append( "\"incomplete\"" );
+        sb.append( "\n" );        
+      }
+    }
+        
+    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Export, sb.toString() ) );
+  }
+  
   /**
    * This gets called when a handler throws a HandlerAlertException and decides
    * how to alert the user.

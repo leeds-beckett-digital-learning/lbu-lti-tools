@@ -140,6 +140,28 @@ const gendata =
       </div>
     </div>
 
+    <div id="exportdialog" class="dialog">
+      <div class="dialogcontent">
+        <h3>Export Data</h3>
+        <p><button id="exportdialogCloseButtonTop" value="Close">Close</button></p>
+        <p>The data here is formatted as tab delimited data. It may not look 
+          pretty here but is suitable for transfer to most spreadsheet software.
+          Select all the text in the text area below and copy to the clipboard.
+          Then go to a blank sheet in your preferred spreadsheet software,
+          select the top left cell and paste. Your spreadsheet may instantly
+          arrange the data into columns or you may need to take further steps
+          to indicate how the data should be parsed.</p>
+        <p>In a typical web browser you can copy to the clipboard this way:</p>
+        <ol>
+          <li>Click on the text box.</li>
+          <li>Type ctrl-A</li>
+          <li>Type ctrl-C</li>
+        </ol>
+        <textarea id="exporttextarea" cols="70" rows="20" disabled=""></textarea>
+        <p><button id="exportdialogCloseButtonBottom" value="Close">Close</button></p>
+      </div>
+    </div>
+
     <div id="debugdialog" class="dialog">
       <div class="dialogcontent">
         <h3>Debug Information</h3>
@@ -193,6 +215,7 @@ const gendata =
             </thead>
             <tbody id="overviewtablebody"></tbody>
           </table>
+          <p><button id="exportButton">Export</button></p>
         </c:if>
           
       </c:when>

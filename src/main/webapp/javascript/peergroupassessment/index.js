@@ -80,6 +80,9 @@ function init()
   {
     elements.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
     elements.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
+    elements.exportdialogCloseButtonTop        .addEventListener( 'click', () => closeDialog('exportdialog')    );
+    elements.exportdialogCloseButtonBottom     .addEventListener( 'click', () => closeDialog('exportdialog')    );
+    elements.exportButton                      .addEventListener( 'click', () => getExport()                    );
   }
   
   elements.debugdialogCloseButtonTop     .addEventListener( 'click', () => closeDialog('debugdialog')       );
@@ -156,6 +159,13 @@ function init()
     handleDataList( message )
     {
       updateOverviewData( message.payload );
+    },
+    
+    handleExport( message )
+    {
+      console.log( "handleExport" );
+      console.log( message.payload );
+      elements.exporttextarea.value = message.payload;
     }
   
   };
@@ -671,5 +681,11 @@ function addMembership( gid )
   toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
 }
 
+function getExport()
+{
+  elements.exporttextarea.innerText = "Waiting for data...";
+  toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
+  openDialog( 'exportdialog' );  
+}
 
 init();

@@ -60,7 +60,12 @@ public enum PgaServerMessageName implements ToolMessageName
   /**
    * A list of data objects for multiple groups.
    */
-  DataList(           "DataList",           PgaDataList.class       );
+  DataList(           "DataList",           PgaDataList.class       ),
+  
+  /**
+   * A list of data objects for multiple groups.
+   */
+  Export(             "Export",             String.class       );
   
   /**
    * Each constant has a name which can be used in encoded messages passing

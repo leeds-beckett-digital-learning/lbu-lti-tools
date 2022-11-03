@@ -21,6 +21,8 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKe
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 
@@ -68,6 +70,19 @@ public class StoreCluster
   public PeerGroupData getData( PeerGroupDataKey key, boolean create )
   {
     return dataStore.get( key, create );
+  }
+
+  public PgaDataList getAllData( PeerGroupResource resource )
+  {
+    PgaDataList list = new PgaDataList();
+    for ( String gid : resource.groupIdsInOrder )
+    {
+      PeerGroupDataKey key = new PeerGroupDataKey( resource.getKey(), gid );
+      PeerGroupData data = dataStore.get( key, false );
+      if ( data != null )
+        list.add( data );
+    }
+    return list;
   }
 
   public void updateData( PeerGroupData d ) throws IOException

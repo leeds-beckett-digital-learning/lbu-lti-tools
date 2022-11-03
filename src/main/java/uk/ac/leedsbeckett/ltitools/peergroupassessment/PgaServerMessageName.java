@@ -15,9 +15,9 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeGroup;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaFormAndData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
@@ -49,13 +49,18 @@ public enum PgaServerMessageName implements ToolMessageName
   /**
    * Message contains the PGA resource and the resource's selected form.
    */
-  FormAndData(        "FormAndData",        PgaFormAndData.class    ),
-  
+  Form(               "Form",               PeerGroupForm.class    ),
+    
   /**
    * Message contains data from participants relating to a specific
    * group.
    */
-  Data(               "Data",               PeerGroupData.class     );
+  Data(               "Data",               PeerGroupData.class     ),
+  
+  /**
+   * A list of data objects for multiple groups.
+   */
+  DataList(           "DataList",           PgaDataList.class       );
   
   /**
    * Each constant has a name which can be used in encoded messages passing

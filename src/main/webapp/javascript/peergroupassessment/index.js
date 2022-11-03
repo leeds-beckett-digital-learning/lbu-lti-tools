@@ -110,6 +110,11 @@ function init()
       resource = message.payload;
       updateResource( resource.properties );
       updateGroups();
+      if ( dyndata.manager )
+      {
+        updateOverview();
+        toolsocket.sendMessage( new peergroupassessment.GetAllDataMessage() );
+      }
     },
     
     handleResourceProperties( message )
@@ -126,16 +131,12 @@ function init()
       }
     },
     
-    handleFormAndData( message )
+    handleForm( message )
     {
       formuptodate = false;
-      form = message.payload.form;
-      if ( message.payload.data.key.groupId === selectedgroupid )
-        data = message.payload.data;
+      form = message.payload;
       console.log( form );
-      console.log( data );
       updateForm();      
-      updateFormData();      
     },
     
     handleData( message )
@@ -148,7 +149,15 @@ function init()
           updateForm();
         updateFormData();
       }      
+      if ( dyndata.manager )
+        updateOverviewDataGroup( message.payload );
+    },
+
+    handleDataList( message )
+    {
+      updateOverviewData( message.payload );
     }
+  
   };
   
   toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
@@ -260,7 +269,7 @@ function updateGroup( g )
   }
   html += "</td>\n";
   html += "<td>";
-  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) )
+  if ( dyndata.participant && resource.properties.stage === "JOIN" && !isMemberOf(g) )
     html += "<button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button>";
   html += "</td>";
 
@@ -280,7 +289,7 @@ function updateGroup( g )
     }
             );
   }
-  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) )  
+  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dyndata.participant )  
     document.getElementById( "groupJoinButton"   + g.id ).addEventListener( 'click', () => addMembership( g.id ) );
 }
 
@@ -469,6 +478,104 @@ function updateFormData()
 }
 
 
+function updateOverview()
+{
+  console.log( "updateOverview" );
+  elements.overviewtablebody.innerHTML = '';
+  for ( const gid of resource.groupIdsInOrder )
+    updateOverviewGroup( resource.groupsById[gid] );
+}
+
+function updateOverviewGroup( g )
+{
+  console.log( "updateOverview group " + g.title );
+  for ( let mid in g.membersbyid )
+  {
+    let m = g.membersbyid[mid];
+    console.log( "updateOverview member " );
+    console.log( m );
+    let tr  = document.createElement( "tr" );
+    let td = [];
+    for ( let i=0; i<6; i++ )
+    {
+      td[i] = document.createElement( "td" );
+      tr.append( td[i] );
+    }
+    td[0].innerText = g.title;
+    td[1].innerText = m.name;
+    for ( let i=2; i<6; i++ )
+      td[i].innerText = '?';
+    td[2].id = "overviewScore_"    + mid;
+    td[3].id = "overviewEndorsed_" + mid;
+    td[4].id = "overviewCount_"    + mid;
+    td[5].id = "overviewTotal_"    + mid;
+    elements.overviewtablebody.append( tr );
+  }
+}
+
+function updateOverviewData( datalist )
+{  
+  console.log( "updateOverviewData" );
+  console.log( datalist );
+  for ( const d of datalist )
+    updateOverviewDataGroup( d );
+}
+
+function updateOverviewDataGroup( d )
+{  
+  console.log( "updateOverviewDataGroup" );
+  console.log( d );
+  let groupcount=0;
+  let grouptotal=0;
+  let groupcomplete=true;
+  
+  for ( const mid in d.participantData )
+  {
+    groupcount++;
+    console.log( "mid = " + mid );
+    let memberdata = d.participantData[mid];
+    console.log( "memberdata = " + memberdata );
+    console.log( memberdata );
+    
+    let complete=true;
+    let total = 0;
+    for ( let i=0; i<form.fieldIds.length; i++ )
+    {
+      let fieldid = form.fieldIds[i];
+      let datum = memberdata.participantData[fieldid];
+      console.log( datum );
+      if ( datum && datum.valid )
+        total += parseInt( datum.value );
+      else
+        complete = false;
+    }
+    if ( complete )
+      grouptotal += total;
+    else
+      groupcomplete = false;
+    let td = document.getElementById( "overviewScore_" + mid );
+    if ( td ) td.innerText = complete ? total : "incomplete";
+    
+    td = document.getElementById( "overviewEndorsed_" + mid );
+    if ( td )
+    {
+      if ( memberdata.endorsedDate )
+        td.innerText = "Yes";
+      else if ( memberdata.managerEndorsedDate )
+        td.innerText = "Override";
+      else
+        td.innerText = "No";
+    }
+  }
+  
+  for ( const mid in d.participantData )
+  {
+    let td = document.getElementById( "overviewCount_" + mid );
+    td.innerText = groupcount;
+    td = document.getElementById( "overviewTotal_" + mid );
+    td.innerText = groupcomplete?grouptotal:'incomplete';
+  }
+}
 
 function openDialog( id )
 {
@@ -502,9 +609,10 @@ function openGroupEditDialog( gid )
 function openDataEntryDialog( gid )
 {
   selectedgroupid = gid;
-  toolsocket.sendMessage( new peergroupassessment.GetFormAndDataMessage( gid ) );
-      
   clearForm();
+  updateForm();
+  toolsocket.sendMessage( new peergroupassessment.GetDataMessage( gid ) );
+      
   openDialog( 'dataentry' );
 }
 

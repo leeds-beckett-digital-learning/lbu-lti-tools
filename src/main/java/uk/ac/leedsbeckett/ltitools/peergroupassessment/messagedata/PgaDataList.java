@@ -15,33 +15,13 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata;
 
-import java.io.Serializable;
+import java.util.ArrayList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 
 /**
  *
  * @author maber01
  */
-public class PgaFormAndData implements Serializable
+public class PgaDataList extends ArrayList<PeerGroupData>
 {
-  final PeerGroupForm form;
-  final PeerGroupData data;
-
-  public PgaFormAndData( PeerGroupForm form, PeerGroupData data )
-  {
-    this.form = form;
-    this.data = data;
-  }
-
-  public PeerGroupForm getForm()
-  {
-    return form;
-  }
-
-  public PeerGroupData getData()
-  {
-    return data;
-  }
-  
 }

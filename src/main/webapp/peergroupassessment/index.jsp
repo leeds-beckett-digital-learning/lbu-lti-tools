@@ -177,6 +177,24 @@ const gendata =
         <h4>Unplaced Students</h4>
         <div id="unattachedParticipants"></div>
           
+        <c:if test="${support.allowedToManage}">
+          <h4>Overview of Students</h4>
+          <p>A tables of all students and their scores.</p>
+          <table id="overviewtable">
+            <thead>
+              <tr>
+                <th>Group</th>
+                <th>Name</th>
+                <th>Score</th>
+                <th>Endorsed</th>
+                <th>Group<br />Count</th>
+                <th>Group<br />Total</th>
+              </tr>
+            </thead>
+            <tbody id="overviewtablebody"></tbody>
+          </table>
+        </c:if>
+          
       </c:when>
       <c:otherwise>
         <p>Your role set by system that launched this tool means that you

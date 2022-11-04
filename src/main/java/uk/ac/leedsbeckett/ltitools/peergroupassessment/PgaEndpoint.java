@@ -577,9 +577,13 @@ public class PgaEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleGetExport( Session session, ToolMessage message )
           throws IOException, HandlerAlertException
-  {    if ( !pgaState.isAllowedToManage() )
+  {
+    if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to export all data.", message.getId() );
     PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    if ( resource.getStage() != Stage.RESULTS )
+      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
+    
     PeerGroupForm form = store.getForm( resource.getFormId() );
     HashMap<String,String>    memberscore = new HashMap<>();
     HashMap<String,String>  memberendorse = new HashMap<>();

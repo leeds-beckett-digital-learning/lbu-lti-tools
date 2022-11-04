@@ -66,7 +66,8 @@ const gendata =
   myname:       '${support.personName}',
   manager:      ${support.allowedToManage},
   participant:  ${support.allowedToParticipate},
-  wsuri:        '${support.websocketUri}'
+  wsuri:        '${support.websocketUri}',
+  debugging:    ${support.debugging}
 };
         
     </script>

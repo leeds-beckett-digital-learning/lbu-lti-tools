@@ -683,6 +683,11 @@ function addMembership( gid )
 
 function getExport()
 {
+  if ( resource.properties.stage !== "RESULTS" )
+  {
+    alert( "Result export is only available in the final stage when results are frozen." );
+    return;
+  }
   elements.exporttextarea.innerText = "Waiting for data...";
   toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
   openDialog( 'exportdialog' );  

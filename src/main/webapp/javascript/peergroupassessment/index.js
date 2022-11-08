@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import arialib from "../common/aria.js";
 import peergroupassessment from "../generated/peergroupassessment.js";
 
 let dyndata = gendata;
@@ -92,6 +93,18 @@ function init()
     elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
   if ( elements.debugdialogButton )
     elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
+
+  // For trial Aria dialog boxes...
+  elements.opendialogbutton      .addEventListener( 'click', () => arialib.openDialog('dialog1', elements.opendialogbutton)                     );
+  elements.dialog1verifybutton   .addEventListener( 'click', () => arialib.openDialog('dialog2', elements.dialog1verifybutton, 'dialog2_para1') );
+  elements.dialog1addbutton      .addEventListener( 'click', () => arialib.replaceDialog('dialog3', undefined, 'dialog3_close_btn')             );
+  elements.dialog1cancelbutton   .addEventListener( 'click', () => arialib.closeDialog( elements.dialog1cancelbutton )                          );
+  elements.dialog2helplink       .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helplink)         );
+  elements.dialog2helpbutton     .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helpbutton)       );
+  elements.dialog2closebutton    .addEventListener( 'click', () => arialib.closeDialog( elements.dialog2closebutton )              );
+  elements.dialog3profilelink    .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helplink)         );
+  elements.dialog3okbutton       .addEventListener( 'click', () => arialib.closeDialog( elements.dialog3okbutton )                 );
+  elements.dialog4closebutton    .addEventListener( 'click', () => arialib.closeDialog( elements.dialog4closebutton )              );
   
   console.log( dyndata.wsuri );
   

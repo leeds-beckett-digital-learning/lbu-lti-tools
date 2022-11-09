@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import finder from "../common/domutil.js";
 import arialib from "../common/aria.js";
 import peergroupassessment from "../generated/peergroupassessment.js";
 
@@ -23,8 +24,6 @@ let toolsocket;
 
 let loading;
 
-
-let elements = {};
 
 let resource = 
         {
@@ -42,69 +41,37 @@ let formuptodate = false;
 
 function init()
 {
-  let list = document.body.getElementsByTagName("*");
-  for ( let i=0; i<list.length; i++ )
-  {
-    let e = list[i];
-    if ( e.id )
-    {
-      console.log( "Found element with ID " + e.id );
-      elements[e.id] = e;
-    }
-  }
-  console.log( elements );
-
   if ( dyndata.manager )
-    elements.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
+    finder.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
     
   if ( dyndata.manager )
-  {
-    elements.editpropsSaveButtonTop      .addEventListener( 'click', () => saveEditProps()                );
-    elements.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
-  }
-  elements.editpropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editprops')       );
-  elements.editpropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editprops')       );
+    finder.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
+  finder.editpropsCloseButtonBottom    .addEventListener( 'click', () => arialib.closeDialog( finder.editpropsCloseButtonBottom )       );
   
   if ( dyndata.manager )
-  {
-    elements.editgrouppropsSaveButtonTop      .addEventListener( 'click', () => saveEditGroupProps()                );
-    elements.editgrouppropsSaveButtonBottom   .addEventListener( 'click', () => saveEditGroupProps()                );
-  }
-  elements.editgrouppropsCloseButtonTop     .addEventListener( 'click', () => closeDialog('editgroupProps')       );
-  elements.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => closeDialog('editgroupProps')       );
+    finder.editgrouppropsSaveButtonBottom .addEventListener( 'click', () => saveEditGroupProps()                );
+  finder.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => arialib.closeDialog(finder.editgrouppropsCloseButtonBottom)       );
   
-  elements.dataentryCloseButtonTop           .addEventListener( 'click', () => closeDialog('dataentry')       );
-  elements.dataentryCloseButtonBottom        .addEventListener( 'click', () => closeDialog('dataentry')       );
+  finder.dataentryCloseButtonTop           .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonTop)       );
+  finder.dataentryCloseButtonBottom        .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonBottom)       );
   if ( dyndata.participant )
-    elements.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
+    finder.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
   if ( dyndata.manager )
   {
-    elements.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
-    elements.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
-    elements.exportdialogCloseButtonTop        .addEventListener( 'click', () => closeDialog('exportdialog')    );
-    elements.exportdialogCloseButtonBottom     .addEventListener( 'click', () => closeDialog('exportdialog')    );
-    elements.exportButton                      .addEventListener( 'click', () => getExport()                    );
+    finder.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
+    finder.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
+    finder.exportdialogCloseButtonTop        .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonTop)    );
+    finder.exportdialogCloseButtonBottom     .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonBottom)    );
+    finder.exportButton                      .addEventListener( 'click', () => getExport(finder.exportButton)                    );
   }
   
-  elements.debugdialogCloseButtonTop     .addEventListener( 'click', () => closeDialog('debugdialog')       );
-  elements.debugdialogCloseButtonBottom  .addEventListener( 'click', () => closeDialog('debugdialog')       );
+  finder.debugdialogCloseButtonTop     .addEventListener( 'click', () => arialib.closeDialog(finder.debugdialogCloseButtonTop)       );
+  finder.debugdialogCloseButtonBottom  .addEventListener( 'click', () => arialib.closeDialog(finder.debugdialogCloseButtonBottom)       );
 
-  if ( elements.editpropertiesButton )
-    elements.editpropertiesButton.addEventListener( 'click', () => openDialog( 'editprops' )       );
-  if ( elements.debugdialogButton )
-    elements.debugdialogButton   .addEventListener( 'click', () => openDialog( 'debugdialog' )       );
-
-  // For trial Aria dialog boxes...
-  elements.opendialogbutton      .addEventListener( 'click', () => arialib.openDialog('dialog1', elements.opendialogbutton)                     );
-  elements.dialog1verifybutton   .addEventListener( 'click', () => arialib.openDialog('dialog2', elements.dialog1verifybutton, 'dialog2_para1') );
-  elements.dialog1addbutton      .addEventListener( 'click', () => arialib.replaceDialog('dialog3', undefined, 'dialog3_close_btn')             );
-  elements.dialog1cancelbutton   .addEventListener( 'click', () => arialib.closeDialog( elements.dialog1cancelbutton )                          );
-  elements.dialog2helplink       .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helplink)         );
-  elements.dialog2helpbutton     .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helpbutton)       );
-  elements.dialog2closebutton    .addEventListener( 'click', () => arialib.closeDialog( elements.dialog2closebutton )              );
-  elements.dialog3profilelink    .addEventListener( 'click', () => arialib.openDialog('dialog4', elements.dialog2helplink)         );
-  elements.dialog3okbutton       .addEventListener( 'click', () => arialib.closeDialog( elements.dialog3okbutton )                 );
-  elements.dialog4closebutton    .addEventListener( 'click', () => arialib.closeDialog( elements.dialog4closebutton )              );
+  if ( finder.editpropertiesButton )
+    finder.editpropertiesButton.addEventListener( 'click', () => arialib.openDialog( 'editprops', finder.editpropertiesButton ) );
+  if ( finder.debugdialogButton )
+    finder.debugdialogButton   .addEventListener( 'click', () => openDebugDialog( finder.debugdialogButton )       );
   
   console.log( dyndata.wsuri );
   
@@ -178,7 +145,7 @@ function init()
     {
       console.log( "handleExport" );
       console.log( message.payload );
-      elements.exporttextarea.value = message.payload;
+      finder.exporttextarea.value = message.payload;
     }
   
   };
@@ -193,33 +160,33 @@ function updateResource( properties )
   console.log( "title       = " + properties.title       );
   console.log( "description = " + properties.description );
 
-  elements.mainTitle.innerHTML        = properties.title;
-  elements.editpropsTitle.value       = properties.title;
-  elements.mainDescription.innerHTML  = properties.description;
-  elements.editpropsDescription.value = properties.description;
+  finder.mainTitle.innerHTML        = properties.title;
+  finder.editpropsTitle.value       = properties.title;
+  finder.mainDescription.innerHTML  = properties.description;
+  finder.editpropsDescription.value = properties.description;
   switch ( properties.stage )
   {
     case "SETUP":
-      elements.mainStage.innerHTML = "Setting Up Stage";
+      finder.mainStage.innerHTML = "Setting Up Stage";
       break;
     case "JOIN":
-      elements.mainStage.innerHTML = "Group Members Joining";
+      finder.mainStage.innerHTML = "Group Members Joining";
       break;
     case "DATAENTRY":
-      elements.mainStage.innerHTML = "Group Members Entering Data";
+      finder.mainStage.innerHTML = "Group Members Entering Data";
       break;
     case "RESULTS":
-      elements.mainStage.innerHTML = "Results Frozen";
+      finder.mainStage.innerHTML = "Results Frozen";
       break;
   }
-  elements.editpropsStage.value = properties.stage;
+  finder.editpropsStage.value = properties.stage;
 }
 
 function updateGroups()
 {
   let html = "\n";
-  elements.grouptablebody.innerHTML = html;
-  elements.unattachedParticipants.innerHTML = "";
+  finder.grouptablebody.innerHTML = html;
+  finder.unattachedParticipants.innerHTML = "";
   for ( const gid of resource.groupIdsInOrder )
   {
     const g = resource.groupsById[gid];
@@ -230,7 +197,7 @@ function updateGroups()
 }
 function updateUnattachedGroup()
 {
-  elements.unattachedParticipants.innerHTML = "";
+  finder.unattachedParticipants.innerHTML = "";
   const set = resource.groupOfUnattached.membersbyid;
   let html = "";
   for ( let id in set )
@@ -238,7 +205,7 @@ function updateUnattachedGroup()
     html += set[id].name;
     html += "<br>";
   }
-  elements.unattachedParticipants.innerHTML = html;
+  finder.unattachedParticipants.innerHTML = html;
 }
 
 function isMemberOf( g )
@@ -255,12 +222,12 @@ function updateGroup( g )
   }
   
   resource.groupsById[g.id] = g;
-  let row = document.getElementById( "group-" + g.id );
+  let row = finder[ "group-" + g.id ];
   if ( !row )
   {
     row = document.createElement( "tr" );
     row.id = "group-" + g.id;
-    elements.grouptablebody.appendChild( row );
+    finder.grouptablebody.appendChild( row );
   }
 
   let html = "";
@@ -300,20 +267,23 @@ function updateGroup( g )
   
   if ( dyndata.manager )
   {
-    document.getElementById( "groupDeleteButton" + g.id ).addEventListener( 'click', () => alert( g.id ) );
-    document.getElementById( "groupEditButton"   + g.id ).addEventListener( 'click', () => openGroupEditDialog( g.id ) );
+    var db = finder[ "groupDeleteButton" + g.id ];
+    db.addEventListener( 'click', () => alert( 'Not yet implemented.' ) );
+    var de = finder[ "groupEditButton"   + g.id ];
+    de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
   }
   if ( dyndata.manager || isMemberOf( g ) )
   {
-    document.getElementById( "groupViewLink"   + g.id ).addEventListener( 'click', ( e ) =>     
+    var link = finder[ "groupViewLink"   + g.id ];
+    link.addEventListener( 'click', ( e ) =>     
     {
       e.preventDefault();
-      openDataEntryDialog( g.id ) ;
+      openDataEntryDialog( link, g.id ) ;
     }
             );
   }
   if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dyndata.participant )  
-    document.getElementById( "groupJoinButton"   + g.id ).addEventListener( 'click', () => addMembership( g.id ) );
+    finder[ "groupJoinButton"   + g.id ].addEventListener( 'click', () => addMembership( g.id ) );
 }
 
 function clearForm()
@@ -367,7 +337,7 @@ function updateForm()
     let th = document.createElement( "th" );
     th.className = "dataentry-formcell";
     th.innerHTML = group.membersbyid[m].name;
-    elements.dataentryheadrow.append( th );
+    finder.dataentryheadrow.append( th );
   }
   
   for ( let i=0; i<form.fieldIds.length; i++ )
@@ -393,7 +363,7 @@ function updateForm()
       td.append( input );
       addFormInputListener( input, groupid, field, group.membersbyid[m] );      
     }
-    elements.dataentrytablebody.append( row );
+    finder.dataentrytablebody.append( row );
   }
   
   // Row at bottom with endorsement buttons...
@@ -428,8 +398,8 @@ function updateForm()
     tdm.append( p );
     managerendorserow.append( tdm );  
   }
-  elements.dataentrytablebody.append( endorserow );
-  elements.dataentrytablebody.append( managerendorserow );  
+  finder.dataentrytablebody.append( endorserow );
+  finder.dataentrytablebody.append( managerendorserow );  
   formuptodate = true;
 }
 
@@ -462,7 +432,7 @@ function updateFormData()
       if ( data ) memberdata = data.participantData[m];
       if ( memberdata ) memberdatum = memberdata.participantData[fieldid];
       let inputid = "dataentrycell_" + fieldid + "_" + groupid + "_" + m;
-      let input = document.getElementById( inputid );
+      let input = finder[ inputid ];
       if ( !input )
         continue;      
       input.disabled = inputdisabled;
@@ -485,12 +455,12 @@ function updateFormData()
     let p;
     let memberdata = undefined;
     if ( data ) memberdata = data.participantData[m];
-    p = document.getElementById("dataentry-endorsedate-" + m);
+    p = finder["dataentry-endorsedate-" + m];
     if ( memberdata && memberdata.endorsedDate )
       p.innerHTML = memberdata.endorsedDate.replace( " ", "<br>" );
     else
       p.innerHTML = 'Not Endorsed';
-    p = document.getElementById("dataentry-managerendorsedate-" + m);
+    p = finder["dataentry-managerendorsedate-" + m];
     if ( memberdata && memberdata.managerEndorsedDate )
       p.innerHTML = memberdata.managerEndorsedDate.replace( " ", "<br>" );
     else
@@ -504,7 +474,7 @@ function updateFormData()
 function updateOverview()
 {
   console.log( "updateOverview" );
-  elements.overviewtablebody.innerHTML = '';
+  finder.overviewtablebody.innerHTML = '';
   for ( const gid of resource.groupIdsInOrder )
     updateOverviewGroup( resource.groupsById[gid] );
 }
@@ -532,7 +502,7 @@ function updateOverviewGroup( g )
     td[3].id = "overviewEndorsed_" + mid;
     td[4].id = "overviewCount_"    + mid;
     td[5].id = "overviewTotal_"    + mid;
-    elements.overviewtablebody.append( tr );
+    finder.overviewtablebody.append( tr );
   }
 }
 
@@ -576,10 +546,10 @@ function updateOverviewDataGroup( d )
       grouptotal += total;
     else
       groupcomplete = false;
-    let td = document.getElementById( "overviewScore_" + mid );
+    let td = finder[ "overviewScore_" + mid ];
     if ( td ) td.innerText = complete ? total : "incomplete";
     
-    td = document.getElementById( "overviewEndorsed_" + mid );
+    td = finder[ "overviewEndorsed_" + mid ];
     if ( td )
     {
       if ( memberdata.endorsedDate )
@@ -593,74 +563,65 @@ function updateOverviewDataGroup( d )
   
   for ( const mid in d.participantData )
   {
-    let td = document.getElementById( "overviewCount_" + mid );
+    let td = finder[ "overviewCount_" + mid ];
     td.innerText = groupcount;
-    td = document.getElementById( "overviewTotal_" + mid );
+    td = finder[ "overviewTotal_" + mid ];
     td.innerText = groupcomplete?grouptotal:'incomplete';
   }
 }
 
-function openDialog( id )
+function openGroupEditDialog( openerElement, gid )
 {
-  let dialog = document.getElementById( id );
-  if ( dialog === null )
-  {
-    alert( "Programmer error - unknown dialog id: " + id );
-    return;
-  }
-  dialog.style.display = "block";
-}
-function closeDialog( id )
-{
-  let dialog = document.getElementById( id );
-  if ( dialog === null )
-  {
-    alert( "Programmer error - unknown dialog id: " + id );
-    return;
-  }
-  dialog.style.display = "none";
-}
-
-function openGroupEditDialog( gid )
-{
-  elements.editgrouppropsId.innerHTML = gid;
   let g = resource.groupsById[gid];
-  elements.editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
-  openDialog( 'editgroupProps' );
+  arialib.openDialog( 'editgroupProps', openerElement );
+  finder.editgrouppropsId.value = gid;
+  finder.editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
 }
 
-function openDataEntryDialog( gid )
+function openDataEntryDialog( openerElement, gid )
 {
   selectedgroupid = gid;
   clearForm();
   updateForm();
   toolsocket.sendMessage( new peergroupassessment.GetDataMessage( gid ) );
       
-  openDialog( 'dataentry' );
+  arialib.openDialog( 'dataentry', openerElement );
 }
 
-function openDebugDialog()
+function getExport( openerelement )
 {
-  let pre = document.getElementById( "debugtext" );
+  if ( resource.properties.stage !== "RESULTS" )
+  {
+    alert( "Result export is only available in the final stage when results are frozen." );
+    return;
+  }
+  finder.exporttextarea.innerText = "Waiting for data...";
+  toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
+  arialib.openDialog( 'exportdialog', openerelement );  
+}
+
+function openDebugDialog( openerElement )
+{
+  let pre = finder[ "debugtext" ];
   pre.innerHTML = "testing...";  
-  openDialog( 'debugdialog' );
+  arialib.openDialog( 'debugdialog', openerElement );
 }
 
 function saveEditProps()
 {
   toolsocket.sendMessage( new peergroupassessment.SetResourcePropertiesMessage( 
-          elements.editpropsTitle.value, 
-          elements.editpropsDescription.value, 
-          elements.editpropsStage.value ) );
-  closeDialog( "editprops" );
+          finder.editpropsTitle.value, 
+          finder.editpropsDescription.value, 
+          finder.editpropsStage.value ) );
+  arialib.closeDialog( finder.editpropsSaveButtonBottom );
 }
 
 function saveEditGroupProps()
 {
   toolsocket.sendMessage( new peergroupassessment.SetGroupPropertiesMessage( 
-          elements.editgrouppropsId.innerHTML, 
-          elements.editgrouppropsTitle.value ) );
-  closeDialog( "editgroupProps" );
+          finder.editgrouppropsId.value, 
+          finder.editgrouppropsTitle.value ) );
+  arialib.closeDialog( finder.editgrouppropsSaveButtonBottom );
 }
 
 function endorseData( manager )
@@ -694,16 +655,5 @@ function addMembership( gid )
   toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
 }
 
-function getExport()
-{
-  if ( resource.properties.stage !== "RESULTS" )
-  {
-    alert( "Result export is only available in the final stage when results are frozen." );
-    return;
-  }
-  elements.exporttextarea.innerText = "Waiting for data...";
-  toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
-  openDialog( 'exportdialog' );  
-}
 
 init();

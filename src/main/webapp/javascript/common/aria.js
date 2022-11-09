@@ -7,6 +7,7 @@
 
 /*
  * Adapted into module by JRM
+ * https://www.w3.org/WAI/ARIA/apg/example-index/dialog-modal/dialog.html
  * 
  */
 
@@ -137,7 +138,7 @@ const arialib = (function () {
    *          DOM node to focus when the dialog opens. If not specified, the
    *          first focusable element in the dialog will receive focus.
    */
-  aria.Dialog = function (dialogId, focusAfterClosed, focusFirst) {
+  aria.Dialog = function (dialogId, focusAfterClosed, focusFirst, clear) {
     this.dialogNode = document.getElementById(dialogId);
     if (this.dialogNode === null) {
       throw new Error('No element found with id="' + dialogId + '".');
@@ -220,7 +221,8 @@ const arialib = (function () {
 
     this.addListeners();
     aria.OpenDialogList.push(this);
-    this.clearDialog();
+    if ( clear )
+      this.clearDialog();
     this.dialogNode.className = 'default_dialog'; // make visible
 
     if (this.focusFirst) {
@@ -445,8 +447,8 @@ const arialib = (function () {
 
 
 
-  dialogapi.openDialog = function (dialogId, focusAfterClosed, focusFirst) {
-    new aria.Dialog(dialogId, focusAfterClosed, focusFirst);
+  dialogapi.openDialog = function (dialogId, focusAfterClosed, focusFirst, clear) {
+    new aria.Dialog(dialogId, focusAfterClosed, focusFirst, clear);
   };
 
   dialogapi.closeDialog = function (closeButton) {

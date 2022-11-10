@@ -41,6 +41,12 @@ let formuptodate = false;
 
 function init()
 {
+  arialib.setDialogAlertClass( 'alertList' );
+  arialib.setBaseAlertElement( finder.toplevelalert );
+  finder.toplevelalert.role = 'alert';
+  
+  setInterval( alertUpdate, 1000 );
+  
   if ( dyndata.manager )
     finder.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
     
@@ -153,32 +159,84 @@ function init()
   toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
 }
 
+function alertUpdate()
+{
+  let e = document.querySelector( 'ul[role = "alert"]' );
+  if ( !e )
+    return;
+
+  let now = new Date().getTime();
+  let nodelist = e.querySelectorAll( 'li' );
+  let a = Array.from( nodelist );
+  for ( let i=0; i<a.length; i++ )
+  {
+    let timestamp = new Number( a[i].dataset.timestamp );
+    if ( (now - timestamp)/1000 > 10 )
+      a[i].remove();
+  }
+}
+  
+function showAlert( text )
+{  
+  let e = document.querySelector( 'ul[role = "alert"]' );
+  if ( !e )
+    return;
+  let li = document.createElement( 'li' );
+  li.dataset.timestamp = new Date().getTime();
+  li.innerText = text;
+  e.append( li );
+}
 
 function updateResource( properties )
 {
+  let stagetext="Unknown Stage";
+  switch ( properties.stage )
+  {
+    case "SETUP":
+      stagetext = "Setting Up Stage";
+      break;
+    case "JOIN":
+      stagetext = "Group Members Joining";
+      break;
+    case "DATAENTRY":
+      stagetext = "Group Members Entering Data";
+      break;
+    case "RESULTS":
+      stagetext = "Results Frozen";
+      break;
+  }
   console.log( "stage       = " + properties.stage       );
   console.log( "title       = " + properties.title       );
   console.log( "description = " + properties.description );
 
-  finder.mainTitle.innerHTML        = properties.title;
-  finder.editpropsTitle.value       = properties.title;
-  finder.mainDescription.innerHTML  = properties.description;
-  finder.editpropsDescription.value = properties.description;
-  switch ( properties.stage )
+  let message = "";
+  if ( finder.mainTitle.innerText !== properties.title )
   {
-    case "SETUP":
-      finder.mainStage.innerHTML = "Setting Up Stage";
-      break;
-    case "JOIN":
-      finder.mainStage.innerHTML = "Group Members Joining";
-      break;
-    case "DATAENTRY":
-      finder.mainStage.innerHTML = "Group Members Entering Data";
-      break;
-    case "RESULTS":
-      finder.mainStage.innerHTML = "Results Frozen";
-      break;
+    if ( finder.mainTitle.innerText )
+      showAlert( "Title changed to " + properties.title + "." );
+      //message += "Title changed. ";
+    finder.mainTitle.innerText        = properties.title;
   }
+  if ( finder.mainDescription.innerText !== properties.description )
+  {
+    if ( finder.mainDescription.innerText )
+      showAlert( "Description changed." );
+      //message += "Description changed. ";
+    finder.mainDescription.innerText  = properties.description;
+  }
+  if ( finder.mainStage.innerText !== stagetext )
+  {
+    if ( finder.mainStage.innerText )
+      showAlert( "Stage changed to " + stagetext + "." );
+    //message += "Stage changed to " + stagetext + ". ";
+    finder.mainStage.innerText = stagetext;
+  }
+  
+//  if ( message.length > 0 )
+//    showAlert( message );
+  
+  finder.editpropsTitle.value       = properties.title;
+  finder.editpropsDescription.value = properties.description;
   finder.editpropsStage.value = properties.stage;
 }
 
@@ -360,6 +418,7 @@ function updateForm()
       input.size = 5;
       input.id = inputid;
       input.disabled = true;
+      input.autocomplete = 'off';
       td.append( input );
       addFormInputListener( input, groupid, field, group.membersbyid[m] );      
     }

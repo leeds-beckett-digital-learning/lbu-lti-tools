@@ -120,6 +120,23 @@ const arialib = (function () {
     }
   };
 
+  aria.setAlertRole = function ( element, value ) {
+    if ( aria.dialogAlertClass )
+    {
+      let e = this.dialogNode.querySelector( '.' + aria.dialogAlertClass );
+      if ( e ) e.role = (value)?'alert':'';
+    }
+  };
+
+  aria.setBaseAlertRole = function ( value ) {
+    if ( aria.dialogAlertClass && aria.baseAlertElement )
+    {
+      aria.baseAlertElement.setAttribute( "role", (value)?'alert':'' );
+      if ( !value ) aria.baseAlertElement.innerText = '';
+    }
+  };
+
+
   document.addEventListener('keyup', aria.handleEscape);
 
   /**
@@ -179,6 +196,19 @@ const arialib = (function () {
     // Disable scroll on the body element
     document.body.classList.add(aria.Utils.dialogOpenClass);
 
+    // Disable/enable alert paragraphs appropriately
+    if ( aria.dialogAlertClass )
+    {
+      var nodelist = document.querySelectorAll( aria.dialogAlertClass );
+      for ( let i=0; i<nodelist.length; i++ )
+      {
+        if ( this.dialogNode.contains( nodelist[i] ) )
+          nodelist[i].role = 'alert';
+        else
+          nodelist[i].role = null;
+      }
+    }
+
     if (typeof focusAfterClosed === 'string') {
       this.focusAfterClosed = document.getElementById(focusAfterClosed);
     } else if (typeof focusAfterClosed === 'object') {
@@ -217,9 +247,15 @@ const arialib = (function () {
     // get rid of the document focus listener of the open dialog.
     if (aria.OpenDialogList.length > 0) {
       aria.getCurrentDialog().removeListeners();
+      aria.getCurrentDialog().setAlertRole( false );
+    }
+    else
+    {
+      aria.setBaseAlertRole( false );      
     }
 
     this.addListeners();
+    this.setAlertRole( true );
     aria.OpenDialogList.push(this);
     if ( clear )
       this.clearDialog();
@@ -253,6 +289,7 @@ const arialib = (function () {
   aria.Dialog.prototype.close = function () {
     aria.OpenDialogList.pop();
     this.removeListeners();
+    this.setAlertRole( false );
     aria.Utils.remove(this.preNode);
     aria.Utils.remove(this.postNode);
     this.dialogNode.className = 'hidden';
@@ -262,7 +299,9 @@ const arialib = (function () {
     // If a dialog was open underneath this one, restore its listeners.
     if (aria.OpenDialogList.length > 0) {
       aria.getCurrentDialog().addListeners();
+      aria.getCurrentDialog().setAlertRole( true );
     } else {
+      aria.setBaseAlertRole( true );      
       document.body.classList.remove(aria.Utils.dialogOpenClass);
     }
   }; // end close
@@ -294,6 +333,18 @@ const arialib = (function () {
     var focusAfterClosed = newFocusAfterClosed || this.focusAfterClosed;
     new aria.Dialog(newDialogId, focusAfterClosed, newFocusFirst);
   }; // end replace
+
+  aria.Dialog.prototype.setAlertRole = function ( value ) {
+    if ( aria.dialogAlertClass )
+    {
+      let e = this.dialogNode.querySelector( '.' + aria.dialogAlertClass );
+      if ( e )
+      {
+        e.setAttribute( "role", (value)?'alert':'' );
+        if ( !value ) e.innerText = '';
+      }
+    }
+  };
 
   aria.Dialog.prototype.addListeners = function () {
     document.addEventListener('focus', this.trapFocus, true);
@@ -445,7 +496,15 @@ const arialib = (function () {
   };
 
 
+  dialogapi.setBaseAlertElement = function( e )
+  {
+    aria.baseAlertElement = e;
+  };
 
+  dialogapi.setDialogAlertClass = function( classname )
+  {
+    aria.dialogAlertClass = classname;
+  };
 
   dialogapi.openDialog = function (dialogId, focusAfterClosed, focusFirst, clear) {
     new aria.Dialog(dialogId, focusAfterClosed, focusFirst, clear);
@@ -469,7 +528,12 @@ const arialib = (function () {
     }
   }; // end replaceDialog
 
-  
+  dialogapi.getCurrentDialog = function ( )
+  {
+    var topDialog = aria.getCurrentDialog();
+    if ( !topDialog ) return null;
+    return topDialog.dialogNode.id;
+  };
   
   
   return dialogapi;

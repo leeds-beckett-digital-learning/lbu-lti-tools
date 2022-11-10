@@ -58,7 +58,16 @@
       }
 
 
+.alertList {
+  padding: 10px;
+  border: 2px solid hsl(206deg 74% 54%);
+  border-radius: 4px;
+  background: hsl(206deg 74% 90%);
+}
 
+.alertList:empty {
+  display: none;
+}
 
       
     </style>
@@ -136,10 +145,12 @@ const gendata =
           <button id="dataentryCloseButtonTop" value="Close">Close</button>
         </div>
 
+        <ul class="alertList"></ul>
+
         <div class="dialog_form">
           <table>
             <thead>
-              <tr id="dataentryheadrow"><th></th></tr>
+              <tr id="dataentryheadrow"><th>Criterion</th></tr>
             </thead>
             <tbody id="dataentrytablebody">
             </tbody>
@@ -202,9 +213,11 @@ const gendata =
 
     <h1>Peer Group Assessment Tool</h1>
     <p class="important">${support.importantMessage}</p>
-    <h2 id="mainTitle">...loading</h2>
-    <p id="mainDescription">...loading</p>
+    <h2 id="mainTitle"></h2>
+    <p id="mainDescription"></p>
     <p class="stage"><span class="stage-label">Stage:</span> <span id="mainStage"></span></p>
+
+    <ul id="toplevelalert" class="alertList"></ul>
     
     <!--
     <p>${support.personId} - ${support.personName}</p>

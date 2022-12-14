@@ -67,6 +67,10 @@
 
 .alertList:empty {
   display: none;
+  padding: 10px;
+  border: 2px white;
+  border-radius: 4px;
+  background: white;
 }
 
       
@@ -85,7 +89,7 @@ const gendata =
 };
         
     </script>
-    <script type="module" src="../javascript/@BUILDTIMESTAMP@/peergroupassessment/index.js" defer></script>
+    <script type="module" src="../javascript/@BUILDTIMESTAMP@/peergroupassessment/index.js"></script>
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">
@@ -210,7 +214,8 @@ const gendata =
     </div>
 
 
-
+    <div id="basePage">
+      
     <h1>Peer Group Assessment Tool</h1>
     <p class="important">${support.importantMessage}</p>
     <h2 id="mainTitle"></h2>
@@ -275,5 +280,6 @@ const gendata =
       </div>
     </c:if>
         
+    </div>
   </body>
 </html>

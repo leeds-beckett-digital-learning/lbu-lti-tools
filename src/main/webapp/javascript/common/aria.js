@@ -120,22 +120,61 @@ const arialib = (function () {
     }
   };
 
-  aria.setAlertRole = function ( element, value ) {
-    if ( aria.dialogAlertClass )
+  aria.getCurrentAlertElement = function()
+  {
+    if ( !aria.dialogAlertClass ) return null;
+    let d = aria.getCurrentDialog();
+    if ( d )
+      return d.dialogNode.querySelector( "." + aria.dialogAlertClass );
+    return aria.baseAlertElement;
+  };
+
+  aria.allAlertElementsAriaOff = function ()
+  {
+    if ( !aria.dialogAlertClass ) return;
+    let nodelist = document.querySelectorAll( "." + aria.dialogAlertClass );
+    let a = Array.from( nodelist );
+    for ( let i=0; i<a.length; i++ )
+      a[i].ariaLive = 'off';
+  };
+  
+  aria.currentAlertElementAriaOn = function ()
+  {
+    if ( !aria.dialogAlertClass ) return;
+    aria.allAlertElementsAriaOff();
+    let e = aria.getCurrentAlertElement();
+    if ( e ) e.ariaLive = 'polite';
+  };
+
+  aria.addAlert = function( text )
+  {
+    let e = aria.getCurrentAlertElement();
+    if ( e )
     {
-      let e = this.dialogNode.querySelector( '.' + aria.dialogAlertClass );
-      if ( e ) e.role = (value)?'alert':'';
+      let li = document.createElement( 'li' );
+      li.dataset.timestamp = new Date().getTime();
+      li.innerText = text;
+      li.ariaAtomic = "true";
+      e.append( li );      
     }
   };
 
-  aria.setBaseAlertRole = function ( value ) {
-    if ( aria.dialogAlertClass && aria.baseAlertElement )
+  aria.updateAlerts = function()
+  {
+    let e = aria.getCurrentAlertElement();
+    if ( e )
     {
-      aria.baseAlertElement.setAttribute( "role", (value)?'alert':'' );
-      if ( !value ) aria.baseAlertElement.innerText = '';
-    }
+      let now = new Date().getTime();
+      let nodelist = e.querySelectorAll( 'li' );
+      let a = Array.from( nodelist );
+      for ( let i=0; i<a.length; i++ )
+      {
+        let timestamp = new Number( a[i].dataset.timestamp );
+        if ( (now - timestamp)/1000 > 10 )
+          a[i].remove();
+      }
+    }    
   };
-
 
   document.addEventListener('keyup', aria.handleEscape);
 
@@ -196,19 +235,6 @@ const arialib = (function () {
     // Disable scroll on the body element
     document.body.classList.add(aria.Utils.dialogOpenClass);
 
-    // Disable/enable alert paragraphs appropriately
-    if ( aria.dialogAlertClass )
-    {
-      var nodelist = document.querySelectorAll( aria.dialogAlertClass );
-      for ( let i=0; i<nodelist.length; i++ )
-      {
-        if ( this.dialogNode.contains( nodelist[i] ) )
-          nodelist[i].role = 'alert';
-        else
-          nodelist[i].role = null;
-      }
-    }
-
     if (typeof focusAfterClosed === 'string') {
       this.focusAfterClosed = document.getElementById(focusAfterClosed);
     } else if (typeof focusAfterClosed === 'object') {
@@ -245,18 +271,13 @@ const arialib = (function () {
 
     // If this modal is opening on top of one that is already open,
     // get rid of the document focus listener of the open dialog.
-    if (aria.OpenDialogList.length > 0) {
+    if (aria.OpenDialogList.length > 0)
       aria.getCurrentDialog().removeListeners();
-      aria.getCurrentDialog().setAlertRole( false );
-    }
-    else
-    {
-      aria.setBaseAlertRole( false );      
-    }
 
     this.addListeners();
-    this.setAlertRole( true );
     aria.OpenDialogList.push(this);
+    // now dialog is the current dialog so set aria properties on alert element if there is one
+    aria.currentAlertElementAriaOn();
     if ( clear )
       this.clearDialog();
     this.dialogNode.className = 'default_dialog'; // make visible
@@ -289,19 +310,19 @@ const arialib = (function () {
   aria.Dialog.prototype.close = function () {
     aria.OpenDialogList.pop();
     this.removeListeners();
-    this.setAlertRole( false );
     aria.Utils.remove(this.preNode);
     aria.Utils.remove(this.postNode);
     this.dialogNode.className = 'hidden';
     this.backdropNode.classList.remove('active');
     this.focusAfterClosed.focus();
 
+    // now dialog is no longer current dialog, so set aria properties on new alert element if there is one
+    aria.currentAlertElementAriaOn();
+    
     // If a dialog was open underneath this one, restore its listeners.
     if (aria.OpenDialogList.length > 0) {
       aria.getCurrentDialog().addListeners();
-      aria.getCurrentDialog().setAlertRole( true );
     } else {
-      aria.setBaseAlertRole( true );      
       document.body.classList.remove(aria.Utils.dialogOpenClass);
     }
   }; // end close
@@ -333,18 +354,6 @@ const arialib = (function () {
     var focusAfterClosed = newFocusAfterClosed || this.focusAfterClosed;
     new aria.Dialog(newDialogId, focusAfterClosed, newFocusFirst);
   }; // end replace
-
-  aria.Dialog.prototype.setAlertRole = function ( value ) {
-    if ( aria.dialogAlertClass )
-    {
-      let e = this.dialogNode.querySelector( '.' + aria.dialogAlertClass );
-      if ( e )
-      {
-        e.setAttribute( "role", (value)?'alert':'' );
-        if ( !value ) e.innerText = '';
-      }
-    }
-  };
 
   aria.Dialog.prototype.addListeners = function () {
     document.addEventListener('focus', this.trapFocus, true);
@@ -506,6 +515,17 @@ const arialib = (function () {
     aria.dialogAlertClass = classname;
   };
 
+  dialogapi.addAlert = function ( text )
+  {
+    aria.addAlert( text );
+  };
+
+  dialogapi.updateAlerts = function ()
+  {
+    aria.updateAlerts();
+  };
+
+
   dialogapi.openDialog = function (dialogId, focusAfterClosed, focusFirst, clear) {
     new aria.Dialog(dialogId, focusAfterClosed, focusFirst, clear);
   };
@@ -534,7 +554,7 @@ const arialib = (function () {
     if ( !topDialog ) return null;
     return topDialog.dialogNode.id;
   };
-  
+ 
   
   return dialogapi;
 })();

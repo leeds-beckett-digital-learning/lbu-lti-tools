@@ -24,6 +24,7 @@ let toolsocket;
 
 let loading;
 
+let dataentryopening=true;
 
 let resource = 
         {
@@ -41,11 +42,20 @@ let formuptodate = false;
 
 function init()
 {
+  console.log( "init" );
+  console.log( finder.toplevelalert );
+
+  console.log( finder.toplevelalert.ariaLive );
+  finder.toplevelalert.ariaLive = 'polite';
+  console.log( "Set ariamixin property" );
+  console.log( finder.toplevelalert.ariaLive );
+  
+  //finder.toplevelalert.setAttribute( 'aria-live', 'polite' );  
+  //console.log( finder.toplevelalert.getAttribute( 'aria-live' ) );
+
   arialib.setDialogAlertClass( 'alertList' );
   arialib.setBaseAlertElement( finder.toplevelalert );
-  finder.toplevelalert.role = 'alert';
-  
-  setInterval( alertUpdate, 1000 );
+  setInterval( updateAlerts, 1000 );
   
   if ( dyndata.manager )
     finder.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
@@ -159,32 +169,14 @@ function init()
   toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
 }
 
-function alertUpdate()
+function updateAlerts()
 {
-  let e = document.querySelector( 'ul[role = "alert"]' );
-  if ( !e )
-    return;
-
-  let now = new Date().getTime();
-  let nodelist = e.querySelectorAll( 'li' );
-  let a = Array.from( nodelist );
-  for ( let i=0; i<a.length; i++ )
-  {
-    let timestamp = new Number( a[i].dataset.timestamp );
-    if ( (now - timestamp)/1000 > 10 )
-      a[i].remove();
-  }
+  arialib.updateAlerts();  
 }
   
-function showAlert( text )
-{  
-  let e = document.querySelector( 'ul[role = "alert"]' );
-  if ( !e )
-    return;
-  let li = document.createElement( 'li' );
-  li.dataset.timestamp = new Date().getTime();
-  li.innerText = text;
-  e.append( li );
+function addAlert( text )
+{
+  arialib.addAlert( text );
 }
 
 function updateResource( properties )
@@ -213,27 +205,27 @@ function updateResource( properties )
   if ( finder.mainTitle.innerText !== properties.title )
   {
     if ( finder.mainTitle.innerText )
-      showAlert( "Title changed to " + properties.title + "." );
+      addAlert( "Title changed to " + properties.title + "." );
       //message += "Title changed. ";
     finder.mainTitle.innerText        = properties.title;
   }
   if ( finder.mainDescription.innerText !== properties.description )
   {
     if ( finder.mainDescription.innerText )
-      showAlert( "Description changed." );
+      addAlert( "Description changed." );
       //message += "Description changed. ";
     finder.mainDescription.innerText  = properties.description;
   }
   if ( finder.mainStage.innerText !== stagetext )
   {
     if ( finder.mainStage.innerText )
-      showAlert( "Stage changed to " + stagetext + "." );
+      addAlert( "Stage changed to " + stagetext + "." );
     //message += "Stage changed to " + stagetext + ". ";
     finder.mainStage.innerText = stagetext;
   }
   
 //  if ( message.length > 0 )
-//    showAlert( message );
+//    addAlert( message );
   
   finder.editpropsTitle.value       = properties.title;
   finder.editpropsDescription.value = properties.description;
@@ -252,6 +244,7 @@ function updateGroups()
     updateGroup( g );
   }
   updateUnattachedGroup();
+  addAlert( "The table of groups on this page has been rebuilt." );
 }
 function updateUnattachedGroup()
 {
@@ -346,6 +339,7 @@ function updateGroup( g )
 
 function clearForm()
 {
+  
   let formrows = document.getElementsByClassName( "dataentry-formrow" );
   console.log( formrows );
   console.log( formrows.length );
@@ -460,6 +454,9 @@ function updateForm()
   finder.dataentrytablebody.append( endorserow );
   finder.dataentrytablebody.append( managerendorserow );  
   formuptodate = true;
+  
+  if ( arialib.getCurrentDialog() === 'dataentry' )
+    addAlert( "The data entry table on this page has been rebuilt." );
 }
 
 function updateFormData()
@@ -504,7 +501,17 @@ function updateFormData()
         else
           input.className = 'invalidinput';
         if ( input.value !== memberdatum.value )
+        {
           input.value = memberdatum.value;
+          if ( arialib.getCurrentDialog() === 'dataentry' && !dataentryopening )
+          {
+            let name = getParticipantName( m );
+            if ( name )
+              addAlert( "A score was updated in row " + (i+2) + " for participant " + name + "." );
+            else
+              addAlert( "A score was updated in row " + (i+2) + "." );
+          }
+        }
       }
     }
   }
@@ -526,7 +533,7 @@ function updateFormData()
       p.innerHTML = '';
   }
   
-  
+  dataentryopening=false;
 }
 
 
@@ -639,6 +646,7 @@ function openGroupEditDialog( openerElement, gid )
 
 function openDataEntryDialog( openerElement, gid )
 {
+  dataentryopening=true;
   selectedgroupid = gid;
   clearForm();
   updateForm();
@@ -699,6 +707,16 @@ function clearEndorsements()
   toolsocket.sendMessage( new peergroupassessment.ClearEndorsementsMessage( groupid ) );  
 }
 
+function getParticipantName( id )
+{
+  if ( !id || !resource ) return null;
+  let gid = resource.groupIdsByMember[id];
+  let group = (gid)?resource.groupsById[gid]:resource.groupOfUnattached;
+  let member = group.membersbyid[id];
+  if ( !member ) return null;
+  return member.name;
+}
+
 function addGroup()
 {
   toolsocket.sendMessage( new peergroupassessment.AddGroupMessage() );
@@ -714,5 +732,9 @@ function addMembership( gid )
   toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
 }
 
-
-init();
+window.addEventListener( "load", function(){ init(); } );
+document.addEventListener( "DOMContentLoaded", function()
+  { 
+    console.log( "DOMContentLoaded event arrived." ); 
+    console.log( finder.toplevelalert );
+  } );

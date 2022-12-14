@@ -174,7 +174,8 @@ repositories {
 dependencies {
     // There are two dependencies from leedsbeckett - the basic LTI library
     // and the toolapi library.
-    implementation 'uk.ac.leedsbeckett:lbu-lti:0.0.22'
+    implementation( 'uk.ac.leedsbeckett:lbu-lti:0.0.24' )
+    { changing = false }
     
     // If using a snapshot of toolapi, set changing to true otherwise set it to 
     // false. This makes it possible to rebuild toolapi repeatedly with the
@@ -182,7 +183,7 @@ dependencies {
     // from local maven repository every time. For
     // non-snapshot versions, the build will be speeded up by fetching
     // the library from remote repo. only if an official new version is referenced.
-    implementation( 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.8' )
+    implementation( 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.0.10' )
     { changing = false }
   
     providedCompile 'javax.servlet:javax.servlet-api:4.0.0'

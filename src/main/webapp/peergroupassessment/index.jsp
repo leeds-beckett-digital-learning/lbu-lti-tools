@@ -246,6 +246,7 @@ const gendata =
         <div id="unattachedParticipants"></div>
           
         <c:if test="${support.allowedToManage}">
+          <p><button id="importButton">Import Participants</button> (Under development)</p>
           <h4>Overview of Students</h4>
           <p>A tables of all students and their scores.</p>
           <table id="overviewtable">

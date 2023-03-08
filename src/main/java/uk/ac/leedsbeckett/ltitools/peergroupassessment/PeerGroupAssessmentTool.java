@@ -100,5 +100,7 @@ public class PeerGroupAssessmentTool extends Tool
       pgastate.setAllowedToManage( true );
     if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
       pgastate.setAllowedToParticipate( true );
+    if ( lticlaims.getLtiNamesRoleService() != null )
+      pgastate.setNamesRoleServiceUrl( lticlaims.getLtiNamesRoleService().getContextMembershipsUrl() );
   }
 }

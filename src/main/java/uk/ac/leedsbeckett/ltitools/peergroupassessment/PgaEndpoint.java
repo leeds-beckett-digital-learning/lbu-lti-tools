@@ -39,6 +39,7 @@ import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
+import uk.ac.leedsbeckett.ltitoolset.ToolCoordinator;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -51,6 +52,8 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGro
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.AuthToken;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.HttpClient;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
@@ -565,6 +568,55 @@ public class PgaEndpoint extends ToolEndpoint
             new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
   }
 
+  /**
+   * The user wants to import participants from the launching platform.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
+   */
+  @EndpointMessageHandler()
+  public void handleGetImport( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message.getId() );
+    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    if ( resource.getStage() != Stage.SETUP )
+      throw new HandlerAlertException( "You can only import participants in setup phase. Try again at that stage.", message.getId() );
+
+    if ( pgaState.getNamesRoleServiceUrl() == null )
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for a names/role service.", message.getId() );
+    
+    // Before calling the Url above we need to call the configured "auth_token_url" (back on developer.blackboard.com) to 
+    // get a token which is used in the bearer authentication.
+
+
+    // Copy process from blackboard/BBDN-LTI-Tool-Provider-Node
+    AuthToken token = null;
+    try
+    {
+      token = this.getPlatformAuthToken();
+    }
+    catch ( Exception e )
+    {
+      throw new HandlerAlertException( "Exception caught. " + e.getMessage(), message.getId() );      
+    }
+    
+    if ( token == null )
+      throw new HandlerAlertException( "Unable to obtain authorization to access the names/roles service.", message.getId() );
+
+    logger.log( Level.INFO, "token = {0}", token.getToken() );
+    logger.log( Level.INFO, "scope = {0}", token.getScope() );
+    logger.log( Level.INFO, "expires = {0}", token.getExpires() );
+
+    String data = HttpClient.getNamesRoles( pgaState.getNamesRoleServiceUrl(), token.getToken() );
+    logger.log( Level.INFO, "handleGetImport() {0}", data );
+
+    throw new HandlerAlertException( "Functionality incomplete. data = " + data, message.getId() );    
+  }  
+  
   /**
    * The user wants a string containing the resource's complete data set for
    * export.

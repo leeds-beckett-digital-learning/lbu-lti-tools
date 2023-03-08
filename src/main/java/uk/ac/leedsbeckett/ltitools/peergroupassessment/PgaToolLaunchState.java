@@ -29,7 +29,7 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
 {
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
-
+  private String namesRoleServiceUrl=null;
   /**
    * Is the user connected to this state object allowed to manage the resource?
    * 
@@ -73,5 +73,15 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   public boolean isAllowedToAccess()
   {
     return allowedToParticipate || allowedToManage;
+  }
+
+  public String getNamesRoleServiceUrl()
+  {
+    return namesRoleServiceUrl;
+  }
+
+  public void setNamesRoleServiceUrl( String namesRoleServiceUrl )
+  {
+    this.namesRoleServiceUrl = namesRoleServiceUrl;
   }
 }

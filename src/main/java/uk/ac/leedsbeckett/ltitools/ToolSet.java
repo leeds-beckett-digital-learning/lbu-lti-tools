@@ -21,7 +21,7 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolSetMapping;
  *
  * @author maber01
  */
-@ToolSetMapping( loginUrl="/login", launchUrl="/launch" )
+@ToolSetMapping( loginUrl="/login", launchUrl="/launch", jwksUrl="/jwks" )
 public class ToolSet
 {
 }

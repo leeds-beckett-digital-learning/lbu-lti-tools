@@ -79,6 +79,7 @@ function init()
     finder.exportdialogCloseButtonTop        .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonTop)    );
     finder.exportdialogCloseButtonBottom     .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonBottom)    );
     finder.exportButton                      .addEventListener( 'click', () => getExport(finder.exportButton)                    );
+    finder.importButton                      .addEventListener( 'click', () => getImport(finder.importButton)                    );
   }
   
   finder.debugdialogCloseButtonTop     .addEventListener( 'click', () => arialib.closeDialog(finder.debugdialogCloseButtonTop)       );
@@ -665,6 +666,11 @@ function getExport( openerelement )
   finder.exporttextarea.innerText = "Waiting for data...";
   toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
   arialib.openDialog( 'exportdialog', openerelement );  
+}
+
+function getImport( openerelement )
+{
+  toolsocket.sendMessage( new peergroupassessment.GetImportMessage() );
 }
 
 function openDebugDialog( openerElement )

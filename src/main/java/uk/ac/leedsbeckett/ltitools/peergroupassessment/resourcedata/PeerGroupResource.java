@@ -155,6 +155,12 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     return getGroupById( gid );
   }
   
+  public boolean isMember( String id )
+  {
+    if ( id == null ) return false;
+    return groupIdsByMember.containsKey( id );
+  }
+  
   public int compareGroupsUsingIds( String o1, String o2 )
   {
     Group g1 = groupsById.get( o1 );
@@ -258,9 +264,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
       synchronized ( membersbyid )
       {
         membersinorder = null;
-        Member m = new Member();
-        m.setLtiId( id );
-        m.setName( name );
+        Member m = new Member( id, name );
         membersbyid.put( id, m );
       }
     }
@@ -300,6 +304,12 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   {
     String ltiId;
     String name;
+
+    public Member( String ltiId, String name )
+    {
+      this.ltiId = ltiId;
+      this.name = name;
+    }
 
     public String getLtiId()
     {

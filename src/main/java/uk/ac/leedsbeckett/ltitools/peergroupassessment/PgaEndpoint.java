@@ -25,6 +25,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembers
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +37,8 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import uk.ac.leedsbeckett.lti.services.nrps.NrpsMembershipContainer;
+import uk.ac.leedsbeckett.lti.services.nrps.NrpsMember;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
@@ -295,8 +298,8 @@ public class PgaEndpoint extends ToolEndpoint
   
   /**
    * The client wants to add participants to a specified group.Participants
- will be removed from any other groups. Should be possible to use this to
- move people into the 'unattached' group. (To do).
+   * will be removed from any other groups. Possible to use this to
+   * move people into the 'unattached' group. 
    * 
    * @param session The session this endpoint belongs to.
    * @param message The incoming message from the client end.
@@ -583,7 +586,8 @@ public class PgaEndpoint extends ToolEndpoint
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message.getId() );
     PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
-    if ( resource.getStage() != Stage.SETUP )
+
+    if ( resource.getStage() != Stage.JOIN )
       throw new HandlerAlertException( "You can only import participants in setup phase. Try again at that stage.", message.getId() );
 
     if ( pgaState.getNamesRoleServiceUrl() == null )
@@ -614,7 +618,28 @@ public class PgaEndpoint extends ToolEndpoint
     String data = HttpClient.getNamesRoles( pgaState.getNamesRoleServiceUrl(), token.getToken() );
     logger.log( Level.INFO, "handleGetImport() {0}", data );
 
-    throw new HandlerAlertException( "Functionality incomplete. data = " + data, message.getId() );    
+    NrpsMembershipContainer membership = new NrpsMembershipContainer();
+    membership.load( data );
+    
+    if ( !membership.isValid() )
+      throw new HandlerAlertException( "Invalid membership data was received from the platform.", message.getId() );
+    
+    membership.dumpToLog();
+    ArrayList<Member> members = new ArrayList<>();
+    for ( NrpsMember m : membership.getMembers() )
+    {
+      // filter out people who are already members.
+      if ( !resource.isMember( m.getUserId() ) )
+        members.add( new Member( m.getUserId(), m.getName() ) );
+    }
+    
+    if ( members.isEmpty() )
+      throw new HandlerAlertException( "No more users to import.", message.getId() );    
+
+    // null group id means add to the 'unattached' group
+    PgaAddMembership pgaaddmem = new PgaAddMembership( null, members );
+    
+    handleMembership( session, message, pgaaddmem );
   }  
   
   /**

@@ -45,6 +45,12 @@ public class SelfEnrolTool extends Tool
   public SelfEnrolTool()
   {
   }
+
+  @Override
+  public boolean usesBlackboardRest()
+  {
+    return true;
+  }
   
   /**
    * This initializes the tool. The toolapi tool coordinator calls this when

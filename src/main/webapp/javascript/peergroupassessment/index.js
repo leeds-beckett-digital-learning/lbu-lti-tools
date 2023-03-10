@@ -147,7 +147,7 @@ function init()
         console.log( data );
         if ( !formuptodate )
           updateForm();
-        updateFormData();
+       updateFormData();
       }      
       if ( dyndata.manager )
         updateOverviewDataGroup( message.payload );

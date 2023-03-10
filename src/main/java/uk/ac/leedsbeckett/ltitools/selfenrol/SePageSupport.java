@@ -70,7 +70,7 @@ public class SePageSupport extends ToolPageSupport
     logger.log(Level.FINE, "resource key = {0}", seState.getResourceKey() );
     tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolKey() );
 
-    String base = computeWebSocketUri( PgaEndpoint.class.getAnnotation( ServerEndpoint.class ) );
+    String base = computeWebSocketUri( SeEndpoint.class.getAnnotation( ServerEndpoint.class ) );
     websocketuri = base + "?state=" + state.getId();
   }
 

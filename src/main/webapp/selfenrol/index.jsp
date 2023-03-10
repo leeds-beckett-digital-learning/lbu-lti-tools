@@ -93,123 +93,13 @@ const gendata =
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">
-      <div role="dialog" id="editprops" aria-labelledby="editpropslabel" aria-modal="true" class="hidden">
-        <h3 id="editpropslabel" class="dialog_label">Edit Properties</h3>
-        <div class="dialog_form">
-          <div class="dialog_form_item">
-            <label>
-              <span class="label_text">Title:</span>
-              <input id="editpropsTitle" size="30"/>
-            </label>
-          </div>
-          <div class="dialog_form_item">
-            <label>
-              <span class="label_text">Description:</span>
-              <textarea id="editpropsDescription" cols="40" rows="10">...loading</textarea>
-            </label>
-          </div>
-          <div class="dialog_form_item">
-            <label>
-              <span class="label_text">Stage:</span>
-              <select id="editpropsStage">
-                <option value="SETUP">Set Up</option>
-                <option value="JOIN">Join Groups</option>
-                <option value="DATAENTRY">Enter Data</option>
-                <option value="RESULTS">Results Frozen</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div class="dialog_form_actions">    
-          <button id="editpropsSaveButtonBottom" value="Save">Save</button>
-          <button id="editpropsCloseButtonBottom" value="Close">Close</button>
-        </div>
-      </div>
-    
-      <div role="dialog" id="editgroupProps" aria-labelledby="editgroupPropsLabel" aria-modal="true" class="hidden">
-        <h3 id="editgroupPropsLabel">Edit Group Properties</h3>
-        <div class="dialog_form">
-          <input id="editgrouppropsId" size="30" type="hidden"/>
-          <div class="dialog_form_item">
-            <label>
-              <span class="label_text">Title:</span>
-              <input id="editgrouppropsTitle" size="30"/>
-            </label>
-          </div>
-        </div>
-        <div class="dialog_form_actions">    
-          <button id="editgrouppropsSaveButtonBottom" value="Save">Save</button>
-          <button id="editgrouppropsCloseButtonBottom" value="Close">Close</button>
-        </div>
-      </div>
-
-      <div role="dialog" id="dataentry"  aria-labelledby="dataentryLabel" aria-modal="true" class="hidden">
-        <h3 id="dataentryLabel">Data Entry</h3>
-        <div class="dialog_form_actions">    
-          <button id="dataentryCloseButtonTop" value="Close">Close</button>
-        </div>
-
-        <ul class="alertList"></ul>
-
-        <div class="dialog_form">
-          <table>
-            <thead>
-              <tr id="dataentryheadrow"><th>Criterion</th></tr>
-            </thead>
-            <tbody id="dataentrytablebody">
-            </tbody>
-          </table>
-        </div>
-        <h3>Endorsement</h3>
-        <p>When marks are entered and agreed, each participant must indicate 
-          their endorsement of the marks using the button below. When the first
-          participant endorses the marks, all the marks become read-only.
-          An instructor can reset all the endorsements so you can edit marks
-          and an instructor can endorse marks on behalf of participants who have
-          been absent.</p>
-        <div class="dialog_form_actions">    
-          <p>
-          <c:if test="${support.allowedToParticipate}">
-            <button id="dataentryEndorseButton">Endorse</button>
-          </c:if>
-          <c:if test="${support.allowedToManage}">
-            <button id="dataentryManagerEndorseButton">Endorse For All</button>
-            <button id="dataentryClearEndorsementsButton">Reset Endorsements</button>
-          </c:if>
-          </p>
-          <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
-        </div>
-    </div>
-
-      <div role="dialog" id="exportdialog" aria-labelledby="exportdialogLabel" aria-modal="true" class="hidden">
-        <h3 id="exportdialogLabel">Export Data</h3>
-        <div class="dialog_form_actions"><button id="exportdialogCloseButtonTop" value="Close">Close</button></div>
-        <p>The data here is formatted as tab delimited data. It may not look 
-          pretty here but is suitable for transfer to most spreadsheet software.
-          Select all the text in the text area below and copy to the clipboard.
-          Then go to a blank sheet in your preferred spreadsheet software,
-          select the top left cell and paste. Your spreadsheet may instantly
-          arrange the data into columns or you may need to take further steps
-          to indicate how the data should be parsed.</p>
-        <p>In a typical web browser you can copy to the clipboard this way:</p>
-        <ol>
-          <li>Click on the text box.</li>
-          <li>Type ctrl-A</li>
-          <li>Type ctrl-C</li>
-        </ol>
-        <div class="dialog_form">
-          <textarea id="exporttextarea" cols="70" rows="20" disabled=""></textarea>
-        </div>
-        <div class="dialog_form_actions"><button id="exportdialogCloseButtonBottom" value="Close">Close</button></div>
-      </div>
-
+      
       <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
         <h3 id="debugdialogLabel">Debug Information</h3>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>
         <pre id="debugtext"></pre>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonBottom" value="Close">Close</button></div>
       </div>
-      
       
     </div>
 
@@ -236,6 +126,7 @@ const gendata =
       </c:otherwise>
     </c:choose>
     
+    <p><button id="searchButton">Search</button></p>
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

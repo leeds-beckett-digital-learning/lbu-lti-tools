@@ -41,6 +41,8 @@ function init()
   setInterval( updateAlerts, 1000 );
     
   console.log( dyndata.wsuri );
+
+  finder.searchButton.addEventListener( 'click', () => searchForCourses() );
   
   let handler =
   {
@@ -50,8 +52,18 @@ function init()
     
     handleAlert( message )
     {
+      console.log( "Rxed alert " + message.payload );
       alert( message.payload );
-    }  
+    },
+    
+    handleCourseInfoList( message )
+    {
+      console.log( "Rxed course info list " + message.payload );
+      for ( const d of message.payload )
+      {
+        alert( d.externalId );
+      }
+    }
   };
   
   toolsocket = new selfenrol.ToolSocket( dyndata.wsuri, handler  );  
@@ -63,10 +75,13 @@ function updateAlerts()
 }
   
 function addAlert( text )
-{
-  arialib.addAlert( text );
+{  arialib.addAlert( text );
 }
 
+function searchForCourses()
+{
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "testscope", "testspec" ) );  
+}
 
 window.addEventListener( "load", function(){ init(); } );
 document.addEventListener( "DOMContentLoaded", function()

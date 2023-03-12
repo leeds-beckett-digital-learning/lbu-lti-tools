@@ -27,7 +27,8 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.StringUtils;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
-import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardPlatform;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
@@ -62,6 +63,8 @@ public class SeEndpoint extends ToolEndpoint
   
   SelfEnrolTool tool;
   SeToolLaunchState seState;
+
+  BlackboardBackchannelKey bbbckey;
   
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
@@ -82,6 +85,7 @@ public class SeEndpoint extends ToolEndpoint
     
     seState = (SeToolLaunchState)getState().getToolLaunchState();
     tool = (SelfEnrolTool)getToolCoordinator().getTool( getState().getToolKey() );
+    bbbckey = new BlackboardBackchannelKey( getPlatformHost() );
   }
   
   /**
@@ -136,7 +140,7 @@ public class SeEndpoint extends ToolEndpoint
   public void handleSearch( Session session, ToolMessage message, SeSearch search )
           throws IOException, HandlerAlertException
   {
-    BlackboardPlatform bp = getBlackboardPlatform();
+    BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV3Courses( null, "Course" );
     if ( !result.isComplete() )
       throw new HandlerAlertException( "Technical problem running search.", message.getId() );

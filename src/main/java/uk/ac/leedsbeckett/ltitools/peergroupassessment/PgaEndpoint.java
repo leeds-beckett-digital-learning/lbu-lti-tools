@@ -37,12 +37,13 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import uk.ac.leedsbeckett.lti.services.LtiServiceScope;
+import uk.ac.leedsbeckett.lti.services.LtiServiceScopeSet;
 import uk.ac.leedsbeckett.lti.services.nrps.NrpsMembershipContainer;
 import uk.ac.leedsbeckett.lti.services.nrps.NrpsMember;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
-import uk.ac.leedsbeckett.ltitoolset.ToolCoordinator;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -55,8 +56,9 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGro
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
-import uk.ac.leedsbeckett.ltitoolset.backchannel.AuthToken;
-import uk.ac.leedsbeckett.ltitoolset.backchannel.HttpClient;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannel;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannelKey;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
@@ -84,6 +86,8 @@ public class PgaEndpoint extends ToolEndpoint
   PeerGroupAssessmentTool tool;
   PgaToolLaunchState pgaState;
   StoreCluster store;
+
+  LtiBackchannelKey ltibackchannelkey;
   
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
@@ -105,6 +109,19 @@ public class PgaEndpoint extends ToolEndpoint
     pgaState = (PgaToolLaunchState)getState().getToolLaunchState();
     tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolKey() );
     store = tool.getPeerGroupAssessmentStore();
+
+    logger.log( Level.INFO, "URL for NRPS {0}", pgaState.getNamesRoleServiceUrl() );
+    
+    // A set of scopes that we intend to use in our LTI backchannel
+    LtiServiceScopeSet set = new LtiServiceScopeSet();
+    // Just this one
+    set.addScope( LtiServiceScope.NRPS );
+    // The key specifies the backchannel in a way we can share
+    // with other endpoints.
+    ltibackchannelkey = new LtiBackchannelKey( 
+            getPlatformHost(), 
+            pgaState.getNamesRoleServiceUrl(),
+            set );
   }
   
   /**
@@ -592,38 +609,19 @@ public class PgaEndpoint extends ToolEndpoint
 
     if ( pgaState.getNamesRoleServiceUrl() == null )
       throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for a names/role service.", message.getId() );
+
+    // Get a backchannel (which might be new or reused and which knows how
+    // to authenticate/authorize itself.
+    LtiBackchannel backchannel = (LtiBackchannel)getToolCoordinator().getBackchannel( this, ltibackchannelkey, getState() );
+
+    // Call the backchannel and wait for result.
+    JsonResult jresult = backchannel.getNamesRoles();
+    logger.log( Level.INFO, "handleGetImport() {0}", jresult.getRawValue() );
+
+    if ( !jresult.isSuccessful() )
+      throw new HandlerAlertException( "Unable to get membership data from the platform.", message.getId() );
     
-    // Before calling the Url above we need to call the configured "auth_token_url" (back on developer.blackboard.com) to 
-    // get a token which is used in the bearer authentication.
-
-
-    // Copy process from blackboard/BBDN-LTI-Tool-Provider-Node
-    AuthToken token = null;
-    try
-    {
-      token = this.getPlatformAuthToken();
-    }
-    catch ( Exception e )
-    {
-      throw new HandlerAlertException( "Exception caught. " + e.getMessage(), message.getId() );      
-    }
-    
-    if ( token == null )
-      throw new HandlerAlertException( "Unable to obtain authorization to access the names/roles service.", message.getId() );
-
-    logger.log( Level.INFO, "token = {0}", token.getToken() );
-    logger.log( Level.INFO, "scope = {0}", token.getScope() );
-    logger.log( Level.INFO, "expires = {0}", token.getExpires() );
-
-    String data = HttpClient.getNamesRoles( pgaState.getNamesRoleServiceUrl(), token.getToken() );
-    logger.log( Level.INFO, "handleGetImport() {0}", data );
-
-    NrpsMembershipContainer membership = new NrpsMembershipContainer();
-    membership.load( data );
-    
-    if ( !membership.isValid() )
-      throw new HandlerAlertException( "Invalid membership data was received from the platform.", message.getId() );
-    
+    NrpsMembershipContainer membership = (NrpsMembershipContainer)jresult.getResult();    
     membership.dumpToLog();
     ArrayList<Member> members = new ArrayList<>();
     for ( NrpsMember m : membership.getMembers() )

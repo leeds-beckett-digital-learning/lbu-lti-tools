@@ -39,8 +39,10 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScope;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScopeSet;
-import uk.ac.leedsbeckett.lti.services.nrps.NrpsMembershipContainer;
-import uk.ac.leedsbeckett.lti.services.nrps.NrpsMember;
+import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
+import uk.ac.leedsbeckett.lti.services.nrps.LtiNamesRoleServiceClaim;
+import uk.ac.leedsbeckett.lti.services.nrps.data.NrpsMembershipContainer;
+import uk.ac.leedsbeckett.lti.services.nrps.data.NrpsMember;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
@@ -115,7 +117,7 @@ public class PgaEndpoint extends ToolEndpoint
     // A set of scopes that we intend to use in our LTI backchannel
     LtiServiceScopeSet set = new LtiServiceScopeSet();
     // Just this one
-    set.addScope( LtiServiceScope.NRPS );
+    set.addScope( LtiNamesRoleServiceClaim.SCOPE );
     // The key specifies the backchannel in a way we can share
     // with other endpoints.
     ltibackchannelkey = new LtiBackchannelKey( 
@@ -617,9 +619,19 @@ public class PgaEndpoint extends ToolEndpoint
     // Call the backchannel and wait for result.
     JsonResult jresult = backchannel.getNamesRoles();
     logger.log( Level.INFO, "handleGetImport() {0}", jresult.getRawValue() );
+    if ( jresult.getResult() == null )
+      throw new HandlerAlertException( "Unable to get membership data from the platform.", message.getId() );
 
     if ( !jresult.isSuccessful() )
-      throw new HandlerAlertException( "Unable to get membership data from the platform.", message.getId() );
+    {
+      if ( jresult.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)jresult.getResult();
+        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
+    }
     
     NrpsMembershipContainer membership = (NrpsMembershipContainer)jresult.getResult();    
     membership.dumpToLog();

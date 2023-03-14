@@ -26,6 +26,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.StringUtils;
+import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
@@ -142,13 +143,19 @@ public class SeEndpoint extends ToolEndpoint
   {
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV3Courses( null, "Course" );
-    if ( !result.isComplete() )
+    if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem running search.", message.getId() );
     if ( !result.isSuccessful() )
     {
-      RestExceptionMessage m = (RestExceptionMessage)result.getResult();
-      throw new HandlerAlertException( "Search specification was malformed. " + m.getMessage(), message.getId() );
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
     }
+    
     GetCoursesV3Results results = (GetCoursesV3Results)result.getResult();
     logger.log(Level.INFO, "Found {0}", results.getResults().size());
     SeCourseInfoList list = new SeCourseInfoList();

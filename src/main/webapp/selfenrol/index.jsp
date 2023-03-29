@@ -92,6 +92,17 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <pre id="debugtext"></pre>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonBottom" value="Close">Close</button></div>
       </div>
+
+      <div role="dialog" id="searchdialog" aria-labelledby="searchdialogLabel" aria-modal="true" class="hidden">
+        <h3 id="searchdialogLabel">Search Results</h3>
+        <div>
+          <select size="10" id="searchresults"></select>  
+        </div>
+        <div class="dialog_form_actions">
+          <button id="searchdialogEnrolButton" value="Close">Enrol</button>
+          <button id="searchdialogCloseButton" value="Close">Close</button>
+        </div>
+      </div>
       
     </div>
 

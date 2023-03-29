@@ -47,6 +47,8 @@ function init()
   coursespecvalidator = new RegExp( dynamicData.courseSearchValidation );
   orgspecvalidator    = new RegExp( dynamicData.orgSearchValidation    );
 
+  finder.searchdialogEnrolButton.addEventListener( 'click', () => enrolOnCourse() );
+  finder.searchdialogCloseButton.addEventListener( 'click', () => arialib.closeDialog(finder.searchdialog)    );
   finder.searchCourseButton.addEventListener( 'click', () => searchForCourses() );
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   
@@ -65,10 +67,15 @@ function init()
     handleCourseInfoList( message )
     {
       console.log( "Rxed course info list " + message.payload );
-      for ( const d of message.payload )
+      let content = "";
+      if ( message.payload.length == 0 )
       {
-        alert( d.externalId );
+        finder.searchresults.innerHTML = "<option value=\"\">Nothing found.</option>\n";
+        return;
       }
+      for ( const d of message.payload )
+        content += "<option value=\"" + d.externalId + "\">" + d.externalId + " ~ " + d.name + "</option>\n";
+      finder.searchresults.innerHTML = content;
     }
   };
   
@@ -84,6 +91,11 @@ function addAlert( text )
 {  arialib.addAlert( text );
 }
 
+function clearSearch()
+{
+  finder.searchresults.innerHTML = "<option value=\"\">Waiting for results...</option>";
+}
+
 function searchForCourses()
 {
   var spec = finder.courseid.value;
@@ -92,7 +104,9 @@ function searchForCourses()
     alert( "The input was not valid. Please read the notes on the page about how to search." );
     return;
   }
-  toolsocket.sendMessage( new selfenrol.SearchMessage( "course", spec ) );  
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "course", spec ) );
+  clearSearch();
+  arialib.openDialog( 'searchdialog', finder.searchCourseButton );
 }
 
 function searchForOrgs()
@@ -104,6 +118,18 @@ function searchForOrgs()
     return;
   }
   toolsocket.sendMessage( new selfenrol.SearchMessage( "organization", spec ) );  
+}
+
+function enrolOnCourse()
+{
+  var id = finder.searchresults.value;
+  if ( id === "" )
+  {
+    alert( "No course is selected." );
+    return;
+  }
+  
+  toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id ) );  
 }
 
 window.addEventListener( "load", function(){ init(); } );

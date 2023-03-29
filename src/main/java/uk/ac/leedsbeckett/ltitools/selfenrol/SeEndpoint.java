@@ -202,6 +202,12 @@ public class SeEndpoint extends ToolEndpoint
     sendToolMessage( session, tmf );
   }
   
+  @EndpointMessageHandler()
+  public void handleEnrolRequest( Session session, ToolMessage message, SeEnrolRequest request )
+          throws IOException, HandlerAlertException
+  {
+    throw new HandlerAlertException( "Enrolment request not yet implemented.", message.getId() );
+  }
   
   /**
    * This gets called when a handler throws a HandlerAlertException and decides

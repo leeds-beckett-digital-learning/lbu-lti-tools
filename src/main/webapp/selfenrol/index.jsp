@@ -78,16 +78,8 @@
     <link rel="stylesheet" href="../style/dialog.css"/>
     <script lang="JavaScript">
       
-const gendata = 
-{
-  myid:         '${support.personId}',
-  myname:       '${support.personName}',
-  manager:      ${support.allowedToManage},
-  participant:  ${support.allowedToParticipate},
-  wsuri:        '${support.websocketUri}',
-  debugging:    ${support.debugging}
-};
-        
+const dynamicPageData = ${support.dynamicPageDataAsJSON};
+
     </script>
     <script type="module" src="../javascript/@BUILDTIMESTAMP@/selfenrol/index.js"></script>
   </head>
@@ -113,20 +105,27 @@ const gendata =
     
     <p>This tool is non-functional as it is under development.</p>
     <c:choose>
-      <c:when test="${support.allowedToManage || support.allowedToParticipate}">
+      <c:when test="${support.allowedToEnrol}">
         
-        <c:if test="${support.allowedToManage}">
-          <p>You have management rights where this tool is deployed.</p>          
-        </c:if>
-                  
+        <h2>Enrol on a module</h2>
+        <p>Enter a course reference number (CRN). This will usually be a
+        CRN that was created by the student information system for a real
+        module that carries credit. You can also use a made up CRN, starting
+        with a zero, to find a non-credit MyBeckett module that was created
+        on request.</p>
+        <p><input id="courseid"/><button id="searchCourseButton">Search</button></p>
+
+        <h2>Enrol on a course community</h2>
+        <p>Enter an award code.</p>
+        <p><input id="orgid"/><button id="searchOrgButton">Search</button></p>
+          
       </c:when>
       <c:otherwise>
         <p>Your role set by system that launched this tool means that you
-        can neither participate or manage this resource.</p>
+        cannot use it.</p>
       </c:otherwise>
     </c:choose>
     
-    <p><button id="searchButton">Search</button></p>
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

@@ -33,7 +33,7 @@ import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
  * 
  * @author jon
  */
-public class PgaPageSupport extends ToolPageSupport
+public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
 {
   static final Logger logger = Logger.getLogger(PgaPageSupport.class.getName() );
   
@@ -41,7 +41,6 @@ public class PgaPageSupport extends ToolPageSupport
   StoreCluster store;
   PgaToolLaunchState pgaState;
   PeerGroupResource pgaResource;
-  String websocketuri;
   
   /**
    * Get ready to provide services for the java server page.
@@ -72,8 +71,8 @@ public class PgaPageSupport extends ToolPageSupport
     store = tool.getPeerGroupAssessmentStore();
     pgaResource = store.getResource( pgaState.getResourceKey(), true );
 
-    String base = computeWebSocketUri( PgaEndpoint.class.getAnnotation( ServerEndpoint.class ) );
-    websocketuri = base + "?state=" + state.getId();
+    dynamicPageData.setAllowedToParticipate( pgaState.isAllowedToParticipate() );
+    dynamicPageData.setAllowedToManage( pgaState.isAllowedToManage() );
   }
 
   /**
@@ -136,7 +135,7 @@ public class PgaPageSupport extends ToolPageSupport
    */
   public String getWebsocketUri()
   {
-    return websocketuri;
+    return dynamicPageData.getWebSocketUri();
   }
 
   /**
@@ -181,5 +180,12 @@ public class PgaPageSupport extends ToolPageSupport
       return "Unable to dump data as JSON.\n";
     }
     return sb.toString();
+  }
+
+
+  @Override
+  public PgaDynamicPageData makeDynamicPageData()
+  {
+    return new PgaDynamicPageData();
   }
 }

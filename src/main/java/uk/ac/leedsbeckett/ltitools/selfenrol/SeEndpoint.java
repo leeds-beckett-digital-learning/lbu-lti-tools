@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -141,8 +142,39 @@ public class SeEndpoint extends ToolEndpoint
   public void handleSearch( Session session, ToolMessage message, SeSearch search )
           throws IOException, HandlerAlertException
   {
+    String scope = search.getScope();
+    String specification = search.getSpecification();
+    boolean org;
+    
+    Pattern validation;
+    String strfilter;
+    Pattern filter;
+    
+    if ( null == scope )
+      throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+    else switch ( scope )
+    {
+      case "course":
+        validation = tool.getConfig().getCourseSearchValidation();
+        strfilter = tool.getConfig().getCourseSearchFilter().replace( "@", specification );
+        org = false;
+        break;
+      case "organization":
+        validation = tool.getConfig().getOrganizationSearchValidation();
+        strfilter = tool.getConfig().getOrganizationSearchFilter().replace( "@", specification );
+        org = true;
+        break;
+      default:
+        throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+    }
+
+    if ( !validation.matcher( specification ).matches() )
+      throw new HandlerAlertException( "The search specification is not valid.", message.getId() );
+    
+    filter = Pattern.compile( strfilter.replace( "@", Pattern.quote( specification ) ) );
+    
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
-    JsonResult result = bp.getV3Courses( null, "Course" );
+    JsonResult result = bp.getV3Courses( specification, org );
     if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem running search.", message.getId() );
     if ( !result.isSuccessful() )
@@ -160,7 +192,11 @@ public class SeEndpoint extends ToolEndpoint
     logger.log(Level.INFO, "Found {0}", results.getResults().size());
     SeCourseInfoList list = new SeCourseInfoList();
     for ( CourseV2 c : results.getResults() )
-      list.add( new SeCourseInfo( c.getExternalId(), c.getName(), c.getDescription() ) );
+    {
+      String id = c.getExternalId();
+      if ( filter.matcher( id ).matches() )
+        list.add( new SeCourseInfo( id, c.getName(), c.getDescription() ) );
+    }
 
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.CourseInfoList, list );
     sendToolMessage( session, tmf );

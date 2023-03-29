@@ -15,8 +15,6 @@
  */
 package uk.ac.leedsbeckett.ltitools.selfenrol;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.*;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,7 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
 
 /**
@@ -34,14 +31,15 @@ import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
  * 
  * @author jon
  */
-public class SePageSupport extends ToolPageSupport
+public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
 {
   static final Logger logger = Logger.getLogger(SePageSupport.class.getName() );
   
   SelfEnrolTool tool;
-  StoreCluster store;
   SeToolLaunchState seState;
   String websocketuri;
+
+  SelfEnrolConfiguration config;
   
   /**
    * Get ready to provide services for the java server page.
@@ -69,9 +67,13 @@ public class SePageSupport extends ToolPageSupport
       throw new ServletException( "Could not find peer group assessment tool session data." );
     logger.log(Level.FINE, "resource key = {0}", seState.getResourceKey() );
     tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolKey() );
+    config = tool.getConfig();
+    websocketuri = getBaseUri() + seState.getRelativeWebSocketUri();
 
-    String base = computeWebSocketUri( SeEndpoint.class.getAnnotation( ServerEndpoint.class ) );
-    websocketuri = base + "?state=" + state.getId();
+    dynamicPageData.setDebugging( logger.isLoggable( Level.FINE ) );
+    dynamicPageData.setCanEnrol( seState.isAllowedToParticipate() );
+    dynamicPageData.setCourseSearchValidation( config.getCourseSearchValidation().pattern() );
+    dynamicPageData.setOrgSearchValidation( config.getOrganizationSearchValidation().pattern() );
   }
 
   /**
@@ -100,19 +102,9 @@ public class SePageSupport extends ToolPageSupport
    * 
    * @return True if the user is a participant.
    */
-  public boolean isAllowedToParticipate()
+  public boolean isAllowedToEnrol()
   {
-    return seState.isAllowedToParticipate();
-  }
-
-  /**
-   * Is the user allowed to manage the PGA? Derived from LTI role claims.
-   * 
-   * @return True if the user is a manager.
-   */
-  public boolean isAllowedToManage()
-  {
-    return seState.isAllowedToManage();
+    return dynamicPageData.canEnrol();
   }
   
   /**
@@ -125,7 +117,17 @@ public class SePageSupport extends ToolPageSupport
   {
     return websocketuri;
   }
+  
+  public String getCourseSearchValidation()
+  {
+    return config.getCourseSearchValidation().pattern();
+  }
 
+  public String getOrganizationSearchValidation()
+  {
+    return config.getOrganizationSearchValidation().pattern();
+  }
+    
   /**
    * Used by JSP page to find out if the page support has logging level set
    * to FINE or even more detailed.
@@ -134,7 +136,7 @@ public class SePageSupport extends ToolPageSupport
    */
   public boolean isDebugging()
   {
-    return logger.isLoggable( Level.FINE );
+    return dynamicPageData.isDebugging();
   }
   
   /**
@@ -165,5 +167,11 @@ public class SePageSupport extends ToolPageSupport
       return "Unable to dump data as JSON.\n";
     }
     return sb.toString();
+  }
+
+  @Override
+  public SeDynamicPageData makeDynamicPageData()
+  {
+    return new SeDynamicPageData();
   }
 }

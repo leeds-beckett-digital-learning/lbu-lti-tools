@@ -20,10 +20,12 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
+import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
  * This class helps set up websocket endpoints and page requests based on
@@ -96,11 +98,17 @@ public class PeerGroupAssessmentTool extends Tool
   {
     super.initToolLaunchState( toolstate, lticlaims, state );
     PgaToolLaunchState pgastate = (PgaToolLaunchState)toolstate;
-    if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
+    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) )
       pgastate.setAllowedToManage( true );
-    if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
+    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) )
       pgastate.setAllowedToParticipate( true );
     if ( lticlaims.getLtiNamesRoleService() != null )
       pgastate.setNamesRoleServiceUrl( lticlaims.getLtiNamesRoleService().getContextMembershipsUrl() );
+  }
+
+  @Override
+  public Class<? extends ToolEndpoint> getEndpointClass()
+  {
+    return PgaEndpoint.class;
   }
 }

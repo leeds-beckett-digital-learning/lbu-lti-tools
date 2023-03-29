@@ -18,7 +18,7 @@ import finder from "../common/domutil.js";
 import arialib from "../common/aria.js";
 import peergroupassessment from "../generated/peergroupassessment.js";
 
-let dyndata = gendata;
+let dynamicData = dynamicPageData;
 
 let toolsocket;
 
@@ -57,22 +57,22 @@ function init()
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );
   
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
     finder.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
     
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
     finder.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
   finder.editpropsCloseButtonBottom    .addEventListener( 'click', () => arialib.closeDialog( finder.editpropsCloseButtonBottom )       );
   
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
     finder.editgrouppropsSaveButtonBottom .addEventListener( 'click', () => saveEditGroupProps()                );
   finder.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => arialib.closeDialog(finder.editgrouppropsCloseButtonBottom)       );
   
   finder.dataentryCloseButtonTop           .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonTop)       );
   finder.dataentryCloseButtonBottom        .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonBottom)       );
-  if ( dyndata.participant )
+  if ( dynamicData.allowedToParticipate )
     finder.dataentryEndorseButton            .addEventListener( 'click', () => endorseData( false )           );
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
   {
     finder.dataentryManagerEndorseButton     .addEventListener( 'click', () => endorseData( true )            );
     finder.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
@@ -90,7 +90,7 @@ function init()
   if ( finder.debugdialogButton )
     finder.debugdialogButton   .addEventListener( 'click', () => openDebugDialog( finder.debugdialogButton )       );
   
-  console.log( dyndata.wsuri );
+  console.log( dynamicData.webSocketUri );
   
   let handler =
   {
@@ -110,7 +110,7 @@ function init()
       resource = message.payload;
       updateResource( resource.properties );
       updateGroups();
-      if ( dyndata.manager )
+      if ( dynamicData.allowedToManage )
       {
         updateOverview();
         toolsocket.sendMessage( new peergroupassessment.GetAllDataMessage() );
@@ -149,7 +149,7 @@ function init()
           updateForm();
        updateFormData();
       }      
-      if ( dyndata.manager )
+      if ( dynamicData.allowedToManage )
         updateOverviewDataGroup( message.payload );
     },
 
@@ -167,7 +167,7 @@ function init()
   
   };
   
-  toolsocket = new peergroupassessment.ToolSocket( dyndata.wsuri, handler  );  
+  toolsocket = new peergroupassessment.ToolSocket( dynamicData.webSocketUri, handler  );  
 }
 
 function updateAlerts()
@@ -262,7 +262,7 @@ function updateUnattachedGroup()
 
 function isMemberOf( g )
 {
-  return g.hasOwnProperty( "membersbyid" ) && g.membersbyid.hasOwnProperty( dyndata.myid );
+  return g.hasOwnProperty( "membersbyid" ) && g.membersbyid.hasOwnProperty( dynamicData.myId );
 }
 
 function updateGroup( g )
@@ -284,13 +284,13 @@ function updateGroup( g )
 
   let html = "";
   html += "<td>";
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
   {
     html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
     html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
   }
   
-  if ( dyndata.manager || isMemberOf( g ) )
+  if ( dynamicData.allowedToManage || isMemberOf( g ) )
     html += "<td><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></td>\n";
   else
     html += "<td>" + g.title + "</td>\n";
@@ -305,26 +305,26 @@ function updateGroup( g )
     else
       html += "<br>\n";
     let m = g.membersbyid[mid];
-    if ( m.ltiId === dyndata.myid )
+    if ( m.ltiId === dynamicData.myId )
       ingroup = true;
     html += m.name;
   }
   html += "</td>\n";
   html += "<td>";
-  if ( dyndata.participant && resource.properties.stage === "JOIN" && !isMemberOf(g) )
+  if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
     html += "<button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button>";
   html += "</td>";
 
   row.innerHTML = html;
   
-  if ( dyndata.manager )
+  if ( dynamicData.allowedToManage )
   {
     var db = finder[ "groupDeleteButton" + g.id ];
     db.addEventListener( 'click', () => alert( 'Not yet implemented.' ) );
     var de = finder[ "groupEditButton"   + g.id ];
     de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
   }
-  if ( dyndata.manager || isMemberOf( g ) )
+  if ( dynamicData.allowedToManage || isMemberOf( g ) )
   {
     var link = finder[ "groupViewLink"   + g.id ];
     link.addEventListener( 'click', ( e ) =>     
@@ -334,7 +334,7 @@ function updateGroup( g )
     }
             );
   }
-  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dyndata.participant )  
+  if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dynamicData.allowedToParticipate )  
     finder[ "groupJoinButton"   + g.id ].addEventListener( 'click', () => addMembership( g.id ) );
 }
 
@@ -379,7 +379,7 @@ function updateForm()
   
   let groupid = selectedgroupid;
   if ( !groupid )
-    groupid = resource.groupIdsByMember[dyndata.myid];
+    groupid = resource.groupIdsByMember[dynamicData.myId];
   console.log( "group id = " + groupid );
   if ( !groupid )
     return;
@@ -464,7 +464,7 @@ function updateFormData()
 {  
   let groupid = selectedgroupid;
   if ( !groupid )
-    groupid = resource.groupIdsByMember[dyndata.myid];
+    groupid = resource.groupIdsByMember[dynamicData.myId];
   console.log( "group id = " + groupid );
   if ( !groupid )
     return;
@@ -701,7 +701,7 @@ function endorseData( manager )
 {
   let groupid = selectedgroupid;
   if ( !groupid )
-    groupid = resource.groupIdsByMember[dyndata.myid];
+    groupid = resource.groupIdsByMember[dynamicData.myId];
   toolsocket.sendMessage( new peergroupassessment.EndorseDataMessage( groupid, manager ) );  
 }
 
@@ -709,7 +709,7 @@ function clearEndorsements()
 {
   let groupid = selectedgroupid;
   if ( !groupid )
-    groupid = resource.groupIdsByMember[dyndata.myid];
+    groupid = resource.groupIdsByMember[dynamicData.myId];
   toolsocket.sendMessage( new peergroupassessment.ClearEndorsementsMessage( groupid ) );  
 }
 
@@ -732,8 +732,8 @@ function addMembership( gid )
 {
   let pids = [];
   pids[0] = {};
-  pids[0].ltiId = dyndata.myid;
-  pids[0].name  = dyndata.myname;
+  pids[0].ltiId = dynamicData.myId;
+  pids[0].name  = dynamicData.myName;
 
   toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
 }

@@ -15,16 +15,23 @@
  */
 package uk.ac.leedsbeckett.ltitools.selfenrol;
 
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.*;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
-import java.nio.file.Paths;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
+import org.apache.commons.io.FileUtils;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
+import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
  * This class helps set up websocket endpoints and page requests based on
@@ -36,9 +43,18 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
 public class SelfEnrolTool extends Tool
 {
   static final Logger logger = Logger.getLogger(SelfEnrolTool.class.getName() );
-  
-  ServletContext context;
+  private static final ObjectMapper objectmapper = new ObjectMapper();
+  static
+  {
+    objectmapper.enable( SerializationFeature.INDENT_OUTPUT );
+    objectmapper.disable( SerializationFeature.FAIL_ON_EMPTY_BEANS );
+    objectmapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+  }
 
+  
+  ServletContext context = null;
+  SelfEnrolConfiguration config = null;
+  
   /**
    * Empty constructor at present.
    */
@@ -61,9 +77,23 @@ public class SelfEnrolTool extends Tool
   @Override
   public void init( ServletContext context )
   {
-    this.context = context;
+    try
+    {
+      this.context = context;
+      String configpath = context.getRealPath( "/WEB-INF/selfenrolconfig.json" );
+      String rawconfig = FileUtils.readFileToString( new File( configpath ), StandardCharsets.UTF_8 );
+      this.config = objectmapper.readValue( rawconfig, SelfEnrolConfiguration.class );
+    }
+    catch ( IOException ex )
+    {
+      logger.log( Level.SEVERE, "Unable to load Self Enrol tool configuration.", ex );
+    }
   }
   
+  public SelfEnrolConfiguration getConfig()
+  {
+    return this.config;
+  }
   
   /**
    * Instantiate the PgaToolLaunchState. The API's launch servlet will call
@@ -82,6 +112,9 @@ public class SelfEnrolTool extends Tool
    * Initialize the PgaToolLaunchState. It is important to call the super-class
    * to ensure that the tool launch state sub-class fields are set up first.
    * 
+   * Not that this is a system tool so the LTI Roles needed to decide on 
+   * access are System and Institution roles not membership roles.
+   * 
    * @param toolstate The tool state that needs initializing.
    * @param lticlaims The validated LTI claims.
    * @param state The general LTI state.
@@ -91,9 +124,18 @@ public class SelfEnrolTool extends Tool
   {
     super.initToolLaunchState( toolstate, lticlaims, state );
     SeToolLaunchState sestate = (SeToolLaunchState)toolstate;
-    if ( lticlaims.getLtiRoles().isInStandardInstructorRole() )
+    LtiRoleClaims rc = lticlaims.getLtiRoles();
+    if ( rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) )
       sestate.setAllowedToManage( true );
-    if ( lticlaims.getLtiRoles().isInStandardLearnerRole() )
+    if ( rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) ||
+         rc.isInRole( LtiRoleClaims.INSTITUTION_STAFF_ROLE    ) ||
+         rc.isInRole( LtiRoleClaims.INSTITUTION_FACULTY_ROLE  )    )
       sestate.setAllowedToParticipate( true );
+  }
+
+  @Override
+  public Class<? extends ToolEndpoint> getEndpointClass()
+  {
+    return SeEndpoint.class;
   }
 }

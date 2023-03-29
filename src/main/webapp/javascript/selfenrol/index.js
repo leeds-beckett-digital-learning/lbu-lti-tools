@@ -18,7 +18,7 @@ import finder from "../common/domutil.js";
 import arialib from "../common/aria.js";
 import selfenrol from "../generated/selfenrol.js";
 
-let dyndata = gendata;
+let dynamicData = dynamicPageData;
 
 let toolsocket;
 
@@ -26,6 +26,8 @@ let loading;
 
 let dataentryopening=true;
 
+let coursespecvalidator;
+let orgspecvalidator;
 
 function init()
 {
@@ -40,9 +42,13 @@ function init()
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );
     
-  console.log( dyndata.wsuri );
+  console.log( dynamicData.webSocketUri );
 
-  finder.searchButton.addEventListener( 'click', () => searchForCourses() );
+  coursespecvalidator = new RegExp( dynamicData.courseSearchValidation );
+  orgspecvalidator    = new RegExp( dynamicData.orgSearchValidation    );
+
+  finder.searchCourseButton.addEventListener( 'click', () => searchForCourses() );
+  finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   
   let handler =
   {
@@ -66,7 +72,7 @@ function init()
     }
   };
   
-  toolsocket = new selfenrol.ToolSocket( dyndata.wsuri, handler  );  
+  toolsocket = new selfenrol.ToolSocket( dynamicData.webSocketUri, handler  );  
 }
 
 function updateAlerts()
@@ -80,7 +86,24 @@ function addAlert( text )
 
 function searchForCourses()
 {
-  toolsocket.sendMessage( new selfenrol.SearchMessage( "testscope", "testspec" ) );  
+  var spec = finder.courseid.value;
+  if ( !coursespecvalidator.test( spec ) )
+  {
+    alert( "The input was not valid. Please read the notes on the page about how to search." );
+    return;
+  }
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "course", spec ) );  
+}
+
+function searchForOrgs()
+{
+  var spec = finder.orgid.value;
+  if ( !orgspecvalidator.test( spec ) )
+  {
+    alert( "The input was not valid. Please read the notes on the page about how to search." );
+    return;
+  }
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "organization", spec ) );  
 }
 
 window.addEventListener( "load", function(){ init(); } );

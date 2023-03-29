@@ -78,15 +78,7 @@
     <link rel="stylesheet" href="../style/dialog.css"/>
     <script lang="JavaScript">
       
-const gendata = 
-{
-  myid:         '${support.personId}',
-  myname:       '${support.personName}',
-  manager:      ${support.allowedToManage},
-  participant:  ${support.allowedToParticipate},
-  wsuri:        '${support.websocketUri}',
-  debugging:    ${support.debugging}
-};
+const dynamicPageData = ${support.dynamicPageDataAsJSON};
         
     </script>
     <script type="module" src="../javascript/@BUILDTIMESTAMP@/peergroupassessment/index.js"></script>

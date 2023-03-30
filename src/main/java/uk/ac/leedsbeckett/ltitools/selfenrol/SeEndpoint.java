@@ -220,7 +220,7 @@ public class SeEndpoint extends ToolEndpoint
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.putV1CourseMemberships( id, seState.getPersonId(), cmi );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem running search.", message.getId() );
+      throw new HandlerAlertException( "Technical problem attempting to enrol.", message.getId() );
     logger.info( result.getResult().getClass().toString() );
     if ( !result.isSuccessful() )
     {

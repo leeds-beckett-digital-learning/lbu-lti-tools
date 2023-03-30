@@ -68,7 +68,7 @@ function init()
     {
       console.log( "Rxed course info list " + message.payload );
       let content = "";
-      if ( message.payload.length == 0 )
+      if ( message.payload.length === 0 )
       {
         finder.searchresults.innerHTML = "<option value=\"\">Nothing found.</option>\n";
         return;
@@ -80,7 +80,7 @@ function init()
     
     handleEnrolSuccess( message )
     {
-      console.log( "Enrolment succeeded." );
+      alert( "Enrolment succeeded." );
       arialib.closeDialog(finder.searchdialog);
     }
   };

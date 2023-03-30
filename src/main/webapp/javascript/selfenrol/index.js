@@ -76,6 +76,12 @@ function init()
       for ( const d of message.payload )
         content += "<option value=\"" + d.externalId + "\">" + d.externalId + " ~ " + d.name + "</option>\n";
       finder.searchresults.innerHTML = content;
+    },
+    
+    handleEnrolSuccess( message )
+    {
+      console.log( "Enrolment succeeded." );
+      arialib.closeDialog(finder.searchdialog);
     }
   };
   

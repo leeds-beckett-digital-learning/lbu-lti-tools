@@ -31,6 +31,9 @@ import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.Availability;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseMembershipV1;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseMembershipV1Input;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
@@ -206,7 +209,34 @@ public class SeEndpoint extends ToolEndpoint
   public void handleEnrolRequest( Session session, ToolMessage message, SeEnrolRequest request )
           throws IOException, HandlerAlertException
   {
-    throw new HandlerAlertException( "Enrolment request not yet implemented.", message.getId() );
+    String id = request.getCourseId();
+    
+    if ( StringUtils.isEmpty( id ) )
+      throw new HandlerAlertException( "No course ID was received.", message.getId() );
+    
+    CourseMembershipV1Input cmi = new CourseMembershipV1Input( 
+            null, null, new Availability("Yes"), "Instructor" );
+
+    BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
+    JsonResult result = bp.putV1CourseMemberships( id, seState.getPersonId(), cmi );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem running search.", message.getId() );
+    logger.info( result.getResult().getClass().toString() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
+    }
+    
+    CourseMembershipV1 memb = (CourseMembershipV1)result.getResult();
+            
+    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.EnrolSuccess, new SeEnrolSuccess( memb.getId() ) );
+    sendToolMessage( session, tmf );
   }
   
   /**

@@ -28,6 +28,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.StringUtils;
 import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
+import uk.ac.leedsbeckett.ltitools.mail.MailSender;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
@@ -37,6 +38,7 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseMembershi
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -237,6 +239,35 @@ public class SeEndpoint extends ToolEndpoint
             
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.EnrolSuccess, new SeEnrolSuccess( memb.getId() ) );
     sendToolMessage( session, tmf );
+
+
+    result = bp.getV1Users( seState.getPersonId() );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
+    logger.info( result.getResult().getClass().toString() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        logger.severe( "Unable to get contact details from the platform. " + ss.getStatus() + " " + ss.getMessage() );
+      }
+      else
+        logger.severe( "Unable to get contact details from the platform. " );
+      return;
+    }
+    
+    UserV1 user = (UserV1)result.getResult();
+    logger.fine( user.getExternalId() );
+    logger.fine( user.getContact().getEmail() );
+    
+    MailSender sender = tool.getMailSender();
+    sender.processOneEmail( 
+            user.getContact().getEmail(),
+            "Test Message", 
+            "<p>A test message</p>",
+            true
+    );
   }
   
   /**

@@ -27,6 +27,7 @@ import javax.servlet.ServletContext;
 import org.apache.commons.io.FileUtils;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
+import uk.ac.leedsbeckett.ltitools.mail.MailSender;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
@@ -54,6 +55,7 @@ public class SelfEnrolTool extends Tool
   
   ServletContext context = null;
   SelfEnrolConfiguration config = null;
+  MailSender mailSender;  
   
   /**
    * Empty constructor at present.
@@ -82,7 +84,8 @@ public class SelfEnrolTool extends Tool
       this.context = context;
       String configpath = context.getRealPath( "/WEB-INF/selfenrolconfig.json" );
       String rawconfig = FileUtils.readFileToString( new File( configpath ), StandardCharsets.UTF_8 );
-      this.config = objectmapper.readValue( rawconfig, SelfEnrolConfiguration.class );
+      config = objectmapper.readValue( rawconfig, SelfEnrolConfiguration.class );
+      mailSender = new MailSender( config.getSmtpHost(), config.getAdminEmailAddress() );
     }
     catch ( IOException ex )
     {
@@ -137,5 +140,10 @@ public class SelfEnrolTool extends Tool
   public Class<? extends ToolEndpoint> getEndpointClass()
   {
     return SeEndpoint.class;
+  }
+
+  public MailSender getMailSender()
+  {
+    return mailSender;
   }
 }

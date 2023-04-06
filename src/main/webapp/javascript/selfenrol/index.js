@@ -124,6 +124,8 @@ function searchForOrgs()
     return;
   }
   toolsocket.sendMessage( new selfenrol.SearchMessage( "organization", spec ) );  
+  clearSearch();
+  arialib.openDialog( 'searchdialog', finder.searchCourseButton );
 }
 
 function enrolOnCourse()

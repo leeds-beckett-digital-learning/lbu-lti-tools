@@ -35,17 +35,23 @@ public class SelfEnrolConfiguration implements Serializable
   final String courseSearchFilter;
   final Pattern organizationSearchValidation;
   final String organizationSearchFilter;
+  final String smtpHost;
+  final String adminEmailAddress;
 
   public SelfEnrolConfiguration( 
           @JsonProperty( "courseSearchValidation" )       String courseSearchValidation, 
           @JsonProperty( "courseSearchFilter" )           String courseSearchFilter, 
           @JsonProperty( "organizationSearchValidation" ) String organizationSearchValidation, 
-          @JsonProperty( "organizationSearchFilter" )     String organizationSearchFilter )
+          @JsonProperty( "organizationSearchFilter" )     String organizationSearchFilter,
+          @JsonProperty( "smtpHost" )                     String smtpHost,
+          @JsonProperty( "adminEmailAddress" )            String adminEmailAddress )
   {
     this.courseSearchValidation       = Pattern.compile( courseSearchValidation );
     this.courseSearchFilter           = courseSearchFilter;
     this.organizationSearchValidation = Pattern.compile( organizationSearchValidation );
     this.organizationSearchFilter     = organizationSearchFilter;
+    this.smtpHost                     = smtpHost;
+    this.adminEmailAddress            = adminEmailAddress;
   }
   
   
@@ -68,4 +74,14 @@ public class SelfEnrolConfiguration implements Serializable
   {
     return organizationSearchFilter;
   }  
+
+  public String getSmtpHost()
+  {
+    return smtpHost;
+  }
+
+  public String getAdminEmailAddress()
+  {
+    return adminEmailAddress;
+  }
 }

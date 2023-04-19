@@ -3,6 +3,8 @@
 A Java Web Application which implements an LTI 1.3 tool. Initially it can only be deployed in Blackboard Learn
 because that system provides some extra functionality which means the LTI tool needs to do less work.
 
+[Link](docs/index.md)
+
 ## Installation
 
 I plan to add full installation instructions here but this is a fairly involved and complex process and 

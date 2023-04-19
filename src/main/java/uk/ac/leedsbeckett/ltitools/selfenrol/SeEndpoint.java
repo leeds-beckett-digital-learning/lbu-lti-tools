@@ -176,7 +176,9 @@ public class SeEndpoint extends ToolEndpoint
     if ( !validation.matcher( specification ).matches() )
       throw new HandlerAlertException( "The search specification is not valid.", message.getId() );
     
-    filter = Pattern.compile( strfilter.replace( "@", Pattern.quote( specification ) ) );
+    filter = Pattern.compile( strfilter );
+    if ( filter == null )
+      throw new HandlerAlertException( "Unable to create a result filter (regular expression).", message.getId() );
     
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV3Courses( specification, org );
@@ -199,6 +201,8 @@ public class SeEndpoint extends ToolEndpoint
     for ( CourseV2 c : results.getResults() )
     {
       String id = c.getExternalId();
+      if ( id == null )
+        throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message.getId() );
       if ( filter.matcher( id ).matches() )
         list.add( new SeCourseInfo( id, c.getName(), c.getDescription() ) );
     }

@@ -1,6 +1,6 @@
 # LBU-LTI-Tools Installation
 
-[Documentation Index]()
+[Documentation Index](index.md)
 
 
 I plan to add full installation instructions here but this is a fairly involved and complex process and 

@@ -28,6 +28,22 @@ are categorised as follows:
 response or by a forwarding instruction in a previous response.
 * __Backchannel__ - a series of requests originating from a server targetted at another server.
 
+### Terminology for data transfer with HTTPS requests
+
+Of the various ways data is transferred these are the ones relevant to this 
+application
+
+- __Query string__ The data is placed into the URL of the request following a query symbol '?'.
+  Although the whole URL is passed between client and server through an encrypted network
+  socket it has a disadvantage because URLs are sometimes logged by web servers and cached in browsers.
+  Data is stored in a additional locations potentially adding vulnerability.
+  In this application no user or course related data is sent in query strings.
+- __Request Body__ For HTTP methods such as POST and PUT data is passed in the request
+  body. The data is passed through an encrypted socket but is safer because it is
+  not logged to a storage medium.
+- __Response Body__ The same security advantages as for request bodies. This is the
+  only way that user and course data is returned in a response to a request.
+
 ## Network Protocols
 
 A full list of network protocols used by the applications. (Does not reference
@@ -79,33 +95,41 @@ the need for a backchannel.
 
 - User requests LTI resource launch by selecting link in browser to URL on PS.
   - PS generates URL to AS containing information about the launch 'login'.
-    This information contains absolutely NO information about the user or
-    user account. It references only information about the three servers
-    involved in the the launch - PS, AS and AuthS.
+    Information about the requested resource and the application that
+    provides it are encoded in a query string. This query string contains 
+    absolutely NO information about the user,
+    or user account. 
 - User's browser automatically requests login page on AS.
   - AS generates a 'cookie check' page 
-    for the user. URL contains same data as incoming URL. This page contains
+    for the user. This page contains
     Javascript that checks that the user's browser support session only cookies.
     If the test fails an error message is displayed. Otherwise the browser is
-    automatically instructed to load the same URL again but with a flag indicating that
-    the cookie check passed.
+    automatically instructed to load the same URL again but with an additional field
+    in the query string indicating that
+    the cookie check passed. **Note** The application currently doesn't use
+    cookies at all but other applications typically do and this one might in
+    the future.
 - User's browser automatically requests the AS login page again.
-  - AS creates a launch session locally and assigns it a unique ID (a random UUID).
+  - AS creates a launch session data structure locally and assigns it a unique ID (a random UUID many bits long).
     It then generates a URL pointing at the AuthS with the same information
-    provided by the PS with the addition of the AS's unique session ID.
+    provided by the PS with the addition of the AS's unique session ID and other
+    fields that are needed to improve security. (For example a random nonce many bits long that
+    is used to prevent replay attacks.)
 - User's browser auto-forwards to the AuthS URL.
   - AuthS validates the information provided to establish that the PS is entitled
     to launch a resource on the AS and that both those other servers are genuine.
     Then it constructs a URL that will forward the user's browser back to the PS.
+    This includes a query string that will help the PS associate this message with
+    the correct user resource launch request.
 - User's browser auto-forwards to PS URL
-  - PS verifies that the AuthS go ahead is verifiable and constructs a web page
+  - PS verifies the AuthS 'go ahead' message and if successful constructs a web page
     for the user. This page contains Javascript that constructs a URL to the AS's
     launch functionality and then auto-requests that URL. The request method is
     POST and data is sent in the body of the request concerning the resource that
     is requested, the user who needs access to the resource and how to open
     LTI backchannels to the PS (if any have been enabled by PS sysadmin.) Putting 
     this data in the body of a POST request means that data will not appear in
-    web logs and will not be visible to web proxies.
+    web logs and should not be visible to web proxies.
 - User's browser auto-requests launch URL on AS
   - AS receives request and identifies the login session from the session ID 
     provided. It also examines the data in the body of the request. This data
@@ -225,36 +249,44 @@ To make it possible to enrol user in role other than ‘student’.
 
 To create new enrolments. 
 
-## Audit of specific user related data
+## Audit of specific data fields
 
 A detailed report on how they are transmitted between PS, AS and AuthS and 
 whether they are stored by the AS.
 
 - Name
-  - __From__
-  - __Mechanism__
-  - __Encryption__
-  - __Authenticity__
-  - __Storage__
+  - __From__ PS
+  - __Mechanism__ LTI Launch (the user) AND LTI Backchannel (students in course)
+  - __Encryption__ HTTPS including browser (LTI launch); HTTPS server to server (backchannel)
+  - __Authenticity__ Assured by CA verification of source server.
+  - __Storage__ Yes - within web app secure directory on AS file system.
+  - __Displayed to Users__ Yes
+  - __Sent to Servers__ No
+
+- UUID (Generated by PS uniquely for each created user. Many bits long, extremely hard to guess.)
+  - __From__ PS
+  - __Mechanism__ LTI Launch (the user) AND LTI Backchannel (students in course)
+  - __Encryption__ HTTPS including browser (LTI launch); HTTPS server to server (backchannel)
+  - __Authenticity__ Assured by CA verification of source server.
+  - __Storage__ Yes - within web app secure directory on AS file system.
+  - __Displayed to Users__ No
+  - __Sent to Servers__ Yes. Sent to PS backchannels to implement functionality, e.g. enrol user on course.
 
 - Login Name (Username)
-  - __From__
-  - __Mechanism__
-  - __Encryption__
-  - __Authenticity__
-  - __Storage__
-
-- UUID
-  - __From__
-  - __Mechanism__
-  - __Encryption__
-  - __Authenticity__
-  - __Storage__
+  - __From__ PS
+  - __Mechanism__ LTI Launch - it may presented by PS but is not requested or needed by AS
+  - __Encryption__ HTTPS via browser
+  - __Authenticity__ N/A
+  - __Storage__ No - neither in Java heap nor file system.
+  - __Displayed to Users__ No
+  - __Sent to Servers__ No
 
 - Password
   - __From__ Never requested, offered or stored.
-  - __Mechanism__
-  - __Encryption__
-  - __Authenticity__
-  - __Storage__
+  - __Mechanism__ N/A
+  - __Encryption__ N/A
+  - __Authenticity__ N/A
+  - __Storage__ No
+  - __Displayed to Users__ No
+  - __Sent to Servers__ No
 

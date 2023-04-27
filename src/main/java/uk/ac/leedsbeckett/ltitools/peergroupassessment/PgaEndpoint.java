@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -43,6 +44,10 @@ import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
 import uk.ac.leedsbeckett.lti.services.nrps.LtiNamesRoleServiceClaim;
 import uk.ac.leedsbeckett.lti.services.nrps.data.NrpsMembershipContainer;
 import uk.ac.leedsbeckett.lti.services.nrps.data.NrpsMember;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroup;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSet;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSetImportPlan;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSets;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
@@ -61,6 +66,14 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannelKey;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCourseGroupUsersV2Results;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCourseGroupsV2Results;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GroupUserV2;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GroupV2;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
@@ -90,6 +103,7 @@ public class PgaEndpoint extends ToolEndpoint
   StoreCluster store;
 
   LtiBackchannelKey ltibackchannelkey;
+  BlackboardBackchannelKey bbbckey;
   
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
@@ -124,6 +138,7 @@ public class PgaEndpoint extends ToolEndpoint
             getPlatformHost(), 
             pgaState.getNamesRoleServiceUrl(),
             set );
+    bbbckey = new BlackboardBackchannelKey( getPlatformHost() );
   }
   
   /**
@@ -650,6 +665,268 @@ public class PgaEndpoint extends ToolEndpoint
     PgaAddMembership pgaaddmem = new PgaAddMembership( null, members );
     
     handleMembership( session, message, pgaaddmem );
+  }  
+
+  
+  /**
+   * The user wants to import participants from the launching platform.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException Thrown when the request is not allowed or doesn't make sense. 
+   */
+  @EndpointMessageHandler()
+  public void handleGetBlackboardGroupSets( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
+    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+
+    if ( resource.getStage() != Stage.SETUP )
+      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
+
+    BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
+    JsonResult result = bp.getV2CourseGroupSets( pgaState.getCourseId() );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else if ( result.getResult() instanceof RestExceptionMessage )
+      {
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message.getId() );
+    }
+
+    GetCourseGroupsV2Results resultsSets = (GetCourseGroupsV2Results)result.getResult();
+    logger.log(Level.INFO, "Found {0}", resultsSets.getResults().size());
+
+
+    result = bp.getV2CourseGroups( pgaState.getCourseId() );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else if ( result.getResult() instanceof RestExceptionMessage )
+      {
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message.getId() );
+    }
+
+    GetCourseGroupsV2Results resultsGroups = (GetCourseGroupsV2Results)result.getResult();
+    logger.log(Level.INFO, "Found {0}", resultsGroups.getResults().size());
+    for ( GroupV2 g : resultsGroups.getResults() )
+    {
+      logger.log(Level.FINE, "Group Result: {0} {1} {2}", new Object[ ]{g.getId(), g.getName(), g.getGroupSetId()});
+    }    
+    
+    BlackboardGroupSets bbgs = new BlackboardGroupSets();
+    for ( GroupV2 set : resultsSets.getResults() )
+    {
+      String id = set.getExternalId();
+      if ( id == null )
+        throw new HandlerAlertException( "No external ID in group set results. (Perhaps because user agent lacks permissions.)", message.getId() );
+      logger.log(Level.FINE, "Result: {0} {1} {2}", new Object[ ]{set.getId(), set.getName(), set.getGroupSetId()});
+      BlackboardGroupSet bbset = new BlackboardGroupSet( set.getId(), set.getUuid(), set.getName(), new ArrayList<>() );
+      bbgs.add( bbset );
+      for ( GroupV2 g : resultsGroups.getResults() )
+      {
+        if ( g.isInGroupSet() && g.getGroupSetId().equals( set.getId() ) )
+          bbset.addGroup( new BlackboardGroup( g.getId(), g.getUuid(), g.getName() ) );
+      }    
+    }
+    
+    sendToolMessage( 
+            session,
+            new ToolMessage( message.getId(), PgaServerMessageName.BlackboardGroupSets, bbgs ) );
+  }  
+
+  /**
+   * The client wants to record user data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param id ID of BB group set.
+   * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException  Thrown when the request is not allowed or doesn't make sense.
+   */
+  @EndpointMessageHandler()
+  public void handleImportBlackboardGroupSet( Session session, ToolMessage message, Id id )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
+    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+
+    if ( resource.getStage() != Stage.SETUP )
+      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
+    
+    logger.log(Level.FINE, "Importing group set with ID {0}", id.getId());
+
+    // Build this object using data from BB API. It represents a plan of work
+    // that will need to be done to implement the import.
+    BlackboardGroupSetImportPlan plan = new BlackboardGroupSetImportPlan();
+    
+
+    BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
+    JsonResult result = bp.getV2CourseGroupSetGroups( pgaState.getCourseId(), id.getId() );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)result.getResult();
+        throw new HandlerAlertException( "Unable to get groups from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else if ( result.getResult() instanceof RestExceptionMessage )
+      {
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        throw new HandlerAlertException( "Unable to get groups from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get groups from the platform. Unknown error.", message.getId() );
+    }
+
+    GetCourseGroupsV2Results resultsGroups = (GetCourseGroupsV2Results)result.getResult();
+    logger.log(Level.INFO, "Found {0}", resultsGroups.getResults().size());
+    for ( GroupV2 g : resultsGroups.getResults() )
+    {
+      logger.log(Level.FINE, "Group Result: {0} {1} {2}", new Object[ ]{g.getId(), g.getName(), g.getGroupSetId()});
+      plan.addGroup( g.getId(), g.getName() );
+      JsonResult resultUsers = bp.getV2CourseGroupUsers( pgaState.getCourseId(), g.getId() );
+      if ( resultUsers.getResult() == null )
+        throw new HandlerAlertException( "Technical problem fetching group members.", message.getId() );
+      if ( !resultUsers.isSuccessful() )
+      {
+        if ( resultUsers.getResult() instanceof ServiceStatus )
+        {
+          ServiceStatus ss = (ServiceStatus)resultUsers.getResult();
+          throw new HandlerAlertException( "Unable to get group members from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        }
+        else if ( resultUsers.getResult() instanceof RestExceptionMessage )
+        {
+          RestExceptionMessage rem = (RestExceptionMessage)resultUsers.getResult();
+          throw new HandlerAlertException( "Unable to get group members from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        }
+        else
+          throw new HandlerAlertException( "Unable to get group members from the platform. Unknown error.", message.getId() );
+      }
+      GetCourseGroupUsersV2Results users = (GetCourseGroupUsersV2Results)resultUsers.getResult();
+      logger.log(Level.INFO, "Found {0}", users.getResults().size());
+      for ( GroupUserV2 u : users.getResults() )
+      {
+        logger.log(Level.INFO, "User ID {0}", u.getUserId() );
+        JsonResult resultU = bp.getV1Users( u.getUserId() );
+        if ( resultU.getResult() == null )
+          throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
+        logger.info( resultU.getResult().getClass().toString() );
+        if ( !resultU.isSuccessful() )
+        {
+          if ( resultU.getResult() instanceof ServiceStatus )
+          {
+            ServiceStatus ss = (ServiceStatus)resultU.getResult();
+            logger.severe( "Unable to get user info from the platform. " + ss.getStatus() + " " + ss.getMessage() );
+            throw new HandlerAlertException( "Unable to get user info from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+          }
+          else
+            throw new HandlerAlertException( "Unable to get user info from the platform. Unknown error.", message.getId() );
+        }
+
+        UserV1 user = (UserV1)resultU.getResult();
+        logger.fine( user.getUuid() );
+        logger.fine( user.getName().getGiven() + " " + user.getName().getFamily() );
+        plan.addUser( user.getUuid(), user.getName().getGiven() + " " + user.getName().getFamily() );
+      }  
+    }
+    
+    // What's the plan?
+    StringBuilder sb = new StringBuilder();
+    sb.append( "\n\n" );
+    for ( BlackboardGroupSetImportPlan.Group g : plan.getGroups() )
+    {
+      sb.append( g.getExternalId() );
+      sb.append( "\n" );
+      sb.append( g.getName() );
+      sb.append( "\n" );
+      for ( BlackboardGroupSetImportPlan.User u : g.getUsers() )
+      {
+        sb.append( "    " );
+        sb.append( u.getId() );
+        sb.append( "    " );
+        sb.append( u.getName() );
+        sb.append( "\n" );
+      }
+    }
+    sb.append( "\n" );
+
+    logger.fine( sb.toString() );
+    
+    boolean changes = false;
+    // Ensure no duplicate entries.
+    HashSet<String> affectedGids = new HashSet<>();
+    for ( BlackboardGroupSetImportPlan.Group g : plan.getGroups() )
+    {
+      Group resgroup = resource.getGroupByExternalId( g.getExternalId() );
+      if ( resgroup == null )
+      {
+        changes = true;
+        resgroup = resource.addGroup( g.getName(), g.getExternalId() );
+      }
+      PgaAddMembership pam = g.getPgaAddMembership( resgroup.getId() );
+      if ( !pam.isEmpty() )
+      {
+        changes = true;
+        affectedGids.addAll( resource.addMemberships( pam ) );
+      }
+    }
+    
+    if ( changes )
+    {
+      try
+      {
+        store.updateResource( resource );
+        //PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, resource );
+        sendToolMessageToResourceUsers( tm );
+        
+        for ( String gid : affectedGids )
+        {
+          // No data for 'unattached' group
+          if ( gid == null)
+            continue;
+          logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );
+          PeerGroupDataKey key = new PeerGroupDataKey( resource.getKey(), gid );
+          PeerGroupData data = store.getData( key, true );
+          sendToolMessage( 
+                  new AllowedToSeeGroupData( gid, resource ),
+                  new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+        }
+      }
+      catch ( IOException e )
+      {
+        logger.log(  Level.SEVERE, "Unable to store changes.", e );
+      }
+    }    
+    
+    throw new HandlerAlertException( "Nothing was imported.", message.getId() );
   }  
   
   /**

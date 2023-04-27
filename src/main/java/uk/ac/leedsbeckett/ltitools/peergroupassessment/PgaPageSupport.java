@@ -139,6 +139,16 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
   }
 
   /**
+   * Is the user allowed to manage the PGA? Derived from LTI role claims.
+   * 
+   * @return True if the user is a manager.
+   */
+  public boolean isBlackboardLearnRestAvailable()
+  {
+    return pgaState.isBlackboardLearnRestAvailable();
+  }
+  
+  /**
    * Used by JSP page to find out if the page support has logging level set
    * to FINE or even more detailed.
    * 

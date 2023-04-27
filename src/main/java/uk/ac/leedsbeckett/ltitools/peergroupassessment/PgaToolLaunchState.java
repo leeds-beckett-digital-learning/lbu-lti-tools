@@ -30,6 +30,9 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
   private String namesRoleServiceUrl=null;
+  
+  private boolean blackboardLearnRestAvailable=false;
+  
   /**
    * Is the user connected to this state object allowed to manage the resource?
    * 
@@ -83,5 +86,15 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   public void setNamesRoleServiceUrl( String namesRoleServiceUrl )
   {
     this.namesRoleServiceUrl = namesRoleServiceUrl;
+  }
+
+  public boolean isBlackboardLearnRestAvailable()
+  {
+    return blackboardLearnRestAvailable;
+  }
+
+  public void setBlackboardLearnRestAvailable( boolean blackboardLearnRestAvailable )
+  {
+    this.blackboardLearnRestAvailable = blackboardLearnRestAvailable;
   }
 }

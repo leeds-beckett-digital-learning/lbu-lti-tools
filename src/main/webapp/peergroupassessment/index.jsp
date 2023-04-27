@@ -1,4 +1,4 @@
-<%-- 
+/<%-- 
     Document   : index
     Created on : 18 Nov 2021, 08:56:17
     Author     : jon
@@ -85,6 +85,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">
+      
       <div role="dialog" id="editprops" aria-labelledby="editpropslabel" aria-modal="true" class="hidden">
         <h3 id="editpropslabel" class="dialog_label">Edit Properties</h3>
         <div class="dialog_form">
@@ -195,6 +196,27 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div class="dialog_form_actions"><button id="exportdialogCloseButtonBottom" value="Close">Close</button></div>
       </div>
 
+      <div role="dialog" id="bbgroupsetsdialog" aria-labelledby="bbgroupsetsdialoglabel" aria-modal="true" class="hidden">
+        <h3 id="bbgroupsetsdialoglabel" class="dialog_label">Blackboard Group Sets</h3>
+        <div class="dialog_form">
+          <div class="dialog_form_item">
+            <label>
+              <span class="label_text">Group Set to Import:</span>
+              <select id="bbgroupsetsdialogselect">
+                <option>Wait for group sets to load...</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="bbgroupsetsdialogdetail">
+        </div>
+        <div class="dialog_form_actions">    
+          <button id="bbgroupsetsdialogSaveButtonBottom" value="Save">Import</button>
+          <button id="bbgroupsetsdialogCloseButtonBottom" value="Close">Close</button>
+        </div>
+      </div>
+      
+      
       <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
         <h3 id="debugdialogLabel">Debug Information</h3>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>
@@ -238,7 +260,14 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div id="unattachedParticipants"></div>
           
         <c:if test="${support.allowedToManage}">
-          <p><button id="importButton">Import Participants</button> (Under development)</p>
+          <c:choose>
+            <c:when test="${support.blackboardLearnRestAvailable}">
+              <p><button id="importBlackboardButton">Import Blackboard Sub-groups</button> (BB REST API)</p>
+            </c:when>
+            <c:otherwise>
+              <p><button id="importButton">Import Participants</button> (LTI Service)</p>              
+            </c:otherwise>
+          </c:choose>
           <h4>Overview of Students</h4>
           <p>A tables of all students and their scores.</p>
           <table id="overviewtable">

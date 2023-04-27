@@ -15,6 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSets;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
@@ -65,7 +66,12 @@ public enum PgaServerMessageName implements ToolMessageName
   /**
    * A list of data objects for multiple groups.
    */
-  Export(             "Export",             String.class       );
+  Export(             "Export",             String.class       ),
+  
+  /**
+   * A list of data objects for multiple groups.
+   */
+  BlackboardGroupSets( "BlackboardGroupSets", BlackboardGroupSets.class       );
   
   /**
    * Each constant has a name which can be used in encoded messages passing

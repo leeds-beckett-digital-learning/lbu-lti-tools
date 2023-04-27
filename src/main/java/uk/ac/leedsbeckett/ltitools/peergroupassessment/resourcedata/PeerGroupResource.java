@@ -49,6 +49,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();
   public ArrayList<String> groupIdsInOrder = new ArrayList<>();
+  public final Map<String,String> groupIdsByExternalId = new HashMap<>();
   
   public PeerGroupResource( @JsonProperty("key") ResourceKey key )
   {
@@ -155,6 +156,15 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     return getGroupById( gid );
   }
   
+  public Group getGroupByExternalId( String id )
+  {
+    if ( id == null ) return null;
+    if ( !groupIdsByExternalId.containsKey( id ) ) return null;
+    String gid = groupIdsByExternalId.get( id );
+    if ( gid == null ) return null;
+    return getGroupById( gid );
+  }
+  
   public boolean isMember( String id )
   {
     if ( id == null ) return false;
@@ -172,12 +182,20 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   
   public Group addGroup( String gtitle )
   {
+    return addGroup( gtitle, null );
+  }
+  
+  public Group addGroup( String gtitle, String extId )
+  {
     String gid = UUID.randomUUID().toString();
     Group g = new Group();
     g.setId( gid );
     g.setTitle( gtitle );
+    g.setExternalId( extId );
     groupsById.put( gid, g );
     groupIdsInOrder.add( g.id );
+    if ( extId != null )
+      groupIdsByExternalId.put( extId, gid );
     sortGroups();
     return g;
   }
@@ -234,6 +252,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   {
     String id;
     String title;
+    String externalId;
     
     public final Map<String,Member> membersbyid = new HashMap<>();
 
@@ -257,6 +276,16 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     public void setTitle( String title )
     {
       this.title = title;
+    }
+
+    public String getExternalId()
+    {
+      return externalId;
+    }
+
+    public void setExternalId( String externalId )
+    {
+      this.externalId = externalId;
     }
     
     public void addMember( String id, String name )
@@ -302,10 +331,11 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   
   public static class Member implements Serializable
   {
-    String ltiId;
-    String name;
+    final String ltiId;
+    final String name;
 
-    public Member( String ltiId, String name )
+    public Member( @JsonProperty("ltiId")  String ltiId, 
+                   @JsonProperty("name")   String name )
     {
       this.ltiId = ltiId;
       this.name = name;
@@ -316,19 +346,9 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
       return ltiId;
     }
 
-    public void setLtiId( String ltiId )
-    {
-      this.ltiId = ltiId;
-    }
-
     public String getName()
     {
       return name;
-    }
-
-    public void setName( String name )
-    {
-      this.name = name;
     }
   }  
 }

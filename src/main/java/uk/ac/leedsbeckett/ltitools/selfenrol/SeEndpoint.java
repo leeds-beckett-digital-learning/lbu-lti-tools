@@ -245,7 +245,7 @@ public class SeEndpoint extends ToolEndpoint
     sendToolMessage( session, tmf );
 
 
-    result = bp.getV1Users( seState.getPersonId() );
+    result = bp.getV1Users( "uuid:" + seState.getPersonId() );
     if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
     logger.info( result.getResult().getClass().toString() );

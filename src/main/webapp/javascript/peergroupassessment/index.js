@@ -40,6 +40,8 @@ let data;
 let selectedgroupid;
 let formuptodate = false;
 
+let bbgroupsetdata;
+
 function init()
 {
   console.log( "init" );
@@ -78,12 +80,20 @@ function init()
     finder.dataentryClearEndorsementsButton  .addEventListener( 'click', () => clearEndorsements()            );
     finder.exportdialogCloseButtonTop        .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonTop)    );
     finder.exportdialogCloseButtonBottom     .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonBottom)    );
-    finder.exportButton                      .addEventListener( 'click', () => getExport(finder.exportButton)                    );
-    finder.importButton                      .addEventListener( 'click', () => getImport(finder.importButton)                    );
+    finder.exportButton                      .addEventListener( 'click', () => getExport(finder.exportButton)                      );
+    if ( finder.importButton )
+      finder.importButton                      .addEventListener( 'click', () => getImport(finder.importButton)                      );
+    if ( finder.importBlackboardButton )
+      finder.importBlackboardButton            .addEventListener( 'click', () => getBlackboardGroupSets(finder.importBlackboardButton)  );
   }
+
+  finder.bbgroupsetsdialogselect               .addEventListener( 'change', () => showBlackboardGroupSet() );
+  finder.bbgroupsetsdialogSaveButtonBottom     .addEventListener( 'click', () => importBlackboardGroupSet() );
+  finder.bbgroupsetsdialogCloseButtonBottom    .addEventListener( 'click', () => arialib.closeDialog(finder.bbgroupsetsdialogCloseButtonBottom)       );
   
   finder.debugdialogCloseButtonTop     .addEventListener( 'click', () => arialib.closeDialog(finder.debugdialogCloseButtonTop)       );
   finder.debugdialogCloseButtonBottom  .addEventListener( 'click', () => arialib.closeDialog(finder.debugdialogCloseButtonBottom)       );
+
 
   if ( finder.editpropertiesButton )
     finder.editpropertiesButton.addEventListener( 'click', () => arialib.openDialog( 'editprops', finder.editpropertiesButton ) );
@@ -163,6 +173,12 @@ function init()
       console.log( "handleExport" );
       console.log( message.payload );
       finder.exporttextarea.value = message.payload;
+    },
+    
+    handleBlackboardGroupSets( message )
+    {
+      bbgroupsetdata = message.payload;
+      updateBlackboardGroupSets();
     }
   
   };
@@ -637,6 +653,66 @@ function updateOverviewDataGroup( d )
   }
 }
 
+function updateBlackboardGroupSets()
+{
+  console.log( "updateBlackboardGroupSets" );
+  console.log( bbgroupsetdata );  
+      
+  finder.bbgroupsetsdialogselect.innerHTML = '';
+  finder.bbgroupsetsdialogdetail.innerHTML = '';
+  var html;
+  if ( !bbgroupsetdata.length )
+  {
+    html = "<option value=\"-\">No Group Sets in Course</option>\n";
+  }
+  else
+  {
+    html = "<option value=\"-\">Select a Set Here</option>\n";
+    for ( let i=0; i < bbgroupsetdata.length; i++ )
+      html += "<option value=\"" + bbgroupsetdata[i].id + "\">" + bbgroupsetdata[i].name + "</option>";
+  }
+  finder.bbgroupsetsdialogselect.innerHTML = html;
+  console.log( "Done" );
+}
+
+function showBlackboardGroupSet()
+{
+  var selectedid = finder.bbgroupsetsdialogselect.value;
+  console.log( "showBlackboardGroupSet" );
+  console.log( selectedid );
+
+  finder.bbgroupsetsdialogdetail.innerHTML = "";  
+  for ( let i=0; i < bbgroupsetdata.length; i++ )
+  {
+    console.log( "Checking " + bbgroupsetdata[i].id );
+    if ( bbgroupsetdata[i].id === selectedid )
+    {
+      var html = "<h4>Selected Set: " + bbgroupsetdata[i].name + 
+              "</h4>\n<p>Contains " + bbgroupsetdata[i].groups.length + 
+              " Groups</p><ul>\n";
+      for ( let j=0; j<bbgroupsetdata[i].groups.length; j++ )
+        html += "<li>" + bbgroupsetdata[i].groups[j].name + "</li>\n";
+      html += "<ul>\n";
+      finder.bbgroupsetsdialogdetail.innerHTML = html;
+    }
+  }  
+}
+
+function importBlackboardGroupSet()
+{
+  var selectedid = finder.bbgroupsetsdialogselect.value;
+  console.log( "showBlackboardGroupSet" );
+  console.log( selectedid );
+  if ( selectedid === null || selectedid === '-' )
+  {
+    alert( "No group set was selected." );
+    return;
+  }
+  arialib.closeDialog( finder.bbgroupsetsdialogImportButtonBottom );
+  toolsocket.sendMessage( new peergroupassessment.ImportBlackboardGroupSetMessage( selectedid ) );  
+}
+
+
 function openGroupEditDialog( openerElement, gid )
 {
   let g = resource.groupsById[gid];
@@ -671,6 +747,12 @@ function getExport( openerelement )
 function getImport( openerelement )
 {
   toolsocket.sendMessage( new peergroupassessment.GetImportMessage() );
+}
+
+function getBlackboardGroupSets( openerelement )
+{
+  toolsocket.sendMessage( new peergroupassessment.GetBlackboardGroupSetsMessage() );
+  arialib.openDialog( 'bbgroupsetsdialog', openerelement );  
 }
 
 function openDebugDialog( openerElement )

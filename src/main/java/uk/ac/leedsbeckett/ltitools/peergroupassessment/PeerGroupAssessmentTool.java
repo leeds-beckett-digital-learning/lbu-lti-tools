@@ -48,6 +48,12 @@ public class PeerGroupAssessmentTool extends Tool
   {
   }
   
+  @Override
+  public boolean usesBlackboardRest()
+  {
+    return true;
+  }
+  
   /**
    * This initializes the tool. The toolapi tool coordinator calls this when
    * the server context loads.
@@ -104,6 +110,9 @@ public class PeerGroupAssessmentTool extends Tool
       pgastate.setAllowedToParticipate( true );
     if ( lticlaims.getLtiNamesRoleService() != null )
       pgastate.setNamesRoleServiceUrl( lticlaims.getLtiNamesRoleService().getContextMembershipsUrl() );
+    if ( "Blackboard, Inc.".equals( lticlaims.getLtiToolPlatform().getName() ) &&
+         "BlackboardLearn".equals( lticlaims.getLtiToolPlatform().getProductFamilyCode() ) )
+      pgastate.setBlackboardLearnRestAvailable( true );
   }
 
   @Override

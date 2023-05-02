@@ -260,6 +260,8 @@ function updateGroups()
   let html = "\n";
   finder.grouptablebody.innerHTML = html;
   finder.unattachedParticipants.innerHTML = "";
+  if ( finder.addgroupButton )
+    finder.addgroupButton.style.display = resource.properties.stage === "SETUP"?"initial":"none";
   for ( const gid of resource.groupIdsInOrder )
   {
     const g = resource.groupsById[gid];
@@ -322,7 +324,7 @@ function updateGroup( g )
 
   let html = "";
   html += "<td>";
-  if ( dynamicData.allowedToManage )
+  if ( dynamicData.allowedToManage && resource.properties.stage === "SETUP" )
   {
     html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
     html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
@@ -347,7 +349,7 @@ function updateGroup( g )
       ingroup = true;
     html += m.name;
     if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
-      html += "<button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Remove</button>";
+      html += " <button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Remove</button>";
   }
   html += "</td>\n";
   html += "<td>";
@@ -362,19 +364,22 @@ function updateGroup( g )
   if ( dynamicData.allowedToManage )
   {
     var db = finder[ "groupDeleteButton" + g.id ];
-    db.addEventListener( 'click', () => openGroupDeleteDialog( db, g.id ) );
+    if ( db )
+      db.addEventListener( 'click', () => openGroupDeleteDialog( db, g.id ) );
     var de = finder[ "groupEditButton"   + g.id ];
-    de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
+    if ( de )
+      de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
   }
   if ( dynamicData.allowedToManage || isMemberOf( g ) )
   {
     var link = finder[ "groupViewLink"   + g.id ];
-    link.addEventListener( 'click', ( e ) =>     
-    {
-      e.preventDefault();
-      openDataEntryDialog( link, g.id ) ;
-    }
-            );
+    if ( link )
+      link.addEventListener( 'click', ( e ) =>     
+                                {
+                                  e.preventDefault();
+                                  openDataEntryDialog( link, g.id ) ;
+                                }
+                            );
   }
 
   if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dynamicData.allowedToParticipate )  

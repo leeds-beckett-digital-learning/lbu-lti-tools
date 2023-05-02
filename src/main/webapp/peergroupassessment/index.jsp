@@ -21,6 +21,7 @@
     <title>Peer Group Assessment</title>
     <style>
       body { font-family: sans-serif; padding: 1em 1em 1em 1em; }
+      .block { max-width: 50em; }
       .stage {}
       .stage-label { font-weight: bold }
       .important { background-color: yellow }
@@ -245,12 +246,12 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div id="basePage">
       
     <h1>Peer Group Assessment Tool</h1>
+    <div class="block">
     <p class="important">${support.importantMessage}</p>
     <h2 id="mainTitle"></h2>
     <p id="mainDescription"></p>
     <p class="stage"><span class="stage-label">Stage:</span> <span id="mainStage"></span></p>
-
-    <ul id="toplevelalert" class="alertList"></ul>
+    </div>
     
     <!--
     <p>${support.personId} - ${support.personName}</p>
@@ -266,6 +267,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           <p><button id="importButton">Import Participants</button> (LTI Service)</p>              
         </c:if>
         
+        <h4>Groups</h4>
         <table id="grouptable">
           <thead><tr><th></th><th>Group</th><th>Members</th><th></th></tr></thead>
           <tbody id="grouptablebody"></tbody>
@@ -303,6 +305,19 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       </c:otherwise>
     </c:choose>
     
+    <h4>Notifications</h4>
+    <div class="block">
+      <ul id="toplevelalert" class="alertList"></ul>
+      <p>Notifications will appear above this paragraph. These are mainly intended
+        for users who use browsers that are adapted for accessibility. This is 
+        because different elements of this page can change in response to the
+        actions of other users and that could cause problems for sight impaired
+        users. To help those users, whenever a change occurs to the content of this
+        page an alert is added in a way that adapted browsers can notice
+        and report to you. You can choose to navigate to the relevant part of the
+        page and 'read' the changed content.
+      </p>
+    </div>
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

@@ -44,7 +44,7 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
 {
   ResourceKey key;
   
-  PgaProperties properties = new PgaProperties( "Initial Title", "Initial Decsription", Stage.SETUP );
+  PgaProperties properties = new PgaProperties( "Initial Title", "Initial Description", Stage.SETUP );
   public final Map<String,Group> groupsById = new HashMap<>();
   final Group groupOfUnattached = new Group();
   public final Map<String,String> groupIdsByMember = new HashMap<>();

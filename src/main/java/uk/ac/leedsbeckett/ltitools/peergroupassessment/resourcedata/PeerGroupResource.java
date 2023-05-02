@@ -199,6 +199,22 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
     sortGroups();
     return g;
   }
+
+  public void deleteGroup( String gid )
+  {
+    if ( gid == null || !groupsById.containsKey( gid ) )
+      return;
+    
+    Group g = groupsById.get( gid );
+    // Move all members to unattached
+    List<Member> members = g.getMembers();
+    for ( Member m : members )
+      addMember( null, m.getLtiId(), m.getName() );
+    if ( g.getExternalId() != null )
+      groupIdsByExternalId.remove( g.externalId );
+    groupsById.remove( gid );
+    groupIdsInOrder.remove( gid );
+  }
   
   public void sortGroups()
   {

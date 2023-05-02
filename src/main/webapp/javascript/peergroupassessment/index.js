@@ -67,8 +67,12 @@ function init()
   finder.editpropsCloseButtonBottom    .addEventListener( 'click', () => arialib.closeDialog( finder.editpropsCloseButtonBottom )       );
   
   if ( dynamicData.allowedToManage )
+  {
     finder.editgrouppropsSaveButtonBottom .addEventListener( 'click', () => saveEditGroupProps()                );
+    finder.deletegroupDeleteButtonBottom  .addEventListener( 'click', () => deleteGroup()                       );
+  }
   finder.editgrouppropsCloseButtonBottom  .addEventListener( 'click', () => arialib.closeDialog(finder.editgrouppropsCloseButtonBottom)       );
+  finder.deletegroupCloseButtonBottom     .addEventListener( 'click', () => arialib.closeDialog(finder.deletegroupCloseButtonBottom)       );
   
   finder.dataentryCloseButtonTop           .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonTop)       );
   finder.dataentryCloseButtonBottom        .addEventListener( 'click', () => arialib.closeDialog(finder.dataentryCloseButtonBottom)       );
@@ -336,7 +340,7 @@ function updateGroup( g )
   if ( dynamicData.allowedToManage )
   {
     var db = finder[ "groupDeleteButton" + g.id ];
-    db.addEventListener( 'click', () => alert( 'Not yet implemented.' ) );
+    db.addEventListener( 'click', () => openGroupDeleteDialog( de, g.id ) );
     var de = finder[ "groupEditButton"   + g.id ];
     de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
   }
@@ -721,6 +725,16 @@ function openGroupEditDialog( openerElement, gid )
   finder.editgrouppropsTitle.value = (g)?g.title:"Unknown Group";
 }
 
+function openGroupDeleteDialog( openerElement, gid )
+{
+  let g = resource.groupsById[gid];
+  arialib.openDialog( 'deletegroup', openerElement );
+  finder.deletegroupId.value = gid;
+  finder.deletegroupTitle.value          = (g)?g.title:"Unknown Group";
+  finder.deletegroupTitleTitle.innerText = (g)?g.title:"Unknown Group";
+}
+
+
 function openDataEntryDialog( openerElement, gid )
 {
   dataentryopening=true;
@@ -777,6 +791,14 @@ function saveEditGroupProps()
           finder.editgrouppropsId.value, 
           finder.editgrouppropsTitle.value ) );
   arialib.closeDialog( finder.editgrouppropsSaveButtonBottom );
+}
+
+function deleteGroup()
+{
+  toolsocket.sendMessage( new peergroupassessment.DeleteGroupMessage( 
+          finder.deletegroupId.value, 
+          finder.deletegroupTitle.value ) );
+  arialib.closeDialog( finder.deletegroupDeleteButtonBottom );
 }
 
 function endorseData( manager )

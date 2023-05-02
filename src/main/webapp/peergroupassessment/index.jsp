@@ -1,4 +1,4 @@
-/<%-- 
+<%-- 
     Document   : index
     Created on : 18 Nov 2021, 08:56:17
     Author     : jon
@@ -122,7 +122,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <div role="dialog" id="editgroupProps" aria-labelledby="editgroupPropsLabel" aria-modal="true" class="hidden">
         <h3 id="editgroupPropsLabel">Edit Group Properties</h3>
         <div class="dialog_form">
-          <input id="editgrouppropsId" size="30" type="hidden"/>
+          <input id="editgrouppropsId" type="hidden"/>
           <div class="dialog_form_item">
             <label>
               <span class="label_text">Title:</span>
@@ -133,6 +133,20 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div class="dialog_form_actions">    
           <button id="editgrouppropsSaveButtonBottom" value="Save">Save</button>
           <button id="editgrouppropsCloseButtonBottom" value="Close">Close</button>
+        </div>
+      </div>
+
+      <div role="dialog" id="deletegroup" aria-labelledby="deletegroupLabel" aria-modal="true" class="hidden">
+        <h3 id="deletegroupLabel">Delete Group</h3>
+        <h4 id="deletegroupTitleTitle"></h4>
+        <div class="dialog_form">
+          Are you sure that you want to delete this group?
+          <input id="deletegroupId"    type="hidden"/>
+          <input id="deletegroupTitle" type="hidden""/>
+        </div>
+        <div class="dialog_form_actions">    
+          <button id="deletegroupDeleteButtonBottom" value="Delete">Delete</button>
+          <button id="deletegroupCloseButtonBottom" value="Close">Close</button>
         </div>
       </div>
 

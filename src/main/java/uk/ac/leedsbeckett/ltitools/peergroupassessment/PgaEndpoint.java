@@ -296,6 +296,44 @@ public class PgaEndpoint extends ToolEndpoint
   }
   
   /**
+   * The client wants to delete a group.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param p The group id and desired group properties.
+   * @throws IOException Indicates failure to process. 
+   * @throws HandlerAlertException  Thrown when the request is not allowed or doesn't make sense.
+   */
+  @EndpointMessageHandler()
+  public void handleDeleteGroup( Session session, ToolMessage message, PgaChangeGroup p )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Cannot delete group, you don't have management access here.", message.getId() );    
+    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    if ( !pgaResource.getStage().equals( Stage.SETUP ) )
+      throw new HandlerAlertException( "Can only delete groups during the set-up stage.", message.getId() );
+    logger.log( Level.INFO, "ID [{0}]",       p.getId() );
+    logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
+    Group g = pgaResource.getGroupById( p.getId() );
+    if ( g != null )
+    {
+      pgaResource.deleteGroup( p.getId() );
+      try
+      {
+        store.updateResource( pgaResource );
+        // Send whole resource.
+        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+        sendToolMessageToResourceUsers( tm );
+      }
+      catch ( IOException e )
+      {
+        logger.log(  Level.SEVERE, "Unable to store changes.", e );
+      }
+    }
+  }
+  
+  /**
    * The client wants a new group to be created within the PGA.
    * 
    * @param session The session this endpoint belongs to.
@@ -923,10 +961,9 @@ public class PgaEndpoint extends ToolEndpoint
       catch ( IOException e )
       {
         logger.log(  Level.SEVERE, "Unable to store changes.", e );
+        throw new HandlerAlertException( "Import failed.", message.getId() );
       }
-    }    
-    
-    throw new HandlerAlertException( "Nothing was imported.", message.getId() );
+    }        
   }  
   
   /**

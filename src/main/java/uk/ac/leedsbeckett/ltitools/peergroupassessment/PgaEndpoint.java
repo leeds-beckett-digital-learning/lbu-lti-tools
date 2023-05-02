@@ -385,15 +385,22 @@ public class PgaEndpoint extends ToolEndpoint
   {
     PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
 
-    if ( !pgaResource.getStage().equals( Stage.JOIN ) )
-      throw new HandlerAlertException( "Can only change group membership during the 'joining' stage.", message.getId() );
+    if ( pgaState.isAllowedToManage() )
+    {
+      if ( !pgaResource.getStage().equals( Stage.SETUP ) && !pgaResource.getStage().equals( Stage.JOIN ) )
+        throw new HandlerAlertException( "Managers can only change group membership during the 'setup' and 'joining' stages.", message.getId() );      
+    }
+    else if ( pgaState.isAllowedToParticipate() )
+    {
+      if ( !pgaResource.getStage().equals( Stage.JOIN ) )
+        throw new HandlerAlertException( "Can only change group membership during the 'joining' stage.", message.getId() );
+      if ( !m.isOnlySelf( pgaState.getPersonId() ) )
+        throw new HandlerAlertException( "You can only change your own group membership.", message.getId() );
+    }
+    else
+      throw new HandlerAlertException( "Only participants and managers can change membership.", message.getId() );
     
-    if ( !pgaState.isAllowedToAccess() )
-      throw new HandlerAlertException( "As a non-participant you cannot change group membership.", message.getId() );
 
-    if ( !pgaState.isAllowedToManage() && !m.isOnlySelf( pgaState.getPersonId() ) )
-      throw new HandlerAlertException( "You can only change your own group membership.", message.getId() );
-    
     logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
     try
     {
@@ -659,8 +666,8 @@ public class PgaEndpoint extends ToolEndpoint
       throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message.getId() );
     PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
 
-    if ( resource.getStage() != Stage.JOIN )
-      throw new HandlerAlertException( "You can only import participants in setup phase. Try again at that stage.", message.getId() );
+    if ( resource.getStage() != Stage.SETUP && resource.getStage() != Stage.JOIN )
+      throw new HandlerAlertException( "You can only import participants in setup and join phases.", message.getId() );
 
     if ( pgaState.getNamesRoleServiceUrl() == null )
       throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for a names/role service.", message.getId() );

@@ -42,6 +42,8 @@ let formuptodate = false;
 
 let bbgroupsetdata;
 
+let unattachedcheckboxes = new Array();
+
 function init()
 {
   console.log( "init" );
@@ -267,17 +269,33 @@ function updateGroups()
   updateUnattachedGroup();
   addAlert( "The table of groups on this page has been rebuilt." );
 }
+
+
 function updateUnattachedGroup()
 {
+  unattachedcheckboxes = new Array();
   finder.unattachedParticipants.innerHTML = "";
   const set = resource.groupOfUnattached.membersbyid;
   let html = "";
   for ( let id in set )
   {
-    html += set[id].name;
+    html += "<span>";
+    if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
+    {
+      html += "<input type=\"checkbox\" id=\"unattachedMember_" + id + "\" data-id=\"" + id + "\" data-name=\"" + set[id].name + "\"></input>";
+      html += "<label for=\"unattachedMember_" + id + "\">" + set[id].name + "</label>";
+    }
+    else
+      html += set[id].name;
+    html += "</span>";
     html += "<br>";
   }
   finder.unattachedParticipants.innerHTML = html;
+  for ( let id in set )
+  {
+    var checkbox = finder[ "unattachedMember_" + id ];
+    unattachedcheckboxes.push( checkbox );
+  }    
 }
 
 function isMemberOf( g )
@@ -328,11 +346,15 @@ function updateGroup( g )
     if ( m.ltiId === dynamicData.myId )
       ingroup = true;
     html += m.name;
+    if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
+      html += "<button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Remove</button>";
   }
   html += "</td>\n";
   html += "<td>";
   if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
-    html += "<button id=\"groupJoinButton" + g.id + "\" class=\"joinbutton\">Join</button>";
+    html += "<button id=\"groupJoinButton_" + g.id + "\" class=\"joinbutton\">Join</button>";
+  if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
+    html += "<button id=\"groupAddToButton_" + g.id + "\" class=\"addtobutton\">Add Selected</button>";
   html += "</td>";
 
   row.innerHTML = html;
@@ -340,7 +362,7 @@ function updateGroup( g )
   if ( dynamicData.allowedToManage )
   {
     var db = finder[ "groupDeleteButton" + g.id ];
-    db.addEventListener( 'click', () => openGroupDeleteDialog( de, g.id ) );
+    db.addEventListener( 'click', () => openGroupDeleteDialog( db, g.id ) );
     var de = finder[ "groupEditButton"   + g.id ];
     de.addEventListener( 'click', () => openGroupEditDialog( de, g.id ) );
   }
@@ -354,8 +376,49 @@ function updateGroup( g )
     }
             );
   }
+
   if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dynamicData.allowedToParticipate )  
-    finder[ "groupJoinButton"   + g.id ].addEventListener( 'click', () => addMembership( g.id ) );
+    finder[ "groupJoinButton_"   + g.id ].addEventListener( 'click', () => addMembership( g.id ) );
+  if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
+  {
+    finder[ "groupAddToButton_"   + g.id ].addEventListener( 'click', () => addMembersToGroup( g.id ) );
+    for ( const mid in g.membersbyid )
+    {
+     let m = g.membersbyid[mid];
+     finder[ "groupUnjoinButton_" + mid ].addEventListener( 'click', () => removeMemberFromGroup( mid, m.name ) );
+   }
+  }
+}
+
+function removeMemberFromGroup( mid, name )
+{    
+  let pids = [];
+  pids[0] = {};
+  pids[0].ltiId = mid;
+  pids[0].name  = name;
+  toolsocket.sendMessage( new peergroupassessment.MembershipMessage( null, pids ) );
+}
+  
+function addMembersToGroup( gid )
+{
+  let pids = new Array();
+  const set = resource.groupOfUnattached.membersbyid;
+
+  for ( let i=0; i < unattachedcheckboxes.length; i++ )
+  {
+    let checkbox = unattachedcheckboxes[i];
+    if ( checkbox.checked )
+    {
+      let p = {};
+      p.ltiId = checkbox.dataset.id;
+      p.name  = checkbox.dataset.name;
+      pids.push( p );
+    }
+  }
+  if ( pids.length > 0 )
+    toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );  
+  else
+    alert( "You need to select people in the unattached list if you want to add them to a group." );
 }
 
 function clearForm()

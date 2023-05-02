@@ -260,6 +260,10 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
         <c:if test="${support.allowedToManage}">
           <p><button id="editpropertiesButton">Edit Properties</button></p>          
+          <c:if test="${support.blackboardLearnRestAvailable}">
+            <p><button id="importBlackboardButton">Import Blackboard Sub-groups</button> (BB REST API)</p>
+          </c:if>
+          <p><button id="importButton">Import Participants</button> (LTI Service)</p>              
         </c:if>
         
         <table id="grouptable">
@@ -274,14 +278,6 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div id="unattachedParticipants"></div>
           
         <c:if test="${support.allowedToManage}">
-          <c:choose>
-            <c:when test="${support.blackboardLearnRestAvailable}">
-              <p><button id="importBlackboardButton">Import Blackboard Sub-groups</button> (BB REST API)</p>
-            </c:when>
-            <c:otherwise>
-              <p><button id="importButton">Import Participants</button> (LTI Service)</p>              
-            </c:otherwise>
-          </c:choose>
           <h4>Overview of Students</h4>
           <p>A tables of all students and their scores.</p>
           <table id="overviewtable">

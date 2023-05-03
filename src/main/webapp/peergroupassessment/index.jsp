@@ -162,9 +162,6 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
 
         <div class="dialog_form">
           <table>
-            <thead>
-              <tr id="dataentryheadrow"><th>Criterion</th></tr>
-            </thead>
             <tbody id="dataentrytablebody">
             </tbody>
           </table>
@@ -272,13 +269,13 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <table id="grouptable">
           <thead>
             <tr>
-              <th>Group</th>
+              <th scope="col">Group</th>
               <c:if test="${support.allowedToManage}">        
-               <th>Group Actions</th>
+               <th scope="col">Group Actions</th>
               </c:if>
-              <th>Members</th>
+              <th scope="col">Members</th>
               <c:if test="${support.allowedToManage}">        
-                <th>Membership Actions</th>
+                <th scope="col">Membership Actions</th>
               </c:if>
             </tr>
           </thead>

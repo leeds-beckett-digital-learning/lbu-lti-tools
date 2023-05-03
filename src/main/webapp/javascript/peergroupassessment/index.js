@@ -325,7 +325,7 @@ function updateGroup( g )
   let html = "";
   
   if ( dynamicData.allowedToManage || isMemberOf( g ) )
-    html += "<th><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></th>\n";
+    html += "<th scope=\"row\"><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></th>\n";
   else
     html += "<th>" + g.title + "</th>\n";
 
@@ -497,25 +497,38 @@ function updateForm()
     return;
   
   let group = resource.groupsById[groupid];
+  let row = document.createElement( "tr" );
+  let td;
+  let tdm;
+  let th = document.createElement( "th" );
+  th.className = "dataentry-formcell";
+  th.innerHTML = "Criterion";
+  th.scope = "col";
+  row.append( th );
+  
   for ( let m in group.membersbyid )
   {
-    let th = document.createElement( "th" );
+    th = document.createElement( "th" );
     th.className = "dataentry-formcell";
     th.innerHTML = group.membersbyid[m].name;
-    finder.dataentryheadrow.append( th );
+    th.scope = "col";
+    row.append( th );
   }
-  
+  finder.dataentrytablebody.innerHTML = "";
+  finder.dataentrytablebody.append( row );
+
   for ( let i=0; i<form.fieldIds.length; i++ )
   {
     let fieldid = form.fieldIds[i];
     let field = form.fields[fieldid];
     if ( !field ) continue;
-    let row = document.createElement( "tr" );
+    row = document.createElement( "tr" );
     row.className = "dataentry-formrow";
     row.id = "dataentryrow-" + field.id;
-    let td = document.createElement( "td" );
-    td.innerText = field.description;
-    row.append( td );
+    th = document.createElement( "th" );
+    th.scope = "row";
+    th.innerText = field.description;
+    row.append( th );
     for ( let m in group.membersbyid )
     {
       td = document.createElement( "td" );
@@ -537,7 +550,6 @@ function updateForm()
   endorserow.className = "dataentry-formrow";
   let managerendorserow = document.createElement( "tr" );
   managerendorserow.className = "dataentry-formrow";
-  let td, tdm;
   td = document.createElement( "td" );
   td.innerHTML = "Participant Endorsement";
   endorserow.append( td );

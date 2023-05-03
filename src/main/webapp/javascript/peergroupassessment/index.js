@@ -323,20 +323,24 @@ function updateGroup( g )
   }
 
   let html = "";
-  html += "<td>";
-  if ( dynamicData.allowedToManage && resource.properties.stage === "SETUP" )
-  {
-    html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
-    html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
-  }
   
   if ( dynamicData.allowedToManage || isMemberOf( g ) )
-    html += "<td><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></td>\n";
+    html += "<th><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></th>\n";
   else
-    html += "<td>" + g.title + "</td>\n";
+    html += "<th>" + g.title + "</th>\n";
 
+  if ( dynamicData.allowedToManage )
+  {
+    html += "<td>";
+    if ( resource.properties.stage === "SETUP" )
+    {
+      html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
+      html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
+    }
+    html += "</td>";
+  }
+  
   html += "<td>";
-  let ingroup = false;
   let first = true;
   for ( const mid in g.membersbyid )
   {
@@ -345,20 +349,34 @@ function updateGroup( g )
     else
       html += "<br>\n";
     let m = g.membersbyid[mid];
-    if ( m.ltiId === dynamicData.myId )
-      ingroup = true;
     html += m.name;
-    if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
-      html += " <button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Remove</button>";
+    if (
+         ( mid === dynamicData.myId && resource.properties.stage === "JOIN" ) || 
+         ( dynamicData.allowedToManage && 
+              ( resource.properties.stage === "SETUP" || 
+                resource.properties.stage === "JOIN" ) )
+       )
+      html += " <button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Unjoin</button>";
+  }
+  if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
+  {
+    if ( !first )
+      html += "<br>\n";
+    html += "<button id=\"groupJoinButton_" + g.id + "\" class=\"joinbutton\">Join</button>";
   }
   html += "</td>\n";
-  html += "<td>";
-  if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
-    html += "<button id=\"groupJoinButton_" + g.id + "\" class=\"joinbutton\">Join</button>";
-  if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
-    html += "<button id=\"groupAddToButton_" + g.id + "\" class=\"addtobutton\">Add Selected</button>";
-  html += "</td>";
 
+  if ( dynamicData.allowedToManage )
+  {
+    html += "<td>";
+    if ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" )
+      html += "<button id=\"groupAddToButton_" + g.id + "\" class=\"addtobutton\">Add Selected</button>";
+    html += "</td>";
+  }
+  
+  console.log( "Adding table row" );
+  console.log( html );
+  
   row.innerHTML = html;
   
   if ( dynamicData.allowedToManage )
@@ -384,14 +402,20 @@ function updateGroup( g )
 
   if ( resource.properties.stage === "JOIN" && !isMemberOf(g) && dynamicData.allowedToParticipate )  
     finder[ "groupJoinButton_"   + g.id ].addEventListener( 'click', () => addMembership( g.id ) );
+
   if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
-  {
     finder[ "groupAddToButton_"   + g.id ].addEventListener( 'click', () => addMembersToGroup( g.id ) );
-    for ( const mid in g.membersbyid )
-    {
-     let m = g.membersbyid[mid];
-     finder[ "groupUnjoinButton_" + mid ].addEventListener( 'click', () => removeMemberFromGroup( mid, m.name ) );
-   }
+  
+  for ( const mid in g.membersbyid )
+  {
+    let m = g.membersbyid[mid];
+    if (
+         ( mid === dynamicData.myId && resource.properties.stage === "JOIN" ) || 
+         ( dynamicData.allowedToManage && 
+              ( resource.properties.stage === "SETUP" || 
+                resource.properties.stage === "JOIN" ) )
+       )
+      finder[ "groupUnjoinButton_" + mid ].addEventListener( 'click', () => removeMemberFromGroup( mid, m.name ) );
   }
 }
 

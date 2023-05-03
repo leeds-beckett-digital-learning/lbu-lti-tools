@@ -21,6 +21,7 @@
     <title>Peer Group Assessment</title>
     <style>
       body { font-family: sans-serif; padding: 1em 1em 1em 1em; }
+      th { padding: 0em 0.5em 0em 0.5em; }
       .block { max-width: 50em; }
       .stage {}
       .stage-label { font-weight: bold }
@@ -269,7 +270,18 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         
         <h4>Groups</h4>
         <table id="grouptable">
-          <thead><tr><th></th><th>Group</th><th>Members</th><th></th></tr></thead>
+          <thead>
+            <tr>
+              <th>Group</th>
+              <c:if test="${support.allowedToManage}">        
+               <th>Group Actions</th>
+              </c:if>
+              <th>Members</th>
+              <c:if test="${support.allowedToManage}">        
+                <th>Membership Actions</th>
+              </c:if>
+            </tr>
+          </thead>
           <tbody id="grouptablebody"></tbody>
           <c:if test="${support.allowedToManage}">        
             <tfoot><tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr></tfoot>

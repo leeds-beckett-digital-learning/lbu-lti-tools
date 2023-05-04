@@ -185,6 +185,7 @@ function init()
     {
       bbgroupsetdata = message.payload;
       updateBlackboardGroupSets();
+      arialib.openDialog( 'bbgroupsetsdialog', finder.importBlackboardButton );  
     }
   
   };
@@ -886,7 +887,6 @@ function getImport( openerelement )
 function getBlackboardGroupSets( openerelement )
 {
   toolsocket.sendMessage( new peergroupassessment.GetBlackboardGroupSetsMessage() );
-  arialib.openDialog( 'bbgroupsetsdialog', openerelement );  
 }
 
 function openDebugDialog( openerElement )

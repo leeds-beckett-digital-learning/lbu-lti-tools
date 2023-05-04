@@ -257,16 +257,23 @@ function updateResource( properties )
 
 function updateGroups()
 {
-  let html = "\n";
-  finder.grouptablebody.innerHTML = html;
   finder.unattachedParticipants.innerHTML = "";
   if ( finder.addgroupButton )
     finder.addgroupButton.style.display = resource.properties.stage === "SETUP"?"initial":"none";
-  for ( const gid of resource.groupIdsInOrder )
+  
+  if ( resource.groupIdsInOrder.length === 0 )
   {
-    const g = resource.groupsById[gid];
-    console.log( g );
-    updateGroup( g );
+    finder.grouptablebody.innerHTML = "<tr><td colspan=\"2\"><em>No groups yet.</em></td></tr>";
+  }
+  else
+  {
+    finder.grouptablebody.innerHTML = "\n";
+    for ( const gid of resource.groupIdsInOrder )
+    {
+      const g = resource.groupsById[gid];
+      console.log( g );
+      updateGroup( g );
+    }
   }
   updateUnattachedGroup();
   addAlert( "The table of groups on this page has been rebuilt." );
@@ -278,9 +285,12 @@ function updateUnattachedGroup()
   unattachedcheckboxes = new Array();
   finder.unattachedParticipants.innerHTML = "";
   const set = resource.groupOfUnattached.membersbyid;
+  
   let html = "";
+  let empty = true;
   for ( let id in set )
   {
+    empty = false;
     html += "<span>";
     if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
     {
@@ -292,6 +302,10 @@ function updateUnattachedGroup()
     html += "</span>";
     html += "<br>";
   }
+  
+  if ( !empty )
+    html = "<em>Not in group</em><br />" + html;
+  
   finder.unattachedParticipants.innerHTML = html;
   for ( let id in set )
   {
@@ -509,7 +523,7 @@ function updateForm()
   for ( let m in group.membersbyid )
   {
     th = document.createElement( "th" );
-    th.className = "dataentry-formcell";
+    th.className = "vertical";
     th.innerHTML = group.membersbyid[m].name;
     th.scope = "col";
     row.append( th );
@@ -527,6 +541,7 @@ function updateForm()
     row.id = "dataentryrow-" + field.id;
     th = document.createElement( "th" );
     th.scope = "row";
+    th.className = "plain";
     th.innerText = field.description;
     row.append( th );
     for ( let m in group.membersbyid )
@@ -535,7 +550,7 @@ function updateForm()
       row.append( td );
       let inputid = "dataentrycell_" + fieldid + "_" + groupid + "_" + m;
       let input = document.createElement( "input" );
-      input.size = 5;
+      input.size = 3;
       input.id = inputid;
       input.disabled = true;
       input.autocomplete = 'off';
@@ -564,13 +579,14 @@ function updateForm()
   for ( let m in group.membersbyid )
   {
     td = document.createElement( "td" );
-    td.className = "dataentry-formcell";
+    td.className = "vertical";
     p = document.createElement( "p" );
     p.id = "dataentry-endorsedate-" + m;
     td.append( p );
     endorserow.append( td );
+    
     tdm = document.createElement( "td" );
-    tdm.className = "dataentry-formcell";
+    tdm.className = "vertical";
     p = document.createElement( "p" );
     p.id = "dataentry-managerendorsedate-" + m;
     tdm.append( p );

@@ -19,9 +19,11 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Peer Group Assessment</title>
+    <link rel="stylesheet" href="../style/fonts.css">    
+    <link rel="stylesheet" href="../style/dialog.css"/>
+    <link rel="stylesheet" href="../style/buttons.css"/>
     <style>
-      body { font-family: sans-serif; padding: 1em 1em 1em 1em; }
-      th { padding: 0em 0.5em 0em 0.5em; }
+      body { font-family: 'Nobile', sans-serif; padding: 1em 1em 1em 1em; }
       .block { max-width: 50em; }
       .stage {}
       .stage-label { font-weight: bold }
@@ -43,9 +45,29 @@
                    box-shadow: 0.5em 0.5em 0.5em 0.25em black;
                    min-height: 10em;
                    background: white; }
-      td {
-                   padding: 0.5em 2em 0.5em 2em;
+
+      th { 
+        padding: 0.25em 0.5em 0.25em 0.5em;
       }
+      
+      th.vertical {
+        writing-mode: vertical-lr;
+        transform: rotate( 180deg );
+      }      
+      
+      th.plain {
+        font-weight: normal;
+        text-align: left;
+      }
+      
+      td {
+        padding: 0.25em 0.5em 0.25em 0.5em;
+      }
+      
+      td.vertical {
+        writing-mode: vertical-lr;
+        transform: rotate( 180deg );
+      }      
       
       .emptyinput {
         background-color: white;
@@ -77,7 +99,6 @@
 
       
     </style>
-    <link rel="stylesheet" href="../style/dialog.css"/>
     <script lang="JavaScript">
       
 const dynamicPageData = ${support.dynamicPageDataAsJSON};
@@ -158,14 +179,18 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           <button id="dataentryCloseButtonTop" value="Close">Close</button>
         </div>
 
-        <ul class="alertList"></ul>
-
+        
         <div class="dialog_form">
           <table>
             <tbody id="dataentrytablebody">
             </tbody>
           </table>
         </div>
+
+        <h3>Scores</h3>
+        <div><p>Scores for all criteria must be whole numbers between 0 and 20
+            inclusive.</p></div>
+        
         <h3>Endorsement</h3>
         <p>When marks are entered and agreed, each participant must indicate 
           their endorsement of the marks using the button below. When the first
@@ -183,8 +208,24 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             <button id="dataentryClearEndorsementsButton">Reset Endorsements</button>
           </c:if>
           </p>
-          <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
         </div>
+
+        <h3>Advice</h3>
+        <div><p>Any member of the group can enter scores against their own
+          or other members' names. One person can enter all the marks or you
+          can share this task so that two or more group members enter marks
+          simultaneously.  To ensure you all agree about the scores you could
+          physically meet and later enter scores or you could use a group
+          communication tool to discuss scores as you enter them. If you meet on-line,
+          each team member can use the communication application to talk and 
+          simultaneously use a web browser to view or enter the scores. When
+          choosing a communication tool please take into account the needs
+          and preferences of all group members.</p></div>
+
+        <p><button id="dataentryCloseButtonBottom" value="Close">Close</button></p>
+        
+        <h3>Notifications</h3>
+        <ul class="alertList"></ul>
     </div>
 
       <div role="dialog" id="exportdialog" aria-labelledby="exportdialogLabel" aria-modal="true" class="hidden">
@@ -258,11 +299,12 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <c:choose>
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
         <c:if test="${support.allowedToManage}">
-          <p><button id="editpropertiesButton">Edit Properties</button></p>          
+          <p><button id="editpropertiesButton">Edit Properties</button> 
           <c:if test="${support.blackboardLearnRestAvailable}">
-            <p><button id="importBlackboardButton">Import Blackboard Sub-groups</button> (BB REST API)</p>
+            <button id="importBlackboardButton">Import Blackboard Sub-groups</button> 
           </c:if>
-          <p><button id="importButton">Import Participants</button> (LTI Service)</p>              
+          <button id="importButton">Import Class</button></p>
+          <p><em>These and other buttons on the page are only shown to managers of this resource.</em></p>
         </c:if>
         
         <h4>Groups</h4>
@@ -271,26 +313,36 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             <tr>
               <th scope="col">Group</th>
               <c:if test="${support.allowedToManage}">        
-               <th scope="col">Group Actions</th>
+               <th scope="col">Actions</th>
               </c:if>
               <th scope="col">Members</th>
               <c:if test="${support.allowedToManage}">        
-                <th scope="col">Membership Actions</th>
+                <th scope="col">Actions</th>
               </c:if>
             </tr>
           </thead>
           <tbody id="grouptablebody"></tbody>
-          <c:if test="${support.allowedToManage}">        
-            <tfoot><tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr></tfoot>
-          </c:if>
+          <tfoot>
+            <c:if test="${support.allowedToManage}">        
+              <tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr>
+            </c:if>
+              <tr>
+                <th scope="row">~</th>
+                <c:if test="${support.allowedToManage}">        
+                  <td></td>
+                </c:if>
+                  <td id="unattachedParticipants"></td>
+                <c:if test="${support.allowedToManage}">        
+                  <td></td>
+                </c:if>
+              </tr>
+          </tfoot>
         </table>
 
-        <h4>Unplaced Students</h4>
-        <div id="unattachedParticipants"></div>
-          
         <c:if test="${support.allowedToManage}">
           <h4>Overview of Students</h4>
-          <p>A tables of all students and their scores.</p>
+          <p>A tables of all students and their scores. <em>Only 
+              managers of this resource see this section.</em></p>
           <table id="overviewtable">
             <thead>
               <tr>

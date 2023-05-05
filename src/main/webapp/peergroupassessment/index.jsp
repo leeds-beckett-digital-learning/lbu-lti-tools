@@ -22,11 +22,32 @@
     <link rel="stylesheet" href="../style/fonts.css">    
     <link rel="stylesheet" href="../style/dialog.css"/>
     <link rel="stylesheet" href="../style/buttons.css"/>
-    <style>
+   <style>
       body { font-family: 'Nobile', sans-serif; padding: 1em 1em 1em 1em; }
+      .section { margin: 2em 0em 2em 0em; }
       .block { max-width: 50em; }
-      .stage {}
-      .stage-label { font-weight: bold }
+      .stage {
+        padding-bottom: 1em;
+      }
+      .stage-active {
+        display: block;
+        margin: 0px;
+        padding: 0px;
+      }
+      .stage-inactive {
+        display: none;
+        margin: 0px;
+        padding: 0px;
+      }
+      .stage-text {
+        border: black 3px solid;
+        border-radius: 0.5em;
+        margin: 0px;
+        padding: 0.25em;
+      }
+      .stage-img {
+        vertical-align: bottom;
+      }
       .important { background-color: yellow }
       .dialog { 
                    display: none; 
@@ -285,29 +306,31 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div id="basePage">
       
     <h1>Peer Group Assessment Tool</h1>
+    <div class="section">
     <div class="block">
-    <p class="important">${support.importantMessage}</p>
-    <h2 id="mainTitle"></h2>
-    <p id="mainDescription"></p>
-    <p class="stage"><span class="stage-label">Stage:</span> <span id="mainStage"></span></p>
+      <p class="important">${support.importantMessage}</p>
+      <h2 id="mainTitle"></h2>
+      <p id="mainDescription"></p>
+      <div class="stage">
+        <p id="stage1" class="stage-inactive"><img class="stage-img" src="../style/stage1before.png" alt="Stages"                /><span id="stage1text" class="stage-text">Setting Up</span><img             alt="Three more stages" class="stage-img" src="../style/stage1after.png"/></p>
+        <p id="stage2" class="stage-inactive"><img class="stage-img" src="../style/stage2before.png" alt="One complete stage"    /><span id="stage2text" class="stage-text">Members Joining Groups</span><img alt="Two more stages"   class="stage-img" src="../style/stage2after.png"/></p>
+        <p id="stage3" class="stage-inactive"><img class="stage-img" src="../style/stage3before.png" alt="Two complete stages"   /><span id="stage3text" class="stage-text">Members Entering Data</span><img  alt="One more stage"    class="stage-img" src="../style/stage3after.png"/></p>
+        <p id="stage4" class="stage-inactive"><img class="stage-img" src="../style/stage4before.png" alt="Three complete stages" /><span id="stage4text" class="stage-text">Results Frozen</span><img         alt="No more stages"    class="stage-img" src="../style/stage4after.png"/></p>
+      </div>
     </div>
-    
-    <!--
-    <p>${support.personId} - ${support.personName}</p>
-    -->
+      <c:if test="${support.allowedToManage}">
+        <p><button id="editpropertiesButton">Edit Properties</button> 
+        <c:if test="${support.blackboardLearnRestAvailable}">
+          <button id="importBlackboardButton">Import Blackboard Sub-groups</button> 
+        </c:if>
+        <button id="importButton">Import Class</button></p>
+        <p style="display: none;"><em>These and other buttons on the page are only shown to managers of this resource.</em></p>
+      </c:if>
+    </div>
     
     <c:choose>
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
-        <c:if test="${support.allowedToManage}">
-          <p><button id="editpropertiesButton">Edit Properties</button> 
-          <c:if test="${support.blackboardLearnRestAvailable}">
-            <button id="importBlackboardButton">Import Blackboard Sub-groups</button> 
-          </c:if>
-          <button id="importButton">Import Class</button></p>
-          <p><em>These and other buttons on the page are only shown to managers of this resource.</em></p>
-        </c:if>
-        
-        <h4>Groups</h4>
+        <div class="section">
         <table id="grouptable">
           <thead>
             <tr>
@@ -327,7 +350,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
               <tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr>
             </c:if>
               <tr>
-                <th scope="row">~</th>
+                <th scope="row"></th>
                 <c:if test="${support.allowedToManage}">        
                   <td></td>
                 </c:if>
@@ -338,11 +361,10 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
               </tr>
           </tfoot>
         </table>
-
+        </div>
+          
         <c:if test="${support.allowedToManage}">
-          <h4>Overview of Students</h4>
-          <p>A tables of all students and their scores. <em>Only 
-              managers of this resource see this section.</em></p>
+          <div class="section">
           <table id="overviewtable">
             <thead>
               <tr>
@@ -357,6 +379,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             <tbody id="overviewtablebody"></tbody>
           </table>
           <p><button id="exportButton">Export</button></p>
+          </div>
         </c:if>
           
       </c:when>
@@ -366,10 +389,10 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       </c:otherwise>
     </c:choose>
     
-    <h4>Notifications</h4>
+    <h4 style="display: none;">Notifications</h4>
     <div class="block">
       <ul id="toplevelalert" class="alertList"></ul>
-      <p>Notifications will appear above this paragraph. These are mainly intended
+      <p style="display: none;">Notifications will appear above this paragraph. These are mainly intended
         for users who use browsers that are adapted for accessibility. This is 
         because different elements of this page can change in response to the
         actions of other users and that could cause problems for sight impaired

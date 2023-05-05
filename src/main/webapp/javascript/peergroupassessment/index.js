@@ -43,6 +43,7 @@ let formuptodate = false;
 let bbgroupsetdata;
 
 let unattachedcheckboxes = new Array();
+let oldstage = "unknown";
 
 function init()
 {
@@ -205,55 +206,57 @@ function addAlert( text )
 
 function updateResource( properties )
 {
-  let stagetext="Unknown Stage";
-  switch ( properties.stage )
-  {
-    case "SETUP":
-      stagetext = "Setting Up Stage";
-      break;
-    case "JOIN":
-      stagetext = "Group Members Joining";
-      break;
-    case "DATAENTRY":
-      stagetext = "Group Members Entering Data";
-      break;
-    case "RESULTS":
-      stagetext = "Results Frozen";
-      break;
-  }
   console.log( "stage       = " + properties.stage       );
   console.log( "title       = " + properties.title       );
   console.log( "description = " + properties.description );
 
-  let message = "";
+  let stagetext;
+  let stagechanged = !( properties.stage === oldstage );
+  oldstage = properties.stage;
+  if ( stagechanged )
+  {
+    finder.stage1.className = 'stage-inactive';
+    finder.stage2.className = 'stage-inactive';
+    finder.stage3.className = 'stage-inactive';
+    finder.stage4.className = 'stage-inactive';
+    switch ( properties.stage )
+    {
+      case "SETUP":
+        finder.stage1.className = 'stage-active';
+        stagetext = finder.stage1text.innerText;
+        break;
+      case "JOIN":
+        finder.stage2.className = 'stage-active';
+        stagetext = finder.stage2text.innerText;
+        break;
+      case "DATAENTRY":
+        finder.stage3.className = 'stage-active';
+        stagetext = finder.stage3text.innerText;
+        break;
+      case "RESULTS":
+        finder.stage4.className = 'stage-active';
+        stagetext = finder.stage4text.innerText;
+        break;
+    }
+    addAlert( "Stage changed to " + stagetext + "." );
+  }
+  
   if ( finder.mainTitle.innerText !== properties.title )
   {
     if ( finder.mainTitle.innerText )
       addAlert( "Title changed to " + properties.title + "." );
-      //message += "Title changed. ";
     finder.mainTitle.innerText        = properties.title;
   }
   if ( finder.mainDescription.innerText !== properties.description )
   {
     if ( finder.mainDescription.innerText )
       addAlert( "Description changed." );
-      //message += "Description changed. ";
     finder.mainDescription.innerText  = properties.description;
   }
-  if ( finder.mainStage.innerText !== stagetext )
-  {
-    if ( finder.mainStage.innerText )
-      addAlert( "Stage changed to " + stagetext + "." );
-    //message += "Stage changed to " + stagetext + ". ";
-    finder.mainStage.innerText = stagetext;
-  }
-  
-//  if ( message.length > 0 )
-//    addAlert( message );
-  
+
   finder.editpropsTitle.value       = properties.title;
   finder.editpropsDescription.value = properties.description;
-  finder.editpropsStage.value = properties.stage;
+  finder.editpropsStage.value       = properties.stage;
 }
 
 function updateGroups()
@@ -342,7 +345,7 @@ function updateGroup( g )
   if ( dynamicData.allowedToManage || isMemberOf( g ) )
     html += "<th scope=\"row\"><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></th>\n";
   else
-    html += "<th>" + g.title + "</th>\n";
+    html += "<th scope=\"row\">" + g.title + "</th>\n";
 
   if ( dynamicData.allowedToManage )
   {

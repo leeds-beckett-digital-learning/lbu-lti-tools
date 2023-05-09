@@ -23,8 +23,9 @@
     <link rel="stylesheet" href="../style/dialog.css"/>
     <link rel="stylesheet" href="../style/buttons.css"/>
     <style>
-      body { font-family: sans-serif; padding: 1em 1em 1em 1em; max-width: 30em; }
+      body { font-family: sans-serif; padding: 1em 1em 1em 1em; max-width: 50em; }
       h2 { padding-top: 3em; }
+      input { margin: 1em 1em 1em 1em; }
       .stage {}
       .stage-label { font-weight: bold }
       .important { background-color: yellow }
@@ -87,21 +88,31 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <c:choose>
       <c:when test="${support.allowedToEnrol}">
         
-        <h2>Enrol on a module</h2>
+        <h2 id="coursetitle">Enrol on a module</h2>
         <p>Enter a course reference number (CRN). This will usually be a
         CRN that was created by the student information system for a real
         module that carries credit. Non-credit MyBeckett modules are created
         on request and use a made-up CRN that always starts with a zero.</p>
-        <p><input id="courseid"/><button id="searchCourseButton">Search</button></p>
+        <p><form action="javascript:void(0);" aria-labelledby="coursetitle">
+          <label for="courseid">CRN Input Box</label>
+          <input id="courseid"/>
+          <button id="searchCourseButton">Search Modules</button>
+        </form></p>
 
-        <h2>Enrol on a course community</h2>
+        <h2 id="orgtitle">Enrol on a course community</h2>
         <p>Enter an award code. These are comprised of capitals letters
         and may include some numerals.</p>
-        <p><input id="orgid"/><button id="searchOrgButton">Search</button></p>
+        <p><form action="javascript:void(0);" aria-labelledby="orgtitle">
+          <label for="orgid">Award Code Input Box</label>
+          <input id="orgid"/>
+          <button id="searchOrgButton">Search Course Communities</button>
+        </form></p>
 
-        <h2>Enrol on a training module</h2>
+        <h2 id="trainingtitle">Enrol on a training module</h2>
         <p>Use the button to view a full list of all available modules.</p>
-        <p><button id="searchTrainingButton">Search</button></p>
+        <p><form action="javascript:void(0);" aria-labelledby="trainingtitle">
+          <button id="searchTrainingButton">Search Training Modules</button>
+        </form></p>
           
       </c:when>
       <c:otherwise>

@@ -183,7 +183,7 @@ dependencies {
     // from local maven repository every time. For
     // non-snapshot versions, the build will be speeded up by fetching
     // the library from remote repo. only if an official new version is referenced.
-    implementation( 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.1.0' )
+    implementation( 'uk.ac.leedsbeckett:lbu-lti-toolapi:0.1.1' )
     { changing = false }
   
     providedCompile 'javax.servlet:javax.servlet-api:4.0.0'

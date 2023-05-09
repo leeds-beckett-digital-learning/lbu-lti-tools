@@ -19,8 +19,12 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Self Enrol</title>
+    <link rel="stylesheet" href="../style/fonts.css">    
+    <link rel="stylesheet" href="../style/dialog.css"/>
+    <link rel="stylesheet" href="../style/buttons.css"/>
     <style>
-      body { font-family: sans-serif; padding: 1em 1em 1em 1em; }
+      body { font-family: sans-serif; padding: 1em 1em 1em 1em; max-width: 30em; }
+      h2 { padding-top: 3em; }
       .stage {}
       .stage-label { font-weight: bold }
       .important { background-color: yellow }
@@ -43,39 +47,8 @@
                    background: white; }
       td {
                    padding: 0.5em 2em 0.5em 2em;
-      }
-      
-      .emptyinput {
-        background-color: white;
-      }
-
-      .validinput {
-        background-color: greenyellow;
-      }
-
-      .invalidinput {
-        background-color: hotpink;
-      }
-
-
-.alertList {
-  padding: 10px;
-  border: 2px solid hsl(206deg 74% 54%);
-  border-radius: 4px;
-  background: hsl(206deg 74% 90%);
-}
-
-.alertList:empty {
-  display: none;
-  padding: 10px;
-  border: 2px white;
-  border-radius: 4px;
-  background: white;
-}
-
-      
+      }      
     </style>
-    <link rel="stylesheet" href="../style/dialog.css"/>
     <script lang="JavaScript">
       
 const dynamicPageData = ${support.dynamicPageDataAsJSON};
@@ -110,25 +83,25 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div id="basePage">
       
     <h1>Self Enrol on Modules and Course Communities</h1>
-    <p class="important">${support.importantMessage}</p>
-
-    <ul id="toplevelalert" class="alertList"></ul>
-    
-    <p>This tool is non-functional as it is under development.</p>
+        
     <c:choose>
       <c:when test="${support.allowedToEnrol}">
         
         <h2>Enrol on a module</h2>
         <p>Enter a course reference number (CRN). This will usually be a
         CRN that was created by the student information system for a real
-        module that carries credit. You can also use a made up CRN, starting
-        with a zero, to find a non-credit MyBeckett module that was created
-        on request.</p>
+        module that carries credit. Non-credit MyBeckett modules are created
+        on request and use a made-up CRN that always starts with a zero.</p>
         <p><input id="courseid"/><button id="searchCourseButton">Search</button></p>
 
         <h2>Enrol on a course community</h2>
-        <p>Enter an award code.</p>
+        <p>Enter an award code. These are comprised of capitals letters
+        and may include some numerals.</p>
         <p><input id="orgid"/><button id="searchOrgButton">Search</button></p>
+
+        <h2>Enrol on a training module</h2>
+        <p>Use the button to view a full list of all available modules.</p>
+        <p><button id="searchTrainingButton">Search</button></p>
           
       </c:when>
       <c:otherwise>
@@ -147,5 +120,8 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     </c:if>
         
     </div>
+
+    <ul id="toplevelalert" class="alertList"></ul>
+    
   </body>
 </html>

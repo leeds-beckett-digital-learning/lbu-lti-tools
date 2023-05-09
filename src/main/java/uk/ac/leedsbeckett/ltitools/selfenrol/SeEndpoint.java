@@ -17,6 +17,7 @@ package uk.ac.leedsbeckett.ltitools.selfenrol;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -72,6 +73,15 @@ public class SeEndpoint extends ToolEndpoint
   SeToolLaunchState seState;
 
   BlackboardBackchannelKey bbbckey;
+
+  // match anything because search spec is set by admin.
+  Pattern trainingSearchValidation = Pattern.compile( ".*" ); 
+
+  // Info about this user's most recent search. Used to screen the request
+  // to enrol looking for faked course ID.
+  final HashSet<String> mostRecentSearchResults = new HashSet<>();
+  // Needed to know what role to enrol with.
+  String mostRecentScope = "";
   
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
@@ -147,8 +157,13 @@ public class SeEndpoint extends ToolEndpoint
   public void handleSearch( Session session, ToolMessage message, SeSearch search )
           throws IOException, HandlerAlertException
   {
+    mostRecentSearchResults.clear();
+    // In case of unsuccessful search clear this:
+    mostRecentScope = "";
+    
     String scope = search.getScope();
     String specification = search.getSpecification();
+    String availability = null;
     boolean org;
     
     Pattern validation;
@@ -157,7 +172,8 @@ public class SeEndpoint extends ToolEndpoint
     
     if ( null == scope )
       throw new HandlerAlertException( "Unknown search scope.", message.getId() );
-    else switch ( scope )
+    
+    switch ( scope )
     {
       case "course":
         validation = tool.getConfig().getCourseSearchValidation();
@@ -168,6 +184,13 @@ public class SeEndpoint extends ToolEndpoint
         validation = tool.getConfig().getOrganizationSearchValidation();
         strfilter = tool.getConfig().getOrganizationSearchFilter().replace( "@", specification );
         org = true;
+        break;
+      case "training":
+        specification = tool.getConfig().getTrainingSearchSpecification();
+        validation = trainingSearchValidation;
+        strfilter = tool.getConfig().getTrainingSearchFilter().replace( "@", specification );
+        org = false;
+        availability = "Yes";
         break;
       default:
         throw new HandlerAlertException( "Unknown search scope.", message.getId() );
@@ -181,15 +204,15 @@ public class SeEndpoint extends ToolEndpoint
       throw new HandlerAlertException( "Unable to create a result filter (regular expression).", message.getId() );
     
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
-    JsonResult result = bp.getV3Courses( specification, org );
+    JsonResult result = bp.getV3Courses( specification, org, availability );
     if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem running search.", message.getId() );
     if ( !result.isSuccessful() )
     {
-      if ( result.getResult() instanceof ServiceStatus )
+      if ( result.getResult() instanceof RestExceptionMessage )
       {
-        ServiceStatus ss = (ServiceStatus)result.getResult();
-        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
       }
       else
         throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
@@ -204,8 +227,14 @@ public class SeEndpoint extends ToolEndpoint
       if ( id == null )
         throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message.getId() );
       if ( filter.matcher( id ).matches() )
+      {
         list.add( new SeCourseInfo( id, c.getName(), c.getDescription() ) );
+        mostRecentSearchResults.add( id );
+      }
     }
+
+    // only set this on successful searches.
+    mostRecentScope = scope;
 
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.CourseInfoList, list );
     sendToolMessage( session, tmf );
@@ -219,9 +248,29 @@ public class SeEndpoint extends ToolEndpoint
     
     if ( StringUtils.isEmpty( id ) )
       throw new HandlerAlertException( "No course ID was received.", message.getId() );
+
+    if ( !this.mostRecentSearchResults.contains(  id ) )
+      throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message.getId() );
+    
+    String role;
+    switch ( mostRecentScope )
+    {
+      case "course":
+        role="Instructor";
+        break;
+      case "organization":
+        role="Instructor";
+        break;
+      case "training":
+        role="Student";
+        break;
+      default:
+        throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+    }
+
     
     CourseMembershipV1Input cmi = new CourseMembershipV1Input( 
-            null, null, new Availability("Yes"), "Instructor" );
+            null, null, new Availability("Yes"), role );
 
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.putV1CourseMemberships( id, seState.getPersonId(), cmi );
@@ -230,21 +279,24 @@ public class SeEndpoint extends ToolEndpoint
     logger.info( result.getResult().getClass().toString() );
     if ( !result.isSuccessful() )
     {
-      if ( result.getResult() instanceof ServiceStatus )
+      if ( result.getResult() instanceof RestExceptionMessage )
       {
-        ServiceStatus ss = (ServiceStatus)result.getResult();
-        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        if ( "409".equals( rem.getStatus() ) )
+          throw new HandlerAlertException( "You are already enrolled on the course. ", message.getId() );        
+        else
+          throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
       }
       else
-        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to enrol user. Unknown error.", message.getId() );
     }
     
-    CourseMembershipV1 memb = (CourseMembershipV1)result.getResult();
-            
+    // Success so tell client
+    CourseMembershipV1 memb = (CourseMembershipV1)result.getResult();  
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.EnrolSuccess, new SeEnrolSuccess( memb.getId() ) );
     sendToolMessage( session, tmf );
 
-
+    // Now send an email...
     result = bp.getV1Users( "uuid:" + seState.getPersonId() );
     if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
@@ -254,7 +306,7 @@ public class SeEndpoint extends ToolEndpoint
       if ( result.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)result.getResult();
-        logger.severe( "Unable to get contact details from the platform. " + ss.getStatus() + " " + ss.getMessage() );
+        logger.log(Level.SEVERE, "Unable to get contact details from the platform. {0} {1}", new Object[ ]{ss.getStatus(), ss.getMessage()});
       }
       else
         logger.severe( "Unable to get contact details from the platform. " );

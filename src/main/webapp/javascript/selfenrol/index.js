@@ -51,6 +51,7 @@ function init()
   finder.searchdialogCloseButton.addEventListener( 'click', () => arialib.closeDialog(finder.searchdialog)    );
   finder.searchCourseButton.addEventListener( 'click', () => searchForCourses() );
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
+  finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
   
   let handler =
   {
@@ -125,7 +126,14 @@ function searchForOrgs()
   }
   toolsocket.sendMessage( new selfenrol.SearchMessage( "organization", spec ) );  
   clearSearch();
-  arialib.openDialog( 'searchdialog', finder.searchCourseButton );
+  arialib.openDialog( 'searchdialog', finder.searchOrgButton );
+}
+
+function searchForTraining()
+{
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "training", "" ) );  
+  clearSearch();
+  arialib.openDialog( 'searchdialog', finder.searchTrainingButton );
 }
 
 function enrolOnCourse()

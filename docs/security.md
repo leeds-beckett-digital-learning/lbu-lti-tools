@@ -224,30 +224,40 @@ example, a shorter list of CA certificates could be selected.
 
 To implement some functionality the AS connects to the PS using the
 Blackboard Learn REST API.  The PS system administrator sets up a user account
-and connects that account with the application ID. When the AS connects it
+and associates that account with the application ID. When the AS connects it
 operates on the REST API with the permissions settings of the assigned user
 account. There are 479 available permissions. Of these the permissions
 required for this application are:
 
-### Administrator Panel (Courses) > Courses > Edit > Course Properties 
+### For Peer Group Assessment Resource
+
+#### Course/Organization > Groups > View All Groups
+
+#### Course/Organization Control Panel (Users and Groups) > Groups 
+
+### For Course and Organisation Self Enrollment Tool
+
+#### Administrator Panel (Courses) > Courses > Edit > Course Properties 
 
 To see certain privileged fields in course search results. 
 
-### Administrator Panel (Organizations) > Organizations > Edit > Organization Properties 
+#### Administrator Panel (Organizations) > Organizations > Edit > Organization Properties 
 
 To see certain privileged fields in organization search results. 
 
-### Administrator Panel (Users) > Users > Edit > View Course Enrollments 
+#### Administrator Panel (Users) > Users > Edit > View Course Enrollments 
 
 To find enrolments for a particular user ID. 
 
-### Course/Organization Control Panel (Users and Groups) > Users > Change User's Role in Course/Organization
+#### Course/Organization Control Panel (Users and Groups) > Users > Change User's Role in Course/Organization
 
 To make it possible to enrol user in role other than ‘student’. 
 
-### Course/Organization Control Panel (Users and Groups) > Users > Enroll User 
+#### Course/Organization Control Panel (Users and Groups) > Users > Enroll User 
 
 To create new enrolments. 
+
+
 
 ## Audit of specific data fields
 

@@ -174,8 +174,8 @@ repositories {
 dependencies {
     // There are two dependencies from leedsbeckett - the basic LTI library
     // and the toolapi library.
-    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti:0.1.1' )
-    { changing = false }
+    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti:0.1.2.SNAPSHOT' )
+    { changing = true }
     
     // If using a snapshot of toolapi, set changing to true otherwise set it to 
     // false. This makes it possible to rebuild toolapi repeatedly with the
@@ -183,8 +183,8 @@ dependencies {
     // from local maven repository every time. For
     // non-snapshot versions, the build will be speeded up by fetching
     // the library from remote repo. only if an official new version is referenced.
-    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti-toolapi:0.1.2' )
-    { changing = false }
+    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti-toolapi:0.1.3.SNAPSHOT' )
+    { changing = true }
   
     providedCompile 'javax.servlet:javax.servlet-api:4.0.0'
     providedCompile 'javax.websocket:javax.websocket-api:1.1'

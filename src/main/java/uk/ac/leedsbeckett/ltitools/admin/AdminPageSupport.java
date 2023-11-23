@@ -67,22 +67,23 @@ public class AdminPageSupport extends PageSupport
     // save it over the config file. Then tell the LTI library to reload it.
     if ( "saveconfig".equals( action ) )
     {
-      String name = config.getConfigFileName();
-      try
-      {
-        saveLtiConfigToFile( name, request.getParameter( "config" ) );
-        config.load( name );
-        saveLoggingConfigToFile( request.getParameter( "logconfig" ) );
-        importantmessage = "Configuration successfully saved.";
-      }
-      catch ( IOException ioe )
-      {
-        importantmessage = "Configuration saving failed. " + ioe.getMessage();
-      }
+      importantmessage = "Configuration saving not implemented at present. ";
+//      String name = config.getConfigFileName();
+//      try
+//      {
+//        saveLtiConfigToFile( name, request.getParameter( "config" ) );
+//        config.load( name );
+//        saveLoggingConfigToFile( request.getParameter( "logconfig" ) );
+//        importantmessage = "Configuration successfully saved.";
+//      }
+//      catch ( IOException ioe )
+//      {
+//        importantmessage = "Configuration saving failed. " + ioe.getMessage();
+//      }
     }
 
     // Regardless, fetch the current config now.
-    rawconfig = config.getRawConfiguration();
+    rawconfig = "Not implemented."; //config.getRawConfiguration();
     logger.log( Level.FINE, "Path of logging.properties = {0}", logconfigpath );
     if ( Files.exists( logconfigpath ) )
       try

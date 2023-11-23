@@ -33,7 +33,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  * 
  * @author maber01
  */
-@ToolMapping( name = "peergrpassess", type = "coursecontent", launchURI = "/peergroupassessment/index.jsp" )
+@ToolMapping( id = "peergrpassess", type = "coursecontent", title = "LBU Peer Group Assessment", launchURI = "/peergroupassessment/index.jsp" )
 public class PeerGroupAssessmentTool extends Tool
 {
   static final Logger logger = Logger.getLogger( PeerGroupAssessmentTool.class.getName() );

@@ -40,7 +40,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  * 
  * @author maber01
  */
-@ToolMapping( name = "selfenrol", type = "system", launchURI = "/selfenrol/index.jsp" )
+@ToolMapping( id = "selfenrol", type = "system", title = "LBU Self Enrol", launchURI = "/selfenrol/index.jsp" )
 public class SelfEnrolTool extends Tool
 {
   static final Logger logger = Logger.getLogger(SelfEnrolTool.class.getName() );

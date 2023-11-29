@@ -57,7 +57,7 @@ public class AdminPageSupport extends PageSupport
     super.setRequest( request );
     
     // Retrieve information about the application
-    LtiConfiguration config = this.toolCoordinator.getLtiConfiguration();
+    // LtiConfiguration config = this.toolCoordinator.getLtiConfiguration();
     logconfigpath = Paths.get( request.getServletContext().getRealPath( "WEB-INF/classes/logging.properties" ) );
     
     // Find out if there was a form field called 'action'

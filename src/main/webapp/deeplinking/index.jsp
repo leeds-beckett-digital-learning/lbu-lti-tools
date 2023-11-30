@@ -145,6 +145,8 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div class="block">
       <p>This page will present choices of tool but it isn't implemented yet.</p>
     </div>
+      <div id="tooloptions" class="block">
+      </div>
     </div>
         
     <h4 style="display: none;">Notifications</h4>

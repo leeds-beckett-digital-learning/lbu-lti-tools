@@ -51,6 +51,24 @@ function init()
   arialib.setDialogAlertClass( 'alertList' );
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );  
+  
+  var html = "";
+  for ( var i=0; i < dynamicData.options.length; i++ )
+  {
+    console.log( dynamicData.options[i].title );
+    console.log( dynamicData.options[i].id    );
+    console.log( dynamicData.options[i].type  );
+    html += "<h4>";
+    html += dynamicData.options[i].title;
+    html += "</h4>\n<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
+    html += "<input type=\"submit\" value=\"Choose\"/>\n";
+    html += "</form></p>\n";
+  }
+  html += "<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
+  html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.codedMessageCancel + "\"/>\n";
+  html += "<input type=\"submit\" value=\"None of the Above\"/>\n";
+  html += "</form></p>\n";
+  finder.tooloptions.innerHTML = html;
 }
 
 function updateAlerts()

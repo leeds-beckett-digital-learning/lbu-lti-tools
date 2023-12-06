@@ -61,13 +61,14 @@ function init()
     html += "<h4>";
     html += dynamicData.options[i].title;
     html += "</h4>\n<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
+    html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.options[i].jwt + "\"/>\n";
     html += "<input type=\"submit\" value=\"Choose\"/>\n";
     html += "</form></p>\n";
   }
-  html += "<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
-  html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.codedMessageCancel + "\"/>\n";
-  html += "<input type=\"submit\" value=\"None of the Above\"/>\n";
-  html += "</form></p>\n";
+//  html += "<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
+//  html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.codedMessageCancel + "\"/>\n";
+//  html += "<input type=\"submit\" value=\"None of the Above\"/>\n";
+//  html += "</form></p>\n";
   finder.tooloptions.innerHTML = html;
 }
 

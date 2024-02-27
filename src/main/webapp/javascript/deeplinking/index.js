@@ -52,6 +52,14 @@ function init()
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );  
   
+  if ( dynamicData.options.length === 0 )
+  {
+    finder.tooloptions.innerHTML = 
+            "<h4>No Resources Available</h4><p>Sorry, you don't have access " +
+            "rights that will allow you to create any resources.</p>";
+    return;
+  }
+  
   var html = "";
   for ( var i=0; i < dynamicData.options.length; i++ )
   {

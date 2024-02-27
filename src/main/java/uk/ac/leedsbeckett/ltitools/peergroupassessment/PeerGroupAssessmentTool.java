@@ -25,6 +25,7 @@ import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
@@ -119,5 +120,11 @@ public class PeerGroupAssessmentTool extends Tool
   public Class<? extends ToolEndpoint> getEndpointClass()
   {
     return PgaEndpoint.class;
+  }
+
+  @Override
+  public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
+  {
+    return deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
   }
 }

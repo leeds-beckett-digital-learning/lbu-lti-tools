@@ -223,6 +223,7 @@ public class SeEndpoint extends ToolEndpoint
     SeCourseInfoList list = new SeCourseInfoList();
     for ( CourseV2 c : results.getResults() )
     {
+      // We need to work with the external ID to implement filtering based on it.
       String id = c.getExternalId();
       if ( id == null )
         throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message.getId() );
@@ -270,10 +271,16 @@ public class SeEndpoint extends ToolEndpoint
 
     
     CourseMembershipV1Input cmi = new CourseMembershipV1Input( 
-            null, null, new Availability("Yes"), role );
+            null, // unspecified child id - will enrol on parent course 
+            null, // dataSource (of the new membership object)
+            new Availability("Yes"), 
+            role );
 
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
-    JsonResult result = bp.putV1CourseMemberships( id, seState.getPersonId(), cmi );
+    JsonResult result = bp.putV1CourseMemberships( 
+            "externalId:" + id, 
+            "uuid:" + seState.getPersonId(), 
+            cmi );
     if ( result.getResult() == null )
       throw new HandlerAlertException( "Technical problem attempting to enrol.", message.getId() );
     logger.info( result.getResult().getClass().toString() );

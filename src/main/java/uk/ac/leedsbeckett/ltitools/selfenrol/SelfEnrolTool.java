@@ -28,15 +28,25 @@ import org.apache.commons.io.FileUtils;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 import uk.ac.leedsbeckett.ltitools.mail.MailSender;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
  * This class helps set up websocket endpoints and page requests based on
- * an LTI launch.
+ * an LTI launch.   
+ * 
+ * Required REST permissions:
+ * 
+ *  system.course.properties.MODIFY
+ *  system.org.properties.MODIFY
+ *  course.user-enroll.EXECUTE
+ *  course.user.MODIFY
+ *  org.user.MODIFY
  * 
  * @author maber01
  */
@@ -145,5 +155,11 @@ public class SelfEnrolTool extends Tool
   public MailSender getMailSender()
   {
     return mailSender;
+  }
+
+  @Override
+  public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
+  {
+    return deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
   }
 }

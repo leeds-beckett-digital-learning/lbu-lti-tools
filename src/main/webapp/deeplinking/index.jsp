@@ -143,7 +143,6 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <h1>Deep Linking</h1>
     <div class="section">
     <div class="block">
-      <p>This page will present choices of tool but it isn't implemented yet.</p>
     </div>
       <div id="tooloptions" class="block">
       </div>

@@ -25,15 +25,41 @@ import java.io.Serializable;
 public class SeEnrolRequest implements Serializable
 {
   final String courseId;
+  final String authType;
+  final String authName;
+  final String authEmail;
 
   public SeEnrolRequest( 
-          @JsonProperty("courseId")         String courseId )
+          @JsonProperty("courseId")         String courseId,
+          @JsonProperty("authType")         String authType,
+          @JsonProperty("authName")         String authName,
+          @JsonProperty("authEmail")        String authEmail
+  )
   {
-    this.courseId = courseId;
+    this.courseId  = courseId;
+    this.authType  = authType;
+    this.authName  = authName;
+    this.authEmail = authEmail;
   }
 
   public String getCourseId()
   {
     return courseId;
   }  
+
+  public String getAuthType()
+  {
+    return authType;
+  }
+
+  public String getAuthName()
+  {
+    return authName;
+  }
+
+  public String getAuthEmail()
+  {
+    return authEmail;
+  }
+  
 }

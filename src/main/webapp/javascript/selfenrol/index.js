@@ -29,6 +29,8 @@ let dataentryopening=true;
 let coursespecvalidator;
 let orgspecvalidator;
 
+var currentSearch = "";
+
 function init()
 {
   console.log( "init" );
@@ -52,6 +54,7 @@ function init()
   finder.searchCourseButton.addEventListener( 'click', () => searchForCourses() );
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
+  finder.reason.addEventListener( 'change', () => changeReason() );
   
   let handler =
   {
@@ -100,11 +103,32 @@ function addAlert( text )
 
 function clearSearch()
 {
+  finder.whoBlock.style.display = ( currentSearch === "training" ) ? "none" : "block";
   finder.searchresults.innerHTML = "<option value=\"\">Waiting for results...</option>";
+  finder.authDiv.style.display = "none";
+  finder.reason.value = "none";
+  finder.authName.value = "";
+  finder.authEmail.value = "";
 }
+
+function changeReason()
+{
+  let r = finder.reason.value;
+  if ( "directorpermit" !== r && "leaderpermit" !== r )
+  {
+    finder.authDiv.style.display = "none";
+    return;
+  }
+  var s = ( "directorpermit" === r )?"course director":"module leader";
+  finder.authNameTitle.innerHTML = s;
+  finder.authEmailTitle.innerHTML = s;
+  finder.authDiv.style.display = "block";
+}
+
 
 function searchForCourses()
 {
+  currentSearch = "courses";
   var spec = finder.courseid.value;
   if ( !coursespecvalidator.test( spec ) )
   {
@@ -118,6 +142,7 @@ function searchForCourses()
 
 function searchForOrgs()
 {
+  currentSearch = "orgs";
   var spec = finder.orgid.value;
   if ( !orgspecvalidator.test( spec ) )
   {
@@ -131,6 +156,7 @@ function searchForOrgs()
 
 function searchForTraining()
 {
+  currentSearch = "training";
   toolsocket.sendMessage( new selfenrol.SearchMessage( "training", "" ) );  
   clearSearch();
   arialib.openDialog( 'searchdialog', finder.searchTrainingButton );
@@ -144,8 +170,46 @@ function enrolOnCourse()
     alert( "No course is selected." );
     return;
   }
-  
-  toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id ) );  
+  var reason = "";
+  var name = "";
+  var email = "";
+
+  if ( currentSearch !== "training" )
+  {
+    var reason = finder.reason.value;
+    if ( reason === "" || reason === "none" )
+    {
+      alert( "You haven't specified who authorised you to self enrol." );
+      return;
+    }  
+    if ( reason === "directorpermit" || reason === "leaderpermit" )
+    {
+      name = finder.authName.value;
+      email = finder.authEmail.value;
+      if ( name === null || name.trim().length === 0 )
+      {
+        alert( "You need to provide the name of the person who authorised you to self-enrol." );
+        return;
+      }
+      if ( email === null || email.trim().length === 0 )
+      {
+        alert( "You need to provide the EMail address of the person who authorised you to self-enrol." );
+        return;
+      }
+      var split = email.trim().split( "@" );
+      if ( split.length !== 2 )
+      {
+        alert( "The email address doesn't look valid." );
+        return;
+      }
+      if ( split[1].toLowerCase() !== "leedsbeckett.ac.uk" )
+      {
+        alert( "The email isn't a Leeds Beckett address." );
+        return;
+      }
+    }
+  }  
+  toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id, reason, name, email ) );  
 }
 
 window.addEventListener( "load", function(){ init(); } );

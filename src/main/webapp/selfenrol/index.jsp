@@ -70,7 +70,34 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <div role="dialog" id="searchdialog" aria-labelledby="searchdialogLabel" aria-modal="true" class="hidden">
         <h3 id="searchdialogLabel">Search Results</h3>
         <div>
-          <select size="10" id="searchresults"></select>  
+          <table>
+            <tr>
+              <td valign="top">
+                <h4>Which do you want to enrol on?</h4>
+                <select size="10" id="searchresults"></select>  
+              </td>
+              <td valign="top">
+                <div id="whoBlock">
+                <h4>Who authorised you to enrol yourself?</h4>
+                <select size="10" id="reason">
+                  <option value="none">Select from this list.</option>
+                  <option value="coursedirector">Myself - I am the course director.</option>
+                  <option value="moduleleader">Myself - I am the module/community leader.</option>
+                  <option value="admin">Myself - I am the course administrator.</option>
+                  <option value="directorpermit">The course director has asked me to self enrol.</option>
+                  <option value="leaderpermit">The module leader has asked me to self enrol.</option>
+                  <option value="sysadmin">Myself - I am a Digital Learning Service system administrator.</option>
+                </select>
+                <div id="authDiv" style="display: none;">
+                  <h4>Name of the <span id="authNameTitle">authoriser</span></h4>
+                  <p><input id="authName"/></p>
+                  <h4>Email address of the <span id="authEmailTitle">authoriser</span></h4>
+                  <p><input id="authEmail"/></p>
+                </div>
+                </div>
+              </td>
+            </tr>
+          </table>
         </div>
         <div class="dialog_form_actions">
           <button id="searchdialogEnrolButton" value="Close">Enrol</button>

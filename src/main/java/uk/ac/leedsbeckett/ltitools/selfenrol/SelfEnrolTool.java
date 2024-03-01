@@ -48,6 +48,8 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  *  course.user.MODIFY
  *  org.user.MODIFY
  * 
+ *  system.user.VIEW (to find email address etc.)
+ * 
  * @author maber01
  */
 @ToolMapping( id = "selfenrol", type = "system", title = "LBU Self Enrol", launchURI = "/selfenrol/index.jsp" )

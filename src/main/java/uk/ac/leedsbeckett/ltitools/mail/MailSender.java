@@ -45,19 +45,26 @@ public class MailSender
     this.sender = sender;
   }
   
-  public void processOneEmail( String to, String subject, String body, boolean ccself )
+  public void processOneEmail( String to, String cc, String subject, String body, boolean ccself )
   {
-    logger.log(Level.INFO, "Sending Email {0} {1} {2}", new Object[ ]{sender, to, subject});
+    logger.log(Level.INFO, "Sending Email {0} {1} {2} {3}", new Object[ ]{sender, to, cc, subject});
+    
+    int cccount = 0;
+    int ccn=0;
+    if ( ccself ) cccount++;
+    if ( cc != null ) cccount++;
     
     InternetAddress[] recipients = new InternetAddress[1];
-    InternetAddress[] ccs = new InternetAddress[ccself?1:0];
+    InternetAddress[] ccs = new InternetAddress[cccount];
     InternetAddress from;
     try
     {
       from          = new InternetAddress( sender );
       recipients[0] = new InternetAddress( to );
       if ( ccself )
-        ccs[0]      = from;
+        ccs[ccn++]      = from;
+      if ( cc != null )
+        ccs[ccn++]      = new InternetAddress( cc );
       sendHtmlEmail( subject, from, new InternetAddress[0], recipients, ccs, body );
     }
     catch (MessagingException ex)

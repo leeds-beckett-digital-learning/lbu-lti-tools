@@ -68,6 +68,14 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
 public class SeEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger(SeEndpoint.class.getName() );
+
+  static final String[] AUTHTYPES= { 
+    "coursedirector", 
+    "moduleleader", 
+    "admin", 
+    "directorpermit",
+    "leaderpermit",
+    "sysadmin" };
   
   SelfEnrolTool tool;
   SeToolLaunchState seState;
@@ -254,13 +262,17 @@ public class SeEndpoint extends ToolEndpoint
       throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message.getId() );
     
     String role;
+    boolean authneeded=false;
+    boolean authnotself=false;
     switch ( mostRecentScope )
     {
       case "course":
         role="Instructor";
+        authneeded=true;
         break;
       case "organization":
         role="Instructor";
+        authneeded=true;
         break;
       case "training":
         role="Student";
@@ -269,6 +281,32 @@ public class SeEndpoint extends ToolEndpoint
         throw new HandlerAlertException( "Unknown search scope.", message.getId() );
     }
 
+    if ( authneeded )
+    {
+      boolean found=false;
+      for ( String s : AUTHTYPES )
+        if ( s.equals( request.getAuthType() ) )
+        {
+          found = true;
+          break;
+        }
+      if ( !found )
+        throw new HandlerAlertException( "Unknown authorisation type.", message.getId() );
+      if ( "directorpermit".equals( request.getAuthType() ) || 
+             "leaderpermit".equals( request.getAuthType() ) )
+      {
+        authnotself=true;
+        if ( request.getAuthName() == null || request.getAuthName().trim().length() == 0 )
+          throw new HandlerAlertException( "Name of authorising person missing.", message.getId() );
+        if ( request.getAuthEmail() == null || request.getAuthEmail().trim().length() == 0 )
+          throw new HandlerAlertException( "Email of authorising person missing.", message.getId() );
+        String[] parts = request.getAuthEmail().trim().split( "@" );
+        if ( parts.length != 2 )
+          throw new HandlerAlertException( "Email seems invalid.", message.getId() );
+        if ( !"leedsbeckett.ac.uk".equals( parts[1] ) )
+          throw new HandlerAlertException( "Email domain is not \"leedsbeckett.ac.uk\"", message.getId() );
+      }
+    }
     
     CourseMembershipV1Input cmi = new CourseMembershipV1Input( 
             null, // unspecified child id - will enrol on parent course 
@@ -324,11 +362,48 @@ public class SeEndpoint extends ToolEndpoint
     logger.fine( user.getExternalId() );
     logger.fine( user.getContact().getEmail() );
     
+    StringBuilder sb = new StringBuilder();
+    sb.append( "<p>This automated email has been sent from LBU Digital Learning Service staff self enrol tool.</p>\n" );
+    sb.append( "<table>\n" );
+    sb.append( "<tr><th>Person Self Enrolling:</th><td>" );
+    sb.append( user.getName().getGiven() );
+    sb.append( " " );
+    sb.append( user.getName().getFamily() );
+    sb.append( " &lt;" );
+    sb.append( user.getContact().getEmail() );
+    sb.append( "&gt;</td></tr>\n" );
+    sb.append( "<tr><th>Module/Community:</th><td>" );
+    sb.append( id );
+    sb.append( "</td></tr>\n" );
+    if ( authneeded )
+    {
+      sb.append( "<tr><th>Person who authorised enrollment:<br/>(According to person who self enrolled.)</th><td>" );
+      switch ( request.getAuthType() )
+      {
+        case "directorpermit":
+        case "leaderpermit":
+          sb.append( request.getAuthName() );
+          sb.append( " &lt;" );
+          sb.append( request.getAuthEmail() );
+          sb.append( "&gt;" );
+          break;
+        default:
+          sb.append( "Self" );
+          sb.append( "(as " );
+          sb.append( request.getAuthType() );
+          sb.append( ")" );
+      }
+      sb.append( "</td></tr>\n" );
+    }
+    sb.append( "</table>\n" );
+    
+    
     MailSender sender = tool.getMailSender();
     sender.processOneEmail( 
             user.getContact().getEmail(),
-            "Test Message", 
-            "<p>A test message</p>",
+            authnotself?request.getAuthEmail().trim():null,
+            "Automated Message - Staff Self Enrol Tool", 
+            sb.toString(),
             true
     );
   }

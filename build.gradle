@@ -135,27 +135,9 @@ task generateJavascript( type: JavaExec ) {
   mainClass = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
   args 'uk.ac.leedsbeckett', buildJavascriptGen
 }
-
-
-/**
-  *  The standard war task (provided by the war plugin) is customised
-  *  because we build the webapp files differently. There are two 'dependsOn'.
-  *  One processes webapp source files that don't need to be edited and the
-  *  other is a chain of dependent tasks that process webapp files that need
-  *  to be relocated, filtered or generated.
-  *  
-  *  The main source of web files is changed from the normal source folder
-  *  to the static directory containing a subset of files. Then, the directory
-  *  containing the processed web files is added with a 'from' statement.
-  */
-war {
-  dependsOn generateJavascript, staticWebappMove
-  webAppDirectory = file( buildWebappStatic )
-  from buildWebappDynamic
-}
-
 task jspToJava( type: DefaultTask ) {
-    dependsOn compileJava
+    // Needs main class files for project and processed HTML/JS/JSP files
+    dependsOn compileJava, processPages
     def projectLayout = layout
     def webappFragment = projectLayout.buildDirectory.file('jsp/servlets.xml').get().toString()
     doFirst {
@@ -175,7 +157,7 @@ task jspToJava( type: DefaultTask ) {
             validateXml: false, 
             verbose: 9,
             webxml: webappFragment,
-            uriroot: projectLayout.projectDirectory.file('src/main/webapp').asFile, 
+            uriroot: buildWebappDynamic, 
             outputDir: projectLayout.buildDirectory.file("jsp/java").get().asFile )
     }
 }
@@ -184,9 +166,28 @@ task jspToJava( type: DefaultTask ) {
 task jspJavaToClasses( type: JavaCompile ) {
   dependsOn jspToJava
   source = projectLayout.buildDirectory.file("jsp/java").get().asFile
-  destinationDir = projectLayout.buildDirectory.file("jsp/classes").get().asFile
+  destinationDir = projectLayout.buildDirectory.file("webappdynamic/WEB-INF/classes").get().asFile
   classpath = sourceSets.main.output + configurations.jasper;
 }
+
+
+/**
+  *  The standard war task (provided by the war plugin) is customised
+  *  because we build the webapp files differently. There are two 'dependsOn'.
+  *  One processes webapp source files that don't need to be edited and the
+  *  other is a chain of dependent tasks that process webapp files that need
+  *  to be relocated, filtered or generated.
+  *  
+  *  The main source of web files is changed from the normal source folder
+  *  to the static directory containing a subset of files. Then, the directory
+  *  containing the processed web files is added with a 'from' statement.
+  */
+war {
+  dependsOn generateJavascript, staticWebappMove, jspJavaToClasses
+  webAppDirectory = file( buildWebappStatic )
+  from buildWebappDynamic
+}
+
 
 /**
  * Maven central is where all 3rd party libraries come from.

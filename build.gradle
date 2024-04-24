@@ -58,6 +58,16 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
 }
 
+/**
+ * Declare a separate configuration for jasper to make it possible to have
+ * a specific compile time dependency for the JSP compile task. This is based
+ * on the "implementation" configuration and adds jasper classes.
+ *
+ **/
+configurations {
+    jasper {extendsFrom implementation}
+}
+
 /** More detailed warnings from compiler. **/
 compileJava {
     options.compilerArgs << '-Xlint:unchecked' 
@@ -144,6 +154,40 @@ war {
   from buildWebappDynamic
 }
 
+task jspToJava( type: DefaultTask ) {
+    dependsOn compileJava
+    def projectLayout = layout
+    def webappFragment = projectLayout.buildDirectory.file('jsp/servlets.xml').get().toString()
+    doFirst {
+      mkdir projectLayout.buildDirectory.file('jsp')
+    }
+
+    // Adding compiled project classes to configuration : returns a file set.
+    def jasperDepends = sourceSets.main.output + configurations.jasper;
+    doLast {
+        // asPath converts file set to semicolon delimited string
+        // ant.echo jasperDepends.asPath
+        ant.taskdef( 
+            classname: 'org.apache.jasper.JspC', 
+            name: 'jasper', 
+            classpath: jasperDepends.asPath )
+        ant.jasper( 
+            validateXml: false, 
+            verbose: 9,
+            webxml: webappFragment,
+            uriroot: projectLayout.projectDirectory.file('src/main/webapp').asFile, 
+            outputDir: projectLayout.buildDirectory.file("jsp/java").get().asFile )
+    }
+}
+
+
+task jspJavaToClasses( type: JavaCompile ) {
+  dependsOn jspToJava
+  source = projectLayout.buildDirectory.file("jsp/java").get().asFile
+  destinationDir = projectLayout.buildDirectory.file("jsp/classes").get().asFile
+  classpath = sourceSets.main.output + configurations.jasper;
+}
+
 /**
  * Maven central is where all 3rd party libraries come from.
  * Maven local will be used for snapshot builds of our own libraries.
@@ -207,6 +251,10 @@ dependencies {
     implementation "com.sun.mail:javax.mail:1.6.2"
 
     testImplementation     'junit:junit:4.13'
+
+    // Jasper JSP compile task specific dependency
+    // Same version as target Tomcat container.
+    jasper 'org.apache.tomcat.embed:tomcat-embed-jasper:9.0.86'
 }
 
 

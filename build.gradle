@@ -46,6 +46,7 @@ def buildTimestamp      = Long.toHexString( new Date().getTime() )
  **/
 def buildWebappStatic   = project.buildDir.toString() + '/webappstatic'
 def buildWebappDynamic  = project.buildDir.toString() + '/webappdynamic'
+def buildWebappJsp      = project.buildDir.toString() + '/webappjsp'
 def buildJavascriptDir  = buildWebappDynamic + '/javascript/' + buildTimestamp
 def buildJavascriptGen  = buildJavascriptDir + '/generated'
 
@@ -110,16 +111,29 @@ task moveJavascript( type: Copy ) {
 }
 
 /**
- * Prepare the files that need to point at Javascript. Start by calling the
- * move javascript task, which itself deletes the whole build directory structure.
- * Then source JSP and HTML is run through filter to fix links to scripts.
+ * Prepare the HTML files that need to point at Javascript. (After calling the
+ * move javascript task, which itself deletes the whole build directory structure.)
+ * Then source HTML is run through filter to fix links to scripts.
  **/
 task processPages( type: Copy ) {
   dependsOn moveJavascript
   from 'src/main/webapp'
   into buildWebappDynamic
-  include "**/*.jsp"
   include "**/*.html"
+  includeEmptyDirs = false
+  filter( ReplaceTokens, tokens: [ "BUILDTIMESTAMP" : buildTimestamp ] )
+}
+
+/**
+ * Prepare the JSP files that need to point at Javascript. (After calling the
+ * move javascript task, which itself deletes the whole build directory structure.)
+ * Then source JSP is run through filter to fix links to scripts.
+ **/
+task processJspPages( type: Copy ) {
+  dependsOn moveJavascript
+  from 'src/main/webapp'
+  into buildWebappJsp
+  include "**/*.jsp"
   includeEmptyDirs = false
   filter( ReplaceTokens, tokens: [ "BUILDTIMESTAMP" : buildTimestamp ] )
 }
@@ -135,13 +149,19 @@ task generateJavascript( type: JavaExec ) {
   mainClass = "uk.ac.leedsbeckett.ltitoolset.websocket.EndpointJavascriptGenerator"
   args 'uk.ac.leedsbeckett', buildJavascriptGen
 }
+
+/**
+  * After links to javascript have been fixed convert JSP pages to Java
+  * source code. Also create a web fragment XML file which will be used
+  * to help package JSP into a jar file as a web fragment.
+  **/
 task jspToJava( type: DefaultTask ) {
     // Needs main class files for project and processed HTML/JS/JSP files
-    dependsOn compileJava, processPages
+    dependsOn compileJava, processJspPages
     def projectLayout = layout
-    def webappFragment = projectLayout.buildDirectory.file('jsp/servlets.xml').get().toString()
+    def webappFragment = projectLayout.buildDirectory.file("jsp/classes/META-INF/web-fragment.xml").get().asFile
     doFirst {
-      mkdir projectLayout.buildDirectory.file('jsp')
+      mkdir projectLayout.buildDirectory.file('jsp/classes/META-INF')
     }
 
     // Adding compiled project classes to configuration : returns a file set.
@@ -156,36 +176,61 @@ task jspToJava( type: DefaultTask ) {
         ant.jasper( 
             validateXml: false, 
             verbose: 9,
-            webxml: webappFragment,
-            uriroot: buildWebappDynamic, 
+            webfragmentxml: webappFragment,
+            uriroot: buildWebappJsp, 
             outputDir: projectLayout.buildDirectory.file("jsp/java").get().asFile )
     }
 }
 
-
+/**
+  * Compile the JSP java classes - this has to be seperate from the main
+  * project compilation because those classes need to be on the classpath
+  * when these are compiled.
+  **/
 task jspJavaToClasses( type: JavaCompile ) {
   dependsOn jspToJava
-  source = projectLayout.buildDirectory.file("jsp/java").get().asFile
-  destinationDir = projectLayout.buildDirectory.file("webappdynamic/WEB-INF/classes").get().asFile
+  def projectLayout = layout
+  source         = projectLayout.buildDirectory.file("jsp/java").get().asFile
+  destinationDir = projectLayout.buildDirectory.file("jsp/classes").get().asFile
   classpath = sourceSets.main.output + configurations.jasper;
 }
 
+/**
+  * Package up the web fragment into a jar file for inclusion in the war file.
+  **/
+task jspJar( type: Jar ) {
+  dependsOn jspJavaToClasses
+  def projectLayout = layout
+  doFirst {
+    mkdir projectLayout.buildDirectory.file('jsp/lib')
+  }
+  from projectLayout.buildDirectory.file("jsp/classes").get().asFile
+  destinationDir = projectLayout.buildDirectory.file("jsp/lib").get().asFile
+  archiveFileName = 'lbu-lti-tools-jsp.jar'
+}
 
 /**
   *  The standard war task (provided by the war plugin) is customised
-  *  because we build the webapp files differently. There are two 'dependsOn'.
-  *  One processes webapp source files that don't need to be edited and the
-  *  other is a chain of dependent tasks that process webapp files that need
-  *  to be relocated, filtered or generated.
+  *  because we build the webapp files differently. There are three 'dependsOn'.
+  *  One processes webapp source files that don't need to be edited, the
+  *  second HTML that needs to be processed. The third generates a web
+  *  fragment jar file based on the JSP content.
   *  
   *  The main source of web files is changed from the normal source folder
-  *  to the static directory containing a subset of files. Then, the directory
-  *  containing the processed web files is added with a 'from' statement.
+  *  to the static directory containing a subset of files; the directory
+  *  containing the processed HTML files is added with a 'from' statement;
+  *  the built JSP web fragment is included in another from clause.
   */
 war {
-  dependsOn generateJavascript, staticWebappMove, jspJavaToClasses
+  dependsOn generateJavascript, staticWebappMove, jspJar
+  def projectLayout = layout
   webAppDirectory = file( buildWebappStatic )
-  from buildWebappDynamic
+  from ( buildWebappDynamic ) {
+    exclude( '**.*.jsp' )
+  }
+  from( projectLayout.buildDirectory.file("jsp/lib").get().asFile ) {
+    into( 'WEB-INF/lib' )
+  }
 }
 
 

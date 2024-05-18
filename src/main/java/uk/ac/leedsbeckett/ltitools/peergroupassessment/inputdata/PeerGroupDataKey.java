@@ -17,7 +17,7 @@ package uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
+import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 
 /**
  *
@@ -25,18 +25,18 @@ import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
  */
 public class PeerGroupDataKey implements Serializable
 {
-  final ResourceKey resourceKey;
+  final PlatformResourceKey resourceKey;
   final String groupId;
 
   public PeerGroupDataKey( 
-          @JsonProperty("resourceKey") ResourceKey resourceKey, 
+          @JsonProperty("resourceKey") PlatformResourceKey resourceKey, 
           @JsonProperty("groupId") String groupId )
   {
     this.resourceKey = resourceKey;
     this.groupId = groupId;
   }
 
-  public ResourceKey getResourceKey()
+  public PlatformResourceKey getResourceKey()
   {
     return resourceKey;
   }

@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
+import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 
 
 /**
@@ -40,9 +40,9 @@ import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
  * @author jon
  */
 @JsonIgnoreProperties({ "groups" })
-public class PeerGroupResource implements Serializable, Entry<ResourceKey>
+public class PeerGroupResource implements Serializable, Entry<PlatformResourceKey>
 {
-  ResourceKey key;
+  PlatformResourceKey key;
   
   PgaProperties properties = new PgaProperties( "Initial Title", "Initial Description", Stage.SETUP );
   public final Map<String,Group> groupsById = new HashMap<>();
@@ -51,19 +51,19 @@ public class PeerGroupResource implements Serializable, Entry<ResourceKey>
   public ArrayList<String> groupIdsInOrder = new ArrayList<>();
   public final Map<String,String> groupIdsByExternalId = new HashMap<>();
   
-  public PeerGroupResource( @JsonProperty("key") ResourceKey key )
+  public PeerGroupResource( @JsonProperty("key") PlatformResourceKey key )
   {
     this.key = key;
   }
 
   @Override
-  public ResourceKey getKey()
+  public PlatformResourceKey getKey()
   {
     return key;
   }
 
   @Override
-  public void setKey( ResourceKey key )
+  public void setKey( PlatformResourceKey key )
   {
     if ( this.key != null )
       throw new IllegalArgumentException( "Not allowed to change resource key." );

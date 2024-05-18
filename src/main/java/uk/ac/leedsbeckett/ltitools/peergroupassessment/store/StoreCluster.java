@@ -23,7 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
+import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 
 /**
@@ -46,7 +46,7 @@ public class StoreCluster
     formstore     = new FormStore(     basePath.resolve( "forms"     ) );
   }
 
-  public PeerGroupResource getResource( ResourceKey key, boolean create )
+  public PeerGroupResource getResource( PlatformResourceKey key, boolean create )
   {
     return resourceStore.get( key, create );
   }

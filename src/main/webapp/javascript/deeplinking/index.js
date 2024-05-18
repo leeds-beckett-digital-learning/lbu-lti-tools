@@ -16,24 +16,13 @@
 
 import finder from "../common/domutil.js";
 import arialib from "../common/aria.js";
+import deeplinking from "../generated/deeplinking.js";
 
 let dynamicData = dynamicPageData;
 
 let toolsocket;
-
-let loading;
-
-let dataentryopening=true;
-        
-let form;
-let data;
-let selectedgroupid;
-let formuptodate = false;
-
-let bbgroupsetdata;
-
-let unattachedcheckboxes = new Array();
-let oldstage = "unknown";
+let options;
+let selectedti;
 
 function init()
 {
@@ -51,33 +40,101 @@ function init()
   arialib.setDialogAlertClass( 'alertList' );
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );  
+
+  finder.linkcreatedialogCloseButton.addEventListener( 
+          'click', () => arialib.closeDialog(finder.linkcreatedialogCloseButton) );
+
+  finder.linkcreatedialogConfirmButton.addEventListener( 
+          'click', () => toolsocket.sendMessage( new deeplinking.GetJwtMessage( selectedti.id, selectedti.type, "Made up resource title" ) ) );
+    
+  console.log( dynamicData.webSocketUri );
   
-  if ( dynamicData.options.length === 0 )
+  let handler =
   {
-    finder.tooloptions.innerHTML = 
-            "<h4>No Resources Available</h4><p>Sorry, you don't have access " +
-            "rights that will allow you to create any resources.</p>";
-    return;
+    open()
+    {
+      toolsocket.sendMessage( new deeplinking.GetOptionsMessage() );
+    },
+    
+    handleAlert( message )
+    {
+      alert( message.payload );
+    },
+
+    handleOptions( message )
+    {
+      options = message.payload;
+      console.log( 'Options rxed' );
+      updateAvailableTools();
+    },
+
+    handleJwt( message )
+    {
+      createOrLink( message.payload );
+    }
+
+  };
+  
+  toolsocket = new deeplinking.ToolSocket( dynamicData.webSocketUri, handler  );    
+}
+
+
+function updateAvailableTools()
+{
+  var singHtml = "";
+  var multHtml = "";
+  var button;
+  
+  for ( var i=0; i<options.toolInformations.length; i++ )
+  {
+    var ti = options.toolInformations[i];
+    console.log( 'Tool title ' + ti.title );  
+    if ( ti.instantiationType === "SINGLETON" )
+    {
+      singHtml += "<tr><td><button id=\"toolbutton_" + ti.id + "\">Link</button></td><td>" + ti.title + "</td></tr>\n";
+    }
+    if ( ti.instantiationType === "MULTITON" )
+    {
+      if ( ti.instantiateOnDeepLinking )
+        multHtml += "<tr><td><button id=\"toolbutton_" + ti.id + "\">Create</button></td><td>" + ti.title + "</td></tr>\n";
+    }
   }
   
-  var html = "";
-  for ( var i=0; i < dynamicData.options.length; i++ )
+  if ( singHtml.length === 0 )
   {
-    console.log( dynamicData.options[i].title );
-    console.log( dynamicData.options[i].id    );
-    console.log( dynamicData.options[i].type  );
-    html += "<h4>";
-    html += dynamicData.options[i].title;
-    html += "</h4>\n<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
-    html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.options[i].jwt + "\"/>\n";
-    html += "<input type=\"submit\" value=\"Choose\"/>\n";
-    html += "</form></p>\n";
+    finder.optionssiteempty.style.display = 'block';
+    finder.optionssite.style.display = 'none';
   }
-//  html += "<p><form method=\"post\" action=\"" + dynamicData.deepLinkReturnUrl + "\">\n";
-//  html += "<input type=\"hidden\" name=\"JWT\" value=\"" + dynamicData.codedMessageCancel + "\"/>\n";
-//  html += "<input type=\"submit\" value=\"None of the Above\"/>\n";
-//  html += "</form></p>\n";
-  finder.tooloptions.innerHTML = html;
+  else
+  {
+    finder.optionssitetablebody.innerHTML = singHtml;
+    finder.optionssiteempty.style.display = 'none';
+    finder.optionssite.style.display = 'block';
+  }
+  
+  if ( multHtml.length === 0 )
+  {
+    finder.optionsnewresourceempty.style.display = 'block';
+    finder.optionsnewresource.style.display = 'none';
+  }
+  else
+  {
+    finder.optionsnewresourcebody.innerHTML = multHtml;
+    finder.optionsnewresourceempty.style.display = 'none';
+    finder.optionsnewresource.style.display = 'block';    
+  }
+  
+  for ( var i=0; i<options.toolInformations.length; i++ )
+  {
+    // ti declared const here so different for each iteration
+    // to make sure each event listener sees separate ti
+    const ti = options.toolInformations[i];
+    console.log( 'Tool title ' + ti.title );  
+    button = finder[ "toolbutton_" + ti.id ];
+    if ( button )
+      button.addEventListener( 'click', () => openToolDialog( button, ti ) );
+  }
+  
 }
 
 function updateAlerts()
@@ -90,6 +147,23 @@ function addAlert( text )
   arialib.addAlert( text );
 }
 
+function openToolDialog( openerElement, ti )
+{
+  selectedti = ti;
+  arialib.openDialog( 'linkcreatedialog', openerElement );
+  finder.linkcreatedialogTitle.innerHTML = ti.title;
+  finder.linkcreatedialogID.innerHTML    = ti.id;
+  finder.linkcreatedialogType.innerHTML  = ti.type;
+  finder.linkcreatedialogForm.action = dynamicData.deepLinkReturnUrl;
+}
+
+function createOrLink( jwt )
+{
+  finder.linkcreatedialogJwt.value = jwt;
+  finder.linkcreatedialogForm.submit();
+}
+  
+  
 function openDebugDialog( openerElement )
 {
   let pre = finder[ "debugtext" ];

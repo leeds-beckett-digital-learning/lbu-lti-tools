@@ -27,7 +27,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
+import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 import uk.ac.leedsbeckett.ltitoolset.store.Store;
 
 /**
@@ -40,7 +40,7 @@ import uk.ac.leedsbeckett.ltitoolset.store.Store;
  * 
  * @author jon
  */
-public class ResourceStore extends Store<ResourceKey,PeerGroupResource>
+public class ResourceStore extends Store<PlatformResourceKey,PeerGroupResource>
 {
   static final Logger logger = Logger.getLogger(ResourceStore.class.getName() );
 
@@ -61,7 +61,7 @@ public class ResourceStore extends Store<ResourceKey,PeerGroupResource>
   }
 
   @Override
-  public PeerGroupResource create( ResourceKey key )
+  public PeerGroupResource create( PlatformResourceKey key )
   {
     return new PeerGroupResource( key );
   }
@@ -73,7 +73,7 @@ public class ResourceStore extends Store<ResourceKey,PeerGroupResource>
   }
   
   @Override
-  public Path getPath( ResourceKey key )
+  public Path getPath( PlatformResourceKey key )
   {
     Path d = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
     return d.resolve( URLEncoder.encode( key.getResourceId(), StandardCharsets.UTF_8 ) );
@@ -92,7 +92,7 @@ public class ResourceStore extends Store<ResourceKey,PeerGroupResource>
     
     logger.info( "Starting." );
     ResourceStore store = new ResourceStore( Paths.get( "/Users/maber01/peerstore/") );
-    ResourceKey rk = new ResourceKey( "platform", "1" );
+    PlatformResourceKey rk = new PlatformResourceKey( "platform", "1" );
     PeerGroupResource r = store.get( rk, true );    
   }
 }

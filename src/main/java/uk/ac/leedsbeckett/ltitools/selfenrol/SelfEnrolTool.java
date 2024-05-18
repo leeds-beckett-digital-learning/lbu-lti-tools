@@ -32,8 +32,11 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
+import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
@@ -53,6 +56,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  * @author maber01
  */
 @ToolMapping( id = "selfenrol", type = "system", title = "LBU Self Enrol", launchURI = "/selfenrol/index.jsp" )
+@ToolFunctionality( instantiationType = ToolInstantiationType.SINGLETON )
 public class SelfEnrolTool extends Tool
 {
   static final Logger logger = Logger.getLogger(SelfEnrolTool.class.getName() );

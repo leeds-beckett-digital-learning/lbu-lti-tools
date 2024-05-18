@@ -28,7 +28,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import uk.ac.leedsbeckett.ltitoolset.ResourceKey;
+import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 import uk.ac.leedsbeckett.ltitoolset.store.Store;
 
 /**
@@ -94,7 +94,7 @@ public class InputDataStore extends Store<PeerGroupDataKey,PeerGroupData>
     
     logger.info( "Starting." );
     InputDataStore store = new InputDataStore( Paths.get( "/Users/maber01/peerstore/data/") );
-    PeerGroupDataKey rk = new PeerGroupDataKey( new ResourceKey( "platform", "1" ), "222" );
+    PeerGroupDataKey rk = new PeerGroupDataKey( new PlatformResourceKey( "platform", "1" ), "222" );
     PeerGroupData r = store.get( rk, true );    
   }
 }

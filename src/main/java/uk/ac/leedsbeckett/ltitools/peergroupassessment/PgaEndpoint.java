@@ -51,7 +51,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGrou
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
@@ -94,7 +94,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
         prefix="Pga",
         messageEnum="uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaServerMessageName"
 )
-public class PgaEndpoint extends ToolEndpoint
+public class PgaEndpoint extends MultitonToolEndpoint
 {
   static final Logger logger = Logger.getLogger(PgaEndpoint.class.getName() );
   

@@ -40,12 +40,13 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
+import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
 /**

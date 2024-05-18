@@ -120,7 +120,7 @@
 
       
     </style>
-    <script lang="JavaScript">
+    <script>
       
 const dynamicPageData = ${support.dynamicPageDataAsJSON};
         
@@ -129,6 +129,22 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">      
+      <div role="dialog" id="linkcreatedialog" aria-labelledby="linkcreatedialogLabel" aria-modal="true" class="hidden">
+        <h3 id="linkcreatedialogLabel">Link or Create Resource</h3>
+        <table>
+          <tr><th>Title</th>   <td id="linkcreatedialogTitle"></td> </tr>
+          <tr><th>ID</th>      <td id="linkcreatedialogID"></td>    </tr>
+          <tr><th>Type</th>    <td id="linkcreatedialogType"></td>  </tr>
+        </table>
+        <p>Do you want to proceed?</p>
+        <div>
+          <form id="linkcreatedialogForm" method="POST">
+            <input id="linkcreatedialogJwt" type="hidden" name="JWT"/>
+          </form>
+        </div>
+        <div class="dialog_form_actions"><button id="linkcreatedialogConfirmButton" value="Close">Confirm</button></div>
+        <div class="dialog_form_actions"><button id="linkcreatedialogCloseButton" value="Close">Cancel</button></div>
+      </div>
       <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
         <h3 id="debugdialogLabel">Debug Information</h3>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>
@@ -144,8 +160,39 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div class="section">
     <div class="block">
     </div>
-      <div id="tooloptions" class="block">
+      <h4>Create New Resource</h4>
+        <div id="optionsnewresourceempty" class="block" style="display: none; margin-left: 4em;">
+          <p>There are no tools in this category.</p>
+        </div>
+        <div id="optionsnewresource" class="block" style="display: none; margin-left: 4em;">
+          <table>
+            <thead>
+              <tr><th>Select</th><th>Tool</th></tr>
+            </thead>
+            <tbody id="optionsnewresourcebody">
+            </tbody>
+          </table>
+        </div>
+      <h4>Link to Site-Wide Tool</h4>
+        <div id="optionssiteempty" class="block" style="display: none; margin-left: 4em;">
+          <p>There are no tools in this category.</p>
+        </div>
+        <div id="optionssite" class="block" style="display: none; margin-left: 4em;">
+          <table>
+            <thead>
+              <tr><th>Select</th><th>Tool</th></tr>
+            </thead>
+            <tbody id="optionssitetablebody">
+            </tbody>
+          </table>
+        </div>
+      <h4>Link to Existing Resource</h4>
+      <div id="optionsresource" class="block">
+      <p><em>Not yet implemented.</em></p>
       </div>
+
+      <div id="tooloptions" class="block">
+      </div>      
     </div>
         
     <h4 style="display: none;">Notifications</h4>

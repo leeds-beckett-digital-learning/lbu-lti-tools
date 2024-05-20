@@ -45,7 +45,7 @@ function init()
           'click', () => arialib.closeDialog(finder.linkcreatedialogCloseButton) );
 
   finder.linkcreatedialogConfirmButton.addEventListener( 
-          'click', () => toolsocket.sendMessage( new deeplinking.GetJwtMessage( selectedti.id, selectedti.type, "Made up resource title" ) ) );
+          'click', () => toolsocket.sendMessage( new deeplinking.MakeLinkMessage( selectedti.id, selectedti.type, "Made up resource title", null ) ) );
     
   console.log( dynamicData.webSocketUri );
   

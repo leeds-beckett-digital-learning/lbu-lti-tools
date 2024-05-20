@@ -21,7 +21,13 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolSetMapping;
  *
  * @author maber01
  */
-@ToolSetMapping( name="LBU LTI Tools", loginUrl="/login", launchUrl="/launch", jwksUrl="/jwks", autoRegUrl="/autoreg/*" )
+@ToolSetMapping( 
+        name="LBU LTI Tools", 
+        loginUrl="/login", 
+        launchUrl="/launch", 
+        jwksUrl="/jwks", 
+        autoRegUrl="/autoreg/*",
+        deepLinkingUrl="/deeplinking/index.jsp" )
 public class ToolSet
 {
 }

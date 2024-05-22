@@ -1,4 +1,5 @@
 {
   "backchannelProxy": "",
-  "developmentTrustAllServersMode": false
+  "developmentTrustAllServersMode": false,
+  "hostName": "hostname as seen from outside here"
 }

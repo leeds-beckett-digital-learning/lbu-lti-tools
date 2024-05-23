@@ -13,14 +13,6 @@
  **/
 
 
-/**
- *  NOTE. If you run gradle from within NetBeans you may see a number of
- *  warning messages. This is because NetBeans adds unwanted tasks to the
- *  project before running gradle. The offending task is 'explodedWar'.
- *  If you don't like these warnings run gradle from the command line instead.
-**/
-
-
 /* This class is used to auto edit refs to Javascript in JSP and HTML. */
 import org.apache.tools.ant.filters.ReplaceTokens
 
@@ -191,7 +183,7 @@ task jspJavaToClasses( type: JavaCompile ) {
   dependsOn jspToJava
   def projectLayout = layout
   source         = projectLayout.buildDirectory.file("jsp/java").get().asFile
-  destinationDir = projectLayout.buildDirectory.file("jsp/classes").get().asFile
+  destinationDirectory = projectLayout.buildDirectory.file("jsp/classes").get().asFile
   classpath = sourceSets.main.output + configurations.jasper;
 }
 
@@ -205,9 +197,19 @@ task jspJar( type: Jar ) {
     mkdir projectLayout.buildDirectory.file('jsp/lib')
   }
   from projectLayout.buildDirectory.file("jsp/classes").get().asFile
-  destinationDir = projectLayout.buildDirectory.file("jsp/lib").get().asFile
+  destinationDirectory = projectLayout.buildDirectory.file("jsp/lib").get().asFile
   archiveFileName = 'lbu-lti-tools-jsp.jar'
 }
+
+
+/**
+ Defining this do-nothing task stops NetBeans injecting a task of the same name
+ that messes up task dependencies and can't be configured not to.
+**/
+task explodedWar( type: DefaultTask )
+{
+}
+
 
 /**
   *  The standard war task (provided by the war plugin) is customised

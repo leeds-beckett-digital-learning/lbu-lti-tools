@@ -166,6 +166,7 @@ public class SelfEnrolTool extends Tool
   @Override
   public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
   {
-    return deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+    return deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) || 
+           deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
   }
 }

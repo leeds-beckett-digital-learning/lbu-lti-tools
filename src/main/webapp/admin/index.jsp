@@ -13,16 +13,23 @@
 <!DOCTYPE html>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<%--
 <jsp:useBean id="outcomes" class="uk.ac.leedsbeckett.ltitools.admin.AdminPageSupport" scope="request"/>
 <% outcomes.setRequest( request ); %>
+--%>
 
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>Admin Page</title>
+    <style>
+        body { font-family: sans-serif }
+    </style>
   </head>
   <body>
     <h1>Admin Page</h1>
+    <p>This URL is reserved for future functionality.</p>
+    <%--
     <p>Action = ${outcomes.action}</p>
     <p>${outcomes.importantMessage}</p>
     
@@ -36,6 +43,6 @@
       <p><textarea name="logconfig">${outcomes.logConfiguration}</textarea></p>
       <p><input type="submit" value="Save Config"></p>
     </form>
-          
+    --%>      
   </body>
 </html>

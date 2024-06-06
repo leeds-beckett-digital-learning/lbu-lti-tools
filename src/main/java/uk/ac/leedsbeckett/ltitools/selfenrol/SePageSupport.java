@@ -64,7 +64,7 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
     
     seState = (SeToolLaunchState)state.getToolLaunchState();
     if ( seState == null )
-      throw new ServletException( "Could not find peer group assessment tool session data." );
+      throw new ServletException( "Could not find self enrol. session data." );
     logger.log(Level.FINE, "resource key = {0}", seState.getResourceKey() );
     tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolKey() );
     config = tool.getConfig();
@@ -72,6 +72,7 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
 
     dynamicPageData.setDebugging( logger.isLoggable( Level.FINE ) );
     dynamicPageData.setCanEnrol( seState.isAllowedToParticipate() );
+    dynamicPageData.setCanConfigure( seState.isAllowedToManage() );
     dynamicPageData.setCourseSearchValidation( config.getCourseSearchValidation().pattern() );
     dynamicPageData.setOrgSearchValidation( config.getOrganizationSearchValidation().pattern() );
   }
@@ -105,6 +106,17 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
   public boolean isAllowedToEnrol()
   {
     return dynamicPageData.canEnrol();
+  }
+  
+  /**
+   * Is the user allowed to configure the tool for the launching platform?
+   * Derived from LTI role claims.
+   * 
+   * @return True if the user is a participant.
+   */
+  public boolean isAllowedToConfigure()
+  {
+    return dynamicPageData.canConfigure();
   }
   
   /**

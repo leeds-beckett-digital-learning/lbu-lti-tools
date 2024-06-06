@@ -29,9 +29,11 @@ public enum SeServerMessageName implements ToolMessageName
   /**
    * Message contains a simple alert message for the user.
    */
-  Alert(              "Alert",              String.class ),
-  CourseInfoList(     "CourseInfoList",     SeCourseInfoList.class),
-  EnrolSuccess(       "EnrolSuccess",       SeEnrolSuccess.class);
+  Alert(                "Alert",                String.class ),
+  CourseInfoList(       "CourseInfoList",       SeCourseInfoList.class),
+  EnrolSuccess(         "EnrolSuccess",         SeEnrolSuccess.class),
+  Configuration(        "Configuration",        SeConfigurationMessage.class ),
+  ConfigurationSuccess( "ConfigurationSuccess", String.class);
   
   /**
    * Each constant has a name which can be used in encoded messages passing

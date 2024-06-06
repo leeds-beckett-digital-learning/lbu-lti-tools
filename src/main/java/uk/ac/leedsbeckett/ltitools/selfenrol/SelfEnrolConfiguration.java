@@ -18,7 +18,6 @@ package uk.ac.leedsbeckett.ltitools.selfenrol;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 
@@ -29,8 +28,6 @@ import java.util.regex.Pattern;
  */
 public class SelfEnrolConfiguration implements Serializable
 {
-  static final Logger logger = Logger.getLogger(SelfEnrolConfiguration.class.getName() );
-  
   final Pattern courseSearchValidation;
   final String courseSearchFilter;
   final Pattern organizationSearchValidation;
@@ -99,5 +96,19 @@ public class SelfEnrolConfiguration implements Serializable
   public String getAdminEmailAddress()
   {
     return adminEmailAddress;
+  }
+  
+  public static SelfEnrolConfiguration getDefaultConfig()
+  {
+    return new SelfEnrolConfiguration(
+            "^\\d\\d\\d$",
+            "^@$",
+            "^\\d\\d\\d$",
+            "^@$",
+            "TRAINING",
+            "^TRAINING$",
+            "mailrelayhere.com",
+            "admin@mailrelayhere.com"
+    );
   }
 }

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
@@ -72,6 +73,7 @@ public class SelfEnrolTool extends Tool
   ServletContext context = null;
   SelfEnrolConfiguration config = null;
   MailSender mailSender;  
+  SePlatformConfigurationStore configstore = null;
   
   /**
    * Empty constructor at present.
@@ -98,6 +100,9 @@ public class SelfEnrolTool extends Tool
     try
     {
       this.context = context;
+      this.configstore = new SePlatformConfigurationStore( Paths.get( context.getRealPath( "/WEB-INF/tool/selfenrol/platformconfig/" ) ) );
+
+      // This provider-wide config will be fully replaced by the platform config store.
       String configpath = context.getRealPath( "/WEB-INF/selfenrolconfig.json" );
       String rawconfig = FileUtils.readFileToString( new File( configpath ), StandardCharsets.UTF_8 );
       config = objectmapper.readValue( rawconfig, SelfEnrolConfiguration.class );
@@ -108,6 +113,25 @@ public class SelfEnrolTool extends Tool
       logger.log( Level.SEVERE, "Unable to load Self Enrol tool configuration.", ex );
     }
   }
+  
+  public SelfEnrolConfiguration getPlatformConfig( String platform ) throws IOException
+  {
+    SePlatformConfigurationEntry entry = configstore.get( platform, true );
+    if ( entry.getConfig() == null )
+    {
+      entry.setConfig( SelfEnrolConfiguration.getDefaultConfig() );
+      configstore.update( entry );
+    }
+    return entry.getConfig();
+  }
+  
+  public void savePlatformConfig( String platform, SelfEnrolConfiguration config ) throws IOException
+  {
+    SePlatformConfigurationEntry entry = configstore.get( platform, true );
+    entry.setConfig( config );
+    configstore.update( entry );
+  }
+  
   
   public SelfEnrolConfiguration getConfig()
   {

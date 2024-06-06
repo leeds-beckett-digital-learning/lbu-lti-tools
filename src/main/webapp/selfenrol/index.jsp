@@ -104,6 +104,32 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           <button id="searchdialogCloseButton" value="Close">Close</button>
         </div>
       </div>
+
+      <c:if test="${support.allowedToConfigure}">
+      <div role="dialog" id="configdialog" aria-labelledby="configdialogLabel" aria-modal="true" class="hidden">
+        <h3 id="configdialogLabel">Configure Staff Self Enrol</h3>
+        <div>
+          <table>
+            <tr><th colspan="2">Module Enrol</th>
+            <tr><th>Validation RegEx</th>                <td><input id="config_courseSearchValidation"/></td></tr>
+            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_courseSearchFilter"/></td></tr>
+            <tr><th colspan="2">Community Enrol</th>
+            <tr><th>Validation RegEx</th>                <td><input id="config_organizationSearchValidation"/></td></tr>
+            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_organizationSearchFilter"/></td></tr>
+            <tr><th colspan="2">Staff Training Enrol</th>
+            <tr><th>Search Term</th>                     <td><input id="config_trainingSearchSpecification"/></td></tr>
+            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_trainingSearchFilter"/></td></tr>
+            <tr><th colspan="2">Email notification</th>
+            <tr><th>SMTP Host Name</th>                  <td><input id="config_smtpHost"/></td></tr>
+            <tr><th>Admin Email Address</th>             <td><input id="config_adminEmailAddress"/></td></tr>
+          </table>          
+        </div>
+        <div class="dialog_form_actions">
+          <button id="configdialogSaveButton" value="Close">Save</button>
+          <button id="configdialogCancelButton" value="Close">Cancel</button>
+        </div>
+      </div>
+      </c:if>
       
     </div>
 
@@ -148,6 +174,13 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       </c:otherwise>
     </c:choose>
     
+    <c:if test="${support.allowedToConfigure}">
+      <div style="margin-top: 10em;">
+        <hr>
+        <p>Your role allows you to configure this tool.</p>
+        <p><button id="configureButton">Configure</button></p>          
+      </div>
+    </c:if>
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

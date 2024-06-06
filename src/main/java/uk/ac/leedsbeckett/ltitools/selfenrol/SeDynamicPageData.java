@@ -24,6 +24,7 @@ import uk.ac.leedsbeckett.ltitoolset.page.DynamicPageData;
 public class SeDynamicPageData extends DynamicPageData
 {
   boolean canEnrol;
+  boolean canConfigure;
   String courseSearchValidation;
   String orgSearchValidation;
 
@@ -35,6 +36,16 @@ public class SeDynamicPageData extends DynamicPageData
   public void setCanEnrol( boolean canEnrol )
   {
     this.canEnrol = canEnrol;
+  }
+
+  public boolean canConfigure()
+  {
+    return canConfigure;
+  }
+
+  public void setCanConfigure( boolean canConfigure )
+  {
+    this.canConfigure = canConfigure;
   }
   
   public String getCourseSearchValidation()

@@ -40,7 +40,6 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
-import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
@@ -407,6 +406,38 @@ public class SeEndpoint extends ToolEndpoint
             sb.toString(),
             true
     );
+  }
+
+  @EndpointMessageHandler()
+  public void handleConfigurationRequest( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    logger.info( "Fetching config for platform " + getPlatformHost() );
+    SelfEnrolConfiguration config = tool.getPlatformConfig( getPlatformHost() );
+    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
+    sendToolMessage( session, tmf );
+  }
+  
+  @EndpointMessageHandler()
+  public void handleConfigure( Session session, ToolMessage message, SeConfigurationMessage configMessage )
+          throws IOException, HandlerAlertException
+  {
+    SelfEnrolConfiguration config = configMessage.getConfiguration();
+    if ( config == null )
+      throw new HandlerAlertException( "Null configuration was received.", message.getId() );
+    
+    try
+    {  
+      tool.savePlatformConfig( getPlatformHost(), config);
+    }
+    catch ( Exception e )
+    {
+      logger.log( Level.SEVERE, "Unable to save configuration", e );
+      throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
+    }
+    
+    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.ConfigurationSuccess, "Saved" );
+    sendToolMessage( session, tmf );
   }
   
   /**

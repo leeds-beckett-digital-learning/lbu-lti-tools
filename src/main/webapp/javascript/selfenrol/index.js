@@ -31,6 +31,9 @@ let orgspecvalidator;
 
 var currentSearch = "";
 
+let platformconfig = null;
+
+
 function init()
 {
   console.log( "init" );
@@ -55,6 +58,11 @@ function init()
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
   finder.reason.addEventListener( 'change', () => changeReason() );
+
+  finder.configureButton.addEventListener(          'click', () => openConfig() );
+  finder.configdialogSaveButton.addEventListener(   'click', () => saveConfig() );
+  finder.configdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog( finder.configdialog ) );
+
   
   let handler =
   {
@@ -86,6 +94,29 @@ function init()
     {
       alert( "Enrolment succeeded." );
       arialib.closeDialog(finder.searchdialog);
+    },
+
+    handleConfiguration( message )
+    {
+      console.log( message );
+      platformconfig = message.payload.configuration;
+      for ( var prop in platformconfig )
+      {
+        console.log( "Configuration property name: " + prop );
+        let inputid = "config_" + prop;
+        console.log( inputid );
+        let input = finder[inputid];
+        console.log( input );
+        input.value = platformconfig[prop];
+        console.log( input.value );
+      }
+      console.log( "End of list" );
+    },
+    
+    handleConfigurationSuccess( message )
+    {
+      alert( "Configuration success: " + message.payload );
+      arialib.closeDialog( finder.configdialog );
     }
   };
   
@@ -210,6 +241,36 @@ function enrolOnCourse()
     }
   }  
   toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id, reason, name, email ) );  
+}
+
+function openConfig()
+{
+  toolsocket.sendMessage( new selfenrol.ConfigurationRequestMessage() );
+  arialib.openDialog( 'configdialog', finder.configureButton );
+}
+
+function saveConfig()
+{
+  if ( platformconfig === null )
+  {
+    alert( "Unable to save configuration because none was received." );
+    return;
+  }
+
+  let updatedconfig = new Object();
+  for ( var prop in platformconfig )
+  {
+    console.log( "Configuration property name: " + prop );
+    let inputid = "config_" + prop;
+    console.log( inputid );
+    let input = finder[inputid];
+    console.log( input );
+    updatedconfig[prop] = input.value;
+    console.log( input.value );
+  }
+  console.log( updatedconfig );
+  
+  toolsocket.sendMessage( new selfenrol.ConfigureMessage( updatedconfig ) );
 }
 
 window.addEventListener( "load", function(){ init(); } );

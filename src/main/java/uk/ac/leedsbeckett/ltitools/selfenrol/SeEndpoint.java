@@ -81,7 +81,8 @@ public class SeEndpoint extends ToolEndpoint
   SeToolLaunchState seState;
 
   BlackboardBackchannelKey bbbckey;
-
+  String platformName=null;
+        
   // match anything because search spec is set by admin.
   Pattern trainingSearchValidation = Pattern.compile( ".*" ); 
 
@@ -108,6 +109,7 @@ public class SeEndpoint extends ToolEndpoint
   {
     super.onOpen( session );
     
+    platformName = getState().getPlatformName();
     seState = (SeToolLaunchState)getState().getToolLaunchState();
     tool = (SelfEnrolTool)getToolCoordinator().getTool( getState().getToolKey() );
     bbbckey = new BlackboardBackchannelKey( getPlatformHost() );
@@ -180,23 +182,24 @@ public class SeEndpoint extends ToolEndpoint
     
     if ( null == scope )
       throw new HandlerAlertException( "Unknown search scope.", message.getId() );
-    
+
+    SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     switch ( scope )
     {
       case "course":
-        validation = tool.getConfig().getCourseSearchValidation();
-        strfilter = tool.getConfig().getCourseSearchFilter().replace( "@", specification );
+        validation = config.getCourseSearchValidation();
+        strfilter = config.getCourseSearchFilter().replace( "@", specification );
         org = false;
         break;
       case "organization":
-        validation = tool.getConfig().getOrganizationSearchValidation();
-        strfilter = tool.getConfig().getOrganizationSearchFilter().replace( "@", specification );
+        validation = config.getOrganizationSearchValidation();
+        strfilter = config.getOrganizationSearchFilter().replace( "@", specification );
         org = true;
         break;
       case "training":
-        specification = tool.getConfig().getTrainingSearchSpecification();
+        specification = config.getTrainingSearchSpecification();
         validation = trainingSearchValidation;
-        strfilter = tool.getConfig().getTrainingSearchFilter().replace( "@", specification );
+        strfilter = config.getTrainingSearchFilter().replace( "@", specification );
         org = false;
         availability = "Yes";
         break;
@@ -260,8 +263,11 @@ public class SeEndpoint extends ToolEndpoint
 
     if ( !this.mostRecentSearchResults.contains(  id ) )
       throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message.getId() );
+
+    SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     
     String role;
+    String emailbody="";
     boolean authneeded=false;
     boolean authnotself=false;
     switch ( mostRecentScope )
@@ -269,13 +275,16 @@ public class SeEndpoint extends ToolEndpoint
       case "course":
         role="Instructor";
         authneeded=true;
+        emailbody=config.getCourseEmail();
         break;
       case "organization":
         role="Instructor";
         authneeded=true;
+        emailbody=config.getOrganizationEmail();
         break;
       case "training":
         role="Student";
+        emailbody="";
         break;
       default:
         throw new HandlerAlertException( "Unknown search scope.", message.getId() );
@@ -341,6 +350,9 @@ public class SeEndpoint extends ToolEndpoint
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.EnrolSuccess, new SeEnrolSuccess( memb.getId() ) );
     sendToolMessage( session, tmf );
 
+    if ( StringUtils.isEmpty( emailbody ) )
+      return;
+    
     // Now send an email...
     result = bp.getV1Users( "uuid:" + seState.getPersonId() );
     if ( result.getResult() == null )
@@ -357,10 +369,33 @@ public class SeEndpoint extends ToolEndpoint
         logger.severe( "Unable to get contact details from the platform. " );
       return;
     }
-    
+
     UserV1 user = (UserV1)result.getResult();
     logger.fine( user.getExternalId() );
     logger.fine( user.getContact().getEmail() );
+    
+    emailbody = emailbody.replaceAll( "\r", "" );
+    emailbody = emailbody.replaceAll( "</p>", "\n" );  // End of para replaced with new line
+    emailbody = emailbody.replaceAll( "<[^>]*>", "" ); // All other tags stripped out
+    emailbody = emailbody.replaceAll( "&nbsp;", " " ); // nbsp Entity replaced with space.
+    emailbody = emailbody.replaceAll( "\\$\\{name}", user.getName().getGiven() + " " + user.getName().getFamily() );
+    emailbody = emailbody.replaceAll( "\\$\\{username}", user.getExternalId() );
+    emailbody = emailbody.replaceAll( "\\$\\{coursename}", id );    
+    emailbody = emailbody.replaceAll( "\\$\\{reason}", request.getAuthType() );    
+    switch ( request.getAuthType() )
+    {
+      case "directorpermit":
+      case "leaderpermit":
+        emailbody = emailbody.replaceAll( "\\$\\{authname}", request.getAuthName() );    
+        emailbody = emailbody.replaceAll( "\\$\\{authemail}", request.getAuthEmail() );    
+        break;
+      default:
+        emailbody = emailbody.replaceAll( "\\$\\{authname}", "self" );    
+        emailbody = emailbody.replaceAll( "\\$\\{authemail}", "-" );    
+    }
+    emailbody = emailbody.replaceAll( "\\$\\{reason}", request.getAuthName() );    
+    
+    
     
     StringBuilder sb = new StringBuilder();
     sb.append( "<p>This automated email has been sent from LBU Digital Learning Service staff self enrol tool.</p>\n" );
@@ -398,12 +433,12 @@ public class SeEndpoint extends ToolEndpoint
     sb.append( "</table>\n" );
     
     
-    MailSender sender = tool.getMailSender();
+    MailSender sender = tool.getMailSender( platformName );
     sender.processOneEmail( 
             user.getContact().getEmail(),
             authnotself?request.getAuthEmail().trim():null,
             "Automated Message - Staff Self Enrol Tool", 
-            sb.toString(),
+            emailbody,
             true
     );
   }
@@ -412,8 +447,8 @@ public class SeEndpoint extends ToolEndpoint
   public void handleConfigurationRequest( Session session, ToolMessage message )
           throws IOException, HandlerAlertException
   {
-    logger.info( "Fetching config for platform " + getPlatformHost() );
-    SelfEnrolConfiguration config = tool.getPlatformConfig( getPlatformHost() );
+    logger.info( "Fetching config for platform " + platformName );
+    SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
     sendToolMessage( session, tmf );
   }
@@ -422,22 +457,30 @@ public class SeEndpoint extends ToolEndpoint
   public void handleConfigure( Session session, ToolMessage message, SeConfigurationMessage configMessage )
           throws IOException, HandlerAlertException
   {
+    if ( !seState.isAllowedToManage() )
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to manage the tool.", message.getId() );
+            
     SelfEnrolConfiguration config = configMessage.getConfiguration();
     if ( config == null )
       throw new HandlerAlertException( "Null configuration was received.", message.getId() );
     
     try
     {  
-      tool.savePlatformConfig( getPlatformHost(), config);
+      tool.savePlatformConfig( platformName, config);
     }
     catch ( Exception e )
     {
-      logger.log( Level.SEVERE, "Unable to save configuration", e );
+      logger.log( Level.SEVERE, "Unable to save configuration for platform " + platformName, e );
       throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
     }
     
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.ConfigurationSuccess, "Saved" );
     sendToolMessage( session, tmf );
+    
+    // To do - send message to all users now accessing tool from the same platform
+    // for now just for confirmation to current user.
+    ToolMessage tmc = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
+    sendToolMessage( session, tmc );
   }
   
   /**

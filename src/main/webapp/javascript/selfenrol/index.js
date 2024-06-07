@@ -59,10 +59,13 @@ function init()
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
   finder.reason.addEventListener( 'change', () => changeReason() );
 
-  finder.configureButton.addEventListener(          'click', () => openConfig() );
-  finder.configdialogSaveButton.addEventListener(   'click', () => saveConfig() );
-  finder.configdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog( finder.configdialog ) );
-
+  if ( dynamicData.allowedToConfigure )
+  {
+    // These HTML elements won't exist if the user is not allowed to configure
+    finder.configureButton.addEventListener(          'click', () => openConfig() );
+    finder.configdialogSaveButton.addEventListener(   'click', () => saveConfig() );
+    finder.configdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog( finder.configdialog ) );
+  }
   
   let handler =
   {
@@ -100,17 +103,27 @@ function init()
     {
       console.log( message );
       platformconfig = message.payload.configuration;
-      for ( var prop in platformconfig )
+      if ( dynamicData.allowedToConfigure )
       {
-        console.log( "Configuration property name: " + prop );
-        let inputid = "config_" + prop;
-        console.log( inputid );
-        let input = finder[inputid];
-        console.log( input );
-        input.value = platformconfig[prop];
-        console.log( input.value );
+        for ( var prop in platformconfig )
+        {
+          console.log( "Configuration property name: " + prop );
+          let inputid = "config_" + prop;
+          console.log( inputid );
+          let input = finder[inputid];
+          console.log( input );
+          input.value = platformconfig[prop];
+          console.log( input.value );
+        }
+        console.log( "End of list" );
       }
-      console.log( "End of list" );
+      // Now update the validation strings...
+      coursespecvalidator = new RegExp( platformconfig.courseSearchValidation );
+      orgspecvalidator    = new RegExp( platformconfig.organizationSearchValidation    );
+      // And advice strings
+      finder.courseadvice.innerHTML   = platformconfig.courseAdvice;
+      finder.orgadvice.innerHTML      = platformconfig.organizationAdvice;
+      finder.trainingadvice.innerHTML = platformconfig.trainingAdvice;
     },
     
     handleConfigurationSuccess( message )
@@ -245,12 +258,23 @@ function enrolOnCourse()
 
 function openConfig()
 {
+  if ( !dynamicData.allowedToConfigure )
+  {
+    alert( "No permission to configure this tool." );
+    return;
+  }
   toolsocket.sendMessage( new selfenrol.ConfigurationRequestMessage() );
   arialib.openDialog( 'configdialog', finder.configureButton );
 }
 
 function saveConfig()
 {
+  if ( !dynamicData.allowedToConfigure )
+  {
+    alert( "No permission to configure this tool." );
+    return;
+  }
+  
   if ( platformconfig === null )
   {
     alert( "Unable to save configuration because none was received." );

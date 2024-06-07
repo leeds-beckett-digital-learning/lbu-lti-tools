@@ -61,18 +61,10 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 public class SelfEnrolTool extends Tool
 {
   static final Logger logger = Logger.getLogger(SelfEnrolTool.class.getName() );
-  private static final ObjectMapper objectmapper = new ObjectMapper();
-  static
-  {
-    objectmapper.enable( SerializationFeature.INDENT_OUTPUT );
-    objectmapper.disable( SerializationFeature.FAIL_ON_EMPTY_BEANS );
-    objectmapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-  }
 
   
   ServletContext context = null;
-  SelfEnrolConfiguration config = null;
-  MailSender mailSender;  
+  //MailSender mailSender;  
   SePlatformConfigurationStore configstore = null;
   
   /**
@@ -97,21 +89,8 @@ public class SelfEnrolTool extends Tool
   @Override
   public void init( ServletContext context )
   {
-    try
-    {
-      this.context = context;
-      this.configstore = new SePlatformConfigurationStore( Paths.get( context.getRealPath( "/WEB-INF/tool/selfenrol/platformconfig/" ) ) );
-
-      // This provider-wide config will be fully replaced by the platform config store.
-      String configpath = context.getRealPath( "/WEB-INF/selfenrolconfig.json" );
-      String rawconfig = FileUtils.readFileToString( new File( configpath ), StandardCharsets.UTF_8 );
-      config = objectmapper.readValue( rawconfig, SelfEnrolConfiguration.class );
-      mailSender = new MailSender( config.getSmtpHost(), config.getAdminEmailAddress() );
-    }
-    catch ( IOException ex )
-    {
-      logger.log( Level.SEVERE, "Unable to load Self Enrol tool configuration.", ex );
-    }
+    this.context = context;
+    this.configstore = new SePlatformConfigurationStore( Paths.get( context.getRealPath( "/WEB-INF/tool/selfenrol/platformconfig/" ) ) );
   }
   
   public SelfEnrolConfiguration getPlatformConfig( String platform ) throws IOException
@@ -131,13 +110,18 @@ public class SelfEnrolTool extends Tool
     entry.setConfig( config );
     configstore.update( entry );
   }
-  
-  
-  public SelfEnrolConfiguration getConfig()
+
+  /**
+   * Needs to be constructed and perhaps cached per platform..
+   * 
+   * @return 
+   */
+  public MailSender getMailSender( String platform ) throws IOException
   {
-    return this.config;
+    SelfEnrolConfiguration config = getPlatformConfig( platform );
+    return new MailSender( config.getSmtpHost(), config.getAdminEmailAddress() );
   }
-  
+    
   /**
    * Instantiate the PgaToolLaunchState. The API's launch servlet will call
    * this when a new launch occurs and maps onto this tool.
@@ -182,10 +166,6 @@ public class SelfEnrolTool extends Tool
     return SeEndpoint.class;
   }
 
-  public MailSender getMailSender()
-  {
-    return mailSender;
-  }
 
   @Override
   public boolean allowDeepLink( DeepLinkingLaunchState deepstate )

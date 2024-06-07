@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -67,12 +68,20 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
       throw new ServletException( "Could not find self enrol. session data." );
     logger.log(Level.FINE, "resource key = {0}", seState.getResourceKey() );
     tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolKey() );
-    config = tool.getConfig();
+    try
+    {
+      config = tool.getPlatformConfig( state.getPlatformName() );
+    }
+    catch ( IOException ex )
+    {
+      Logger.getLogger( SePageSupport.class.getName() ).log( Level.SEVERE, null, ex );
+      throw new ServletException( "Unable to load configuration for platform " + state.getPlatformName() );
+    }
     websocketuri = getBaseUri() + seState.getRelativeWebSocketUri();
 
     dynamicPageData.setDebugging( logger.isLoggable( Level.FINE ) );
-    dynamicPageData.setCanEnrol( seState.isAllowedToParticipate() );
-    dynamicPageData.setCanConfigure( seState.isAllowedToManage() );
+    dynamicPageData.setAllowedToEnrol( seState.isAllowedToParticipate() );
+    dynamicPageData.setAllowedToConfigure( seState.isAllowedToManage() );
     dynamicPageData.setCourseSearchValidation( config.getCourseSearchValidation().pattern() );
     dynamicPageData.setOrgSearchValidation( config.getOrganizationSearchValidation().pattern() );
   }
@@ -105,7 +114,7 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
    */
   public boolean isAllowedToEnrol()
   {
-    return dynamicPageData.canEnrol();
+    return dynamicPageData.isAllowedToEnrol();
   }
   
   /**
@@ -116,7 +125,7 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
    */
   public boolean isAllowedToConfigure()
   {
-    return dynamicPageData.canConfigure();
+    return dynamicPageData.isAllowedToConfigure();
   }
   
   /**
@@ -139,7 +148,22 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
   {
     return config.getOrganizationSearchValidation().pattern();
   }
-    
+
+  public String getCourseAdvice()
+  {
+    return config.getCourseAdvice();
+  }
+  
+  public String getOrganizationAdvice()
+  {
+    return config.getOrganizationAdvice();
+  }
+  
+  public String getTrainingAdvice()
+  {
+    return config.getTrainingAdvice();
+  }
+  
   /**
    * Used by JSP page to find out if the page support has logging level set
    * to FINE or even more detailed.

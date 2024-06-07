@@ -36,6 +36,11 @@ public class SelfEnrolConfiguration implements Serializable
   final String trainingSearchFilter;
   final String smtpHost;
   final String adminEmailAddress;
+  final String courseAdvice;
+  final String organizationAdvice;
+  final String trainingAdvice;
+  final String courseEmail;
+  final String organizationEmail;
 
   public SelfEnrolConfiguration( 
           @JsonProperty( "courseSearchValidation" )       String courseSearchValidation, 
@@ -45,7 +50,13 @@ public class SelfEnrolConfiguration implements Serializable
           @JsonProperty( "trainingSearchSpecification" )  String trainingSearchSpecification,
           @JsonProperty( "trainingSearchFilter" )         String trainingSearchFilter,
           @JsonProperty( "smtpHost" )                     String smtpHost,
-          @JsonProperty( "adminEmailAddress" )            String adminEmailAddress )
+          @JsonProperty( "adminEmailAddress" )            String adminEmailAddress,
+          @JsonProperty( "courseAdvice" )                 String courseAdvice,
+          @JsonProperty( "organizationAdvice" )           String organizationAdvice,
+          @JsonProperty( "trainingAdvice" )               String trainingAdvice,
+          @JsonProperty( "courseEmail" )                  String courseEmail,
+          @JsonProperty( "organizationEmail" )            String organizationEmail
+          )
   {
     this.courseSearchValidation       = Pattern.compile( courseSearchValidation );
     this.courseSearchFilter           = courseSearchFilter;
@@ -55,6 +66,11 @@ public class SelfEnrolConfiguration implements Serializable
     this.trainingSearchFilter         = trainingSearchFilter;
     this.smtpHost                     = smtpHost;
     this.adminEmailAddress            = adminEmailAddress;
+    this.courseAdvice                 = courseAdvice;
+    this.organizationAdvice           = organizationAdvice;
+    this.trainingAdvice               = trainingAdvice;
+    this.courseEmail                  = courseEmail;
+    this.organizationEmail            = organizationEmail;
   }
   
   
@@ -97,6 +113,32 @@ public class SelfEnrolConfiguration implements Serializable
   {
     return adminEmailAddress;
   }
+
+  public String getCourseAdvice()
+  {
+    return courseAdvice;
+  }
+
+  public String getOrganizationAdvice()
+  {
+    return organizationAdvice;
+  }
+
+  public String getTrainingAdvice()
+  {
+    return trainingAdvice;
+  }
+
+  public String getCourseEmail()
+  {
+    return courseEmail;
+  }
+
+  public String getOrganizationEmail()
+  {
+    return organizationEmail;
+  }
+
   
   public static SelfEnrolConfiguration getDefaultConfig()
   {
@@ -108,7 +150,12 @@ public class SelfEnrolConfiguration implements Serializable
             "TRAINING",
             "^TRAINING$",
             "mailrelayhere.com",
-            "admin@mailrelayhere.com"
+            "admin@mailrelayhere.com",
+            "Course advice HTML here.",
+            "Org advice HTML here.",
+            "Training advice HTML here.",
+            "Email text here.",
+            "Email text here."
     );
   }
 }

@@ -110,16 +110,16 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <h3 id="configdialogLabel">Configure Staff Self Enrol</h3>
         <div>
           <table>
-            <tr><th colspan="2">Module Enrol</th>
-            <tr><th>Validation RegEx</th>                <td><input id="config_courseSearchValidation"/></td></tr>
-            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_courseSearchFilter"/></td></tr>
-            <tr><th colspan="2">Community Enrol</th>
-            <tr><th>Validation RegEx</th>                <td><input id="config_organizationSearchValidation"/></td></tr>
-            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_organizationSearchFilter"/></td></tr>
-            <tr><th colspan="2">Staff Training Enrol</th>
+            <tr><th></th><th>Module Enrol</th><th>Community Enrol</th></tr>
+            <tr><th>Validation RegEx</th>                <td><input id="config_courseSearchValidation"/></td>     <td><input id="config_organizationSearchValidation"/></td></tr>
+            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_courseSearchFilter"/></td>         <td><input id="config_organizationSearchFilter"/></td></tr>
+            <tr><th>Advice</th>                          <td><textarea id="config_courseAdvice"></textarea></td>  <td><textarea id="config_organizationAdvice"></textarea></td></tr>
+            <tr><th>Email text</th>                      <td><textarea id="config_courseEmail"></textarea></td>   <td><textarea id="config_organizationEmail"></textarea></td></tr>
+            <tr><th></th><th>Staff Training Enrol</th></tr>
             <tr><th>Search Term</th>                     <td><input id="config_trainingSearchSpecification"/></td></tr>
             <tr><th>Post Search Filter RegEx</th>        <td><input id="config_trainingSearchFilter"/></td></tr>
-            <tr><th colspan="2">Email notification</th>
+            <tr><th>Advice</th>                          <td><textarea id="config_trainingAdvice"></textarea></td></tr>
+            <tr><th></th><th>Email notification</th></tr>
             <tr><th>SMTP Host Name</th>                  <td><input id="config_smtpHost"/></td></tr>
             <tr><th>Admin Email Address</th>             <td><input id="config_adminEmailAddress"/></td></tr>
           </table>          
@@ -142,10 +142,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <c:when test="${support.allowedToEnrol}">
         
         <h2 id="coursetitle">Enrol on a module</h2>
-        <p>Enter a course reference number (CRN). This will usually be a
-        CRN that was created by the student information system for a real
-        module that carries credit. Non-credit MyBeckett modules are created
-        on request and use a made-up CRN that always starts with a zero.</p>
+        <div id="courseadvice">${support.courseAdvice}</div>
         <p><form action="javascript:void(0);" aria-labelledby="coursetitle">
           <label for="courseid">CRN Input Box</label>
           <input id="courseid"/>
@@ -153,8 +150,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         </form></p>
 
         <h2 id="orgtitle">Enrol on a course community</h2>
-        <p>Enter an award code. These are comprised of capitals letters
-        and may include some numerals.</p>
+        <div id="orgadvice">${support.organizationAdvice}</div>
         <p><form action="javascript:void(0);" aria-labelledby="orgtitle">
           <label for="orgid">Award Code Input Box</label>
           <input id="orgid"/>
@@ -162,7 +158,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         </form></p>
 
         <h2 id="trainingtitle">Enrol on a training module</h2>
-        <p>Use the button to view a full list of all available modules.</p>
+        <div id="trainingadvice">${support.trainingAdvice}</div>
         <p><form action="javascript:void(0);" aria-labelledby="trainingtitle">
           <button id="searchTrainingButton">Search Training Modules</button>
         </form></p>

@@ -110,6 +110,8 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <h3 id="configdialogLabel">Configure Staff Self Enrol</h3>
         <div>
           <table>
+            <tr><th></th><th>Permissions</th></tr>
+            <tr><th>Module/Community Instructor/Leader Can Deep Link</th>  <td><input type="checkbox" id="config_membershipInstructorDeepLinkPermitted"/></td></tr>
             <tr><th></th><th>Module Enrol</th><th>Community Enrol</th></tr>
             <tr><th>Validation RegEx</th>                <td><input id="config_courseSearchValidation"/></td>     <td><input id="config_organizationSearchValidation"/></td></tr>
             <tr><th>Post Search Filter RegEx</th>        <td><input id="config_courseSearchFilter"/></td>         <td><input id="config_organizationSearchFilter"/></td></tr>

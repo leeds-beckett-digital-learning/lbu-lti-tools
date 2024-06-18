@@ -15,21 +15,14 @@
  */
 package uk.ac.leedsbeckett.ltitools.selfenrol;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
-import org.apache.commons.io.FileUtils;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
 import uk.ac.leedsbeckett.ltitools.mail.MailSender;
-import uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
@@ -37,7 +30,6 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
-import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 
 /**
@@ -170,7 +162,20 @@ public class SelfEnrolTool extends Tool
   @Override
   public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
   {
-    return deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) || 
-           deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+    try
+    {
+      SelfEnrolConfiguration sec = getPlatformConfig( deepstate.getResourceKey().getPlatformId() );    
+      return ( 
+               sec.isMembershipInstructorDeepLinkPermitted() && 
+               deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )
+             )
+             ||
+             deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+    }
+    catch ( IOException ex )
+    {
+      Logger.getLogger( SelfEnrolTool.class.getName() ).log( Level.SEVERE, null, ex );
+      return false;
+    }
   }
 }

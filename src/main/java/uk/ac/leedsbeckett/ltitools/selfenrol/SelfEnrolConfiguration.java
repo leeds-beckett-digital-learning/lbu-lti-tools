@@ -16,6 +16,8 @@
 
 package uk.ac.leedsbeckett.ltitools.selfenrol;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.regex.Pattern;
@@ -26,38 +28,47 @@ import java.util.regex.Pattern;
  * 
  * @author jon
  */
-public class SelfEnrolConfiguration implements Serializable
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class SelfEnrolConfiguration
 {
-  final Pattern courseSearchValidation;
-  final String courseSearchFilter;
-  final Pattern organizationSearchValidation;
-  final String organizationSearchFilter;
-  final String trainingSearchSpecification;
-  final String trainingSearchFilter;
-  final String smtpHost;
-  final String adminEmailAddress;
-  final String courseAdvice;
-  final String organizationAdvice;
-  final String trainingAdvice;
-  final String courseEmail;
-  final String organizationEmail;
+  // Optional in serialised object
+  @JsonProperty( value ="membershipInstructorDeepLinkPermitted", required = false )
+  private final boolean membershipInstructorDeepLinkPermitted;
+  
+  // Required in serialised object
+  private final Pattern courseSearchValidation;
+  private final String courseSearchFilter;
+  private final Pattern organizationSearchValidation;
+  private final String organizationSearchFilter;
+  private final String trainingSearchSpecification;
+  private final String trainingSearchFilter;
+  private final String smtpHost;
+  private final String adminEmailAddress;
+  private final String courseAdvice;
+  private final String organizationAdvice;
+  private final String trainingAdvice;
+  private final String courseEmail;
+  private final String organizationEmail;
 
-  public SelfEnrolConfiguration( 
-          @JsonProperty( "courseSearchValidation" )       String courseSearchValidation, 
-          @JsonProperty( "courseSearchFilter" )           String courseSearchFilter, 
-          @JsonProperty( "organizationSearchValidation" ) String organizationSearchValidation, 
-          @JsonProperty( "organizationSearchFilter" )     String organizationSearchFilter,
-          @JsonProperty( "trainingSearchSpecification" )  String trainingSearchSpecification,
-          @JsonProperty( "trainingSearchFilter" )         String trainingSearchFilter,
-          @JsonProperty( "smtpHost" )                     String smtpHost,
-          @JsonProperty( "adminEmailAddress" )            String adminEmailAddress,
-          @JsonProperty( "courseAdvice" )                 String courseAdvice,
-          @JsonProperty( "organizationAdvice" )           String organizationAdvice,
-          @JsonProperty( "trainingAdvice" )               String trainingAdvice,
-          @JsonProperty( "courseEmail" )                  String courseEmail,
-          @JsonProperty( "organizationEmail" )            String organizationEmail
+  @JsonCreator
+  private SelfEnrolConfiguration( 
+          @JsonProperty( value ="courseSearchValidation", required = true )          String courseSearchValidation, 
+          @JsonProperty( value ="courseSearchFilter", required = true )              String courseSearchFilter, 
+          @JsonProperty( value ="organizationSearchValidation", required = true )    String organizationSearchValidation, 
+          @JsonProperty( value ="organizationSearchFilter", required = true )        String organizationSearchFilter,
+          @JsonProperty( value ="trainingSearchSpecification", required = true )     String trainingSearchSpecification,
+          @JsonProperty( value ="trainingSearchFilter", required = true )            String trainingSearchFilter,
+          @JsonProperty( value ="smtpHost", required = true )                        String smtpHost,
+          @JsonProperty( value ="adminEmailAddress", required = true )               String adminEmailAddress,
+          @JsonProperty( value ="courseAdvice", required = true )                    String courseAdvice,
+          @JsonProperty( value ="organizationAdvice", required = true )              String organizationAdvice,
+          @JsonProperty( value ="trainingAdvice", required = true )                  String trainingAdvice,
+          @JsonProperty( value ="courseEmail", required = true )                     String courseEmail,
+          @JsonProperty( value ="organizationEmail", required = true )               String organizationEmail
           )
   {
+    this.membershipInstructorDeepLinkPermitted = false;
+    
     this.courseSearchValidation       = Pattern.compile( courseSearchValidation );
     this.courseSearchFilter           = courseSearchFilter;
     this.organizationSearchValidation = Pattern.compile( organizationSearchValidation );
@@ -72,7 +83,11 @@ public class SelfEnrolConfiguration implements Serializable
     this.courseEmail                  = courseEmail;
     this.organizationEmail            = organizationEmail;
   }
-  
+
+  public boolean isMembershipInstructorDeepLinkPermitted()
+  {
+    return membershipInstructorDeepLinkPermitted;
+  }
   
   public Pattern getCourseSearchValidation()
   {

@@ -112,8 +112,13 @@ function init()
           console.log( inputid );
           let input = finder[inputid];
           console.log( input );
-          input.value = platformconfig[prop];
-          console.log( input.value );
+          if ( input )
+          {
+            if ( input.type === 'checkbox' )
+              input.checked = platformconfig[prop];              
+            else
+              input.value = platformconfig[prop];
+          }
         }
         console.log( "End of list" );
       }
@@ -289,8 +294,14 @@ function saveConfig()
     console.log( inputid );
     let input = finder[inputid];
     console.log( input );
-    updatedconfig[prop] = input.value;
-    console.log( input.value );
+    if ( input )
+    {
+      if ( input.type === 'checkbox' )
+        updatedconfig[prop] = input.checked;
+      else
+        updatedconfig[prop] = input.value;
+      console.log( input.value );
+    }
   }
   console.log( updatedconfig );
   

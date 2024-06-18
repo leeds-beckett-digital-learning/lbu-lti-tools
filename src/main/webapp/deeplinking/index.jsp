@@ -132,9 +132,11 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <div role="dialog" id="linkcreatedialog" aria-labelledby="linkcreatedialogLabel" aria-modal="true" class="hidden">
         <h3 id="linkcreatedialogLabel">Link or Create Resource</h3>
         <table>
-          <tr><th>Title</th>   <td id="linkcreatedialogTitle"></td> </tr>
-          <tr><th>ID</th>      <td id="linkcreatedialogID"></td>    </tr>
-          <tr><th>Type</th>    <td id="linkcreatedialogType"></td>  </tr>
+          <tr><th>Tool</th>        <td id="linkcreatedialogTool"></td>                              </tr>
+          <tr><th>ID</th>          <td id="linkcreatedialogID"></td>                                </tr>
+          <tr><th>Type</th>        <td id="linkcreatedialogType"></td>                              </tr>
+          <tr><th>Title</th>       <td><input    id="linkcreatedialogTitle"/></td>                  </tr>
+          <tr><th>Description</th> <td><textarea id="linkcreatedialogDescription"></textarea></td>  </tr>
         </table>
         <p>Do you want to proceed?</p>
         <div>

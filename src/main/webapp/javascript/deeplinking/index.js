@@ -45,7 +45,7 @@ function init()
           'click', () => arialib.closeDialog(finder.linkcreatedialogCloseButton) );
 
   finder.linkcreatedialogConfirmButton.addEventListener( 
-          'click', () => toolsocket.sendMessage( new deeplinking.MakeLinkMessage( selectedti.id, selectedti.type, "Made up resource title", null ) ) );
+          'click', () => sendMakeLink() );
     
   console.log( dynamicData.webSocketUri );
   
@@ -137,6 +137,14 @@ function updateAvailableTools()
   
 }
 
+
+function sendMakeLink()
+{
+  let title = finder.linkcreatedialogTitle.value;
+  let desc  = finder.linkcreatedialogDescription.value;
+  toolsocket.sendMessage( new deeplinking.MakeLinkMessage( selectedti.id, selectedti.type, title, desc, null ) )  ;
+}
+
 function updateAlerts()
 {
   arialib.updateAlerts();  
@@ -151,10 +159,12 @@ function openToolDialog( openerElement, ti )
 {
   selectedti = ti;
   arialib.openDialog( 'linkcreatedialog', openerElement );
-  finder.linkcreatedialogTitle.innerHTML = ti.title;
-  finder.linkcreatedialogID.innerHTML    = ti.id;
-  finder.linkcreatedialogType.innerHTML  = ti.type;
-  finder.linkcreatedialogForm.action = dynamicData.deepLinkReturnUrl;
+  finder.linkcreatedialogTool.innerHTML    = ti.title;
+  finder.linkcreatedialogID.innerHTML      = ti.id;
+  finder.linkcreatedialogType.innerHTML    = ti.type;
+  finder.linkcreatedialogTitle.value       = ti.title;
+  finder.linkcreatedialogDescription.value = "";
+  finder.linkcreatedialogForm.action       = dynamicData.deepLinkReturnUrl;
 }
 
 function createOrLink( jwt )

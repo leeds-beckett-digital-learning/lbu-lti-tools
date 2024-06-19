@@ -45,6 +45,8 @@ let bbgroupsetdata;
 let unattachedcheckboxes = new Array();
 let oldstage = "unknown";
 
+let platformconfig = null;
+
 function init()
 {
   console.log( "init" );
@@ -109,6 +111,14 @@ function init()
   
   console.log( dynamicData.webSocketUri );
   
+  if ( dynamicData.allowedToConfigure )
+  {
+    // These HTML elements won't exist if the user is not allowed to configure
+    finder.configureButton.addEventListener(          'click', () => openConfig() );
+    finder.configdialogSaveButton.addEventListener(   'click', () => saveConfig() );
+    finder.configdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog( finder.configdialog ) );
+  }
+
   let handler =
   {
     open()
@@ -187,6 +197,44 @@ function init()
       bbgroupsetdata = message.payload;
       updateBlackboardGroupSets();
       arialib.openDialog( 'bbgroupsetsdialog', finder.importBlackboardButton );  
+    },
+    
+    handleConfiguration( message )
+    {
+      console.log( message );
+      platformconfig = message.payload.configuration;
+      if ( dynamicData.allowedToConfigure )
+      {
+        for ( var prop in platformconfig )
+        {
+          console.log( "Configuration property name: " + prop );
+          let inputid = "config_" + prop;
+          console.log( inputid );
+          let input = finder[inputid];
+          console.log( input );
+          if ( input )
+          {
+            if ( input.type === 'checkbox' )
+              input.checked = platformconfig[prop];              
+            else
+              input.value = platformconfig[prop];
+          }
+        }
+        console.log( "End of list" );
+      }
+      // Now update the validation strings...
+      coursespecvalidator = new RegExp( platformconfig.courseSearchValidation );
+      orgspecvalidator    = new RegExp( platformconfig.organizationSearchValidation    );
+      // And advice strings
+      finder.courseadvice.innerHTML   = platformconfig.courseAdvice;
+      finder.orgadvice.innerHTML      = platformconfig.organizationAdvice;
+      finder.trainingadvice.innerHTML = platformconfig.trainingAdvice;
+    },
+    
+    handleConfigurationSuccess( message )
+    {
+      alert( "Configuration success: " + message.payload );
+      arialib.closeDialog( finder.configdialog );
     }
   
   };
@@ -963,6 +1011,53 @@ function addMembership( gid )
   pids[0].name  = dynamicData.myName;
 
   toolsocket.sendMessage( new peergroupassessment.MembershipMessage( gid, pids ) );
+}
+
+function openConfig()
+{
+  if ( !dynamicData.allowedToConfigure )
+  {
+    alert( "No permission to configure this tool." );
+    return;
+  }
+  toolsocket.sendMessage( new peergroupassessment.ConfigurationRequestMessage() );
+  arialib.openDialog( 'configdialog', finder.configureButton );
+}
+
+function saveConfig()
+{
+  if ( !dynamicData.allowedToConfigure )
+  {
+    alert( "No permission to configure this tool." );
+    return;
+  }
+  
+  if ( platformconfig === null )
+  {
+    alert( "Unable to save configuration because none was received." );
+    return;
+  }
+
+  let updatedconfig = new Object();
+  for ( var prop in platformconfig )
+  {
+    console.log( "Configuration property name: " + prop );
+    let inputid = "config_" + prop;
+    console.log( inputid );
+    let input = finder[inputid];
+    console.log( input );
+    if ( input )
+    {
+      if ( input.type === 'checkbox' )
+        updatedconfig[prop] = input.checked;
+      else
+        updatedconfig[prop] = input.value;
+      console.log( input.value );
+    }
+  }
+  console.log( updatedconfig );
+  
+  toolsocket.sendMessage( new peergroupassessment.ConfigureMessage( updatedconfig ) );
 }
 
 window.addEventListener( "load", function(){ init(); } );

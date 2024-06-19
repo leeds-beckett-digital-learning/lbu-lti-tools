@@ -27,6 +27,7 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
  */
 public class PgaToolLaunchState extends ToolLaunchState implements Serializable
 {
+  private boolean allowedToConfigure=false;
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
   private String namesRoleServiceUrl=null;
@@ -78,6 +79,16 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
     return allowedToParticipate || allowedToManage;
   }
 
+  public boolean isAllowedToConfigure()
+  {
+    return allowedToConfigure;
+  }
+
+  public void setAllowedToConfigure( boolean allowedToConfigure )
+  {
+    this.allowedToConfigure = allowedToConfigure;
+  }
+  
   public String getNamesRoleServiceUrl()
   {
     return namesRoleServiceUrl;

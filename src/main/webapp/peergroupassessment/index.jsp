@@ -130,6 +130,22 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
   <body>
     <div id="dialogdiv" class="dialogs">
       
+      <c:if test="${support.allowedToConfigure}">
+      <div role="dialog" id="configdialog" aria-labelledby="configdialogLabel" aria-modal="true" class="hidden">
+        <h3 id="configdialogLabel">Configure Peer Group Assessment Tool</h3>
+        <div>
+          <table>
+            <tr><th></th><th>Permissions</th></tr>
+            <tr><th>Module/Community Instructor/Leader Can Deep Link</th>  <td><input type="checkbox" id="config_membershipInstructorDeepLinkPermitted"/></td></tr>
+          </table>          
+        </div>
+        <div class="dialog_form_actions">
+          <button id="configdialogSaveButton" value="Close">Save</button>
+          <button id="configdialogCancelButton" value="Close">Cancel</button>
+        </div>
+      </div>
+      </c:if>
+
       <div role="dialog" id="editprops" aria-labelledby="editpropslabel" aria-modal="true" class="hidden">
         <h3 id="editpropslabel" class="dialog_label">Edit Properties</h3>
         <div class="dialog_form">
@@ -402,6 +418,14 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         page and 'read' the changed content.
       </p>
     </div>
+    
+    <c:if test="${support.allowedToConfigure}">
+      <div style="margin-top: 10em;">
+        <hr>
+        <p>Your role allows you to configure this tool.</p>
+        <p><button id="configureButton">Configure</button></p>          
+      </div>
+    </c:if>
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

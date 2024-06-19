@@ -57,12 +57,14 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.Configuration;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannelKey;
@@ -104,6 +106,8 @@ public class PgaEndpoint extends MultitonToolEndpoint
 
   LtiBackchannelKey ltibackchannelkey;
   BlackboardBackchannelKey bbbckey;
+
+  String platformName=null;
   
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
@@ -122,6 +126,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     super.onOpen( session );
     
+    platformName = getState().getPlatformName();
     pgaState = (PgaToolLaunchState)getState().getToolLaunchState();
     tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolKey() );
     store = tool.getPeerGroupAssessmentStore();
@@ -1080,6 +1085,50 @@ public class PgaEndpoint extends MultitonToolEndpoint
         
     sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Export, sb.toString() ) );
   }
+
+  @EndpointMessageHandler()
+  public void handleConfigurationRequest( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToConfigure() )
+      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
+    
+    logger.info( "Fetching config for platform " + platformName );
+    Configuration config = tool.getPlatformConfig( platformName );
+    ToolMessage tmf = new ToolMessage( message.getId(), PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
+    sendToolMessage( session, tmf );
+  }
+  
+  @EndpointMessageHandler()
+  public void handleConfigure( Session session, ToolMessage message, PgaConfigurationMessage configMessage )
+          throws IOException, HandlerAlertException
+  {
+    if ( !pgaState.isAllowedToConfigure() )
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
+            
+    Configuration config = configMessage.getConfiguration();
+    if ( config == null )
+      throw new HandlerAlertException( "Null configuration was received.", message.getId() );
+    
+    try
+    {  
+      tool.savePlatformConfig( platformName, config);
+    }
+    catch ( Exception e )
+    {
+      logger.log( Level.SEVERE, "Unable to save configuration for platform " + platformName, e );
+      throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
+    }
+    
+    ToolMessage tmf = new ToolMessage( message.getId(), PgaServerMessageName.ConfigurationSuccess, "Saved" );
+    sendToolMessage( session, tmf );
+    
+    // To do - send message to all users now accessing tool from the same platform
+    // for now just for confirmation to current user.
+    ToolMessage tmc = new ToolMessage( message.getId(), PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
+    sendToolMessage( session, tmc );
+  }
+
   
   /**
    * This gets called when a handler throws a HandlerAlertException and decides

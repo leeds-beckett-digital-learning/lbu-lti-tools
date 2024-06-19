@@ -37,6 +37,7 @@ public class StoreCluster
   ResourceStore resourceStore;
   InputDataStore dataStore;
   FormStore formstore;
+  PlatformConfigurationStore configStore;
 
   public StoreCluster( Path basePath )
   {
@@ -44,8 +45,27 @@ public class StoreCluster
     resourceStore = new ResourceStore( basePath.resolve( "resources" ) );
     dataStore     = new InputDataStore(     basePath.resolve( "data"      ) );
     formstore     = new FormStore(     basePath.resolve( "forms"     ) );
+    configStore   = new PlatformConfigurationStore( basePath.resolve( "platformconfig" ) );
   }
 
+  public Configuration getPlatformConfiguration( String platform, boolean create ) throws IOException
+  {
+    ConfigurationEntry entry = configStore.get( platform, true );
+    if ( entry.getConfig() == null )
+    {
+      entry.setConfig( Configuration.getDefaultConfig() );
+      configStore.update( entry );
+    }
+    return entry.getConfig();
+  }
+  
+  public void updatePlatformConfiguration( String platformId, Configuration c ) throws IOException
+  {
+    ConfigurationEntry entry = configStore.get( platformId, false );
+    entry.setConfig( c );
+    configStore.update( entry );
+  }
+  
   public PeerGroupResource getResource( PlatformResourceKey key, boolean create )
   {
     return resourceStore.get( key, create );

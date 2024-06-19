@@ -59,7 +59,7 @@ function init()
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
   finder.reason.addEventListener( 'change', () => changeReason() );
 
-  if ( dynamicData.allowedToConfigure )
+ if ( dynamicData.allowedToConfigure )
   {
     // These HTML elements won't exist if the user is not allowed to configure
     finder.configureButton.addEventListener(          'click', () => openConfig() );

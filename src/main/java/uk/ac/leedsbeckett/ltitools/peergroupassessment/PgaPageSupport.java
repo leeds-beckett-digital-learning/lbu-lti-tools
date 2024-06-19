@@ -71,6 +71,7 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
     store = tool.getPeerGroupAssessmentStore();
     pgaResource = store.getResource( pgaState.getResourceKey(), true );
 
+    dynamicPageData.setAllowedToConfigure( pgaState.isAllowedToConfigure() );
     dynamicPageData.setAllowedToParticipate( pgaState.isAllowedToParticipate() );
     dynamicPageData.setAllowedToManage( pgaState.isAllowedToManage() );
   }
@@ -125,6 +126,17 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
   public boolean isAllowedToManage()
   {
     return pgaState.isAllowedToManage();
+  }
+  
+  /**
+   * Is the user allowed to configure the tool for the launching platform?
+   * Derived from LTI role claims.
+   * 
+   * @return True if the user is a participant.
+   */
+  public boolean isAllowedToConfigure()
+  {
+    return dynamicPageData.isAllowedToConfigure();
   }
   
   /**

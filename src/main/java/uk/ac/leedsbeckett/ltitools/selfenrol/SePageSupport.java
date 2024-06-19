@@ -81,7 +81,7 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
 
     dynamicPageData.setDebugging( logger.isLoggable( Level.FINE ) );
     dynamicPageData.setAllowedToEnrol( seState.isAllowedToParticipate() );
-    dynamicPageData.setAllowedToConfigure( seState.isAllowedToManage() );
+    dynamicPageData.setAllowedToConfigure( seState.isAllowedToConfigure() );
     dynamicPageData.setCourseSearchValidation( config.getCourseSearchValidation().pattern() );
     dynamicPageData.setOrgSearchValidation( config.getOrganizationSearchValidation().pattern() );
   }

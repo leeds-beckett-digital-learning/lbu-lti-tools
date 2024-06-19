@@ -18,6 +18,7 @@ package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSets;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties;
@@ -71,7 +72,17 @@ public enum PgaServerMessageName implements ToolMessageName
   /**
    * A list of data objects for multiple groups.
    */
-  BlackboardGroupSets( "BlackboardGroupSets", BlackboardGroupSets.class       );
+  BlackboardGroupSets( "BlackboardGroupSets", BlackboardGroupSets.class       ),
+
+  /**
+   * Contains platform wide configuration.
+   */
+  Configuration(        "Configuration",        PgaConfigurationMessage.class ),
+  
+  /**
+   * Indicates that configuration was saved successfully.
+   */
+  ConfigurationSuccess( "ConfigurationSuccess", String.class);
   
   /**
    * Each constant has a name which can be used in encoded messages passing

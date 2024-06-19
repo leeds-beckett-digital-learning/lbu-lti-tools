@@ -25,6 +25,7 @@ public class PgaDynamicPageData extends DynamicPageData
 {
   private boolean allowedToManage;
   private boolean allowedToParticipate;
+  private boolean allowedToConfigure;
 
   public boolean isAllowedToManage()
   {
@@ -45,4 +46,16 @@ public class PgaDynamicPageData extends DynamicPageData
   {
     this.allowedToParticipate = allowedToParticipate;
   }
+
+  public boolean isAllowedToConfigure()
+  {
+    return allowedToConfigure;
+  }
+
+  public void setAllowedToConfigure( boolean allowedToConfigure )
+  {
+    this.allowedToConfigure = allowedToConfigure;
+  }
+  
+  
 }

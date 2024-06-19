@@ -15,12 +15,16 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
+import java.io.IOException;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.StoreCluster;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.Configuration;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.ConfigurationEntry;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
@@ -72,6 +76,18 @@ public class PeerGroupAssessmentTool extends Tool
     // Sets up a store for all data relating to this tool.
     pgaStore = new StoreCluster( Paths.get( context.getRealPath( "/WEB-INF/tool/peergroupassessment/" ) ) );
   }
+
+  public Configuration getPlatformConfig( String platform ) throws IOException
+  {
+    return pgaStore.getPlatformConfiguration( platform, true );
+  }
+  
+  public void savePlatformConfig( String platform, Configuration config ) throws IOException
+  {
+    pgaStore.updatePlatformConfiguration( platform, config );
+  }
+
+
   
   /**
    * Fetch the ResourceStore that this tool will use.
@@ -109,6 +125,8 @@ public class PeerGroupAssessmentTool extends Tool
   {
     super.initToolLaunchState( toolstate, lticlaims, state );
     PgaToolLaunchState pgastate = (PgaToolLaunchState)toolstate;
+    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) )
+      pgastate.setAllowedToConfigure( true );
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) )
       pgastate.setAllowedToManage( true );
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) )
@@ -129,7 +147,20 @@ public class PeerGroupAssessmentTool extends Tool
   @Override
   public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
   {
-    return deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) || 
-           deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+    try
+    {
+      Configuration c = getPlatformConfig( deepstate.getResourceKey().getPlatformId() );    
+      return ( 
+               c.isMembershipInstructorDeepLinkPermitted() && 
+               deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )
+             )
+             ||
+             deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+    }
+    catch ( IOException ex )
+    {
+      logger.log( Level.SEVERE, null, ex );
+      return false;
+    }
   }
 }

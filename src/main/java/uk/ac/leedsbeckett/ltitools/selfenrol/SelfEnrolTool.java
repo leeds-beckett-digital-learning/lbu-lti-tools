@@ -145,7 +145,7 @@ public class SelfEnrolTool extends Tool
     SeToolLaunchState sestate = (SeToolLaunchState)toolstate;
     LtiRoleClaims rc = lticlaims.getLtiRoles();
     if ( rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) )
-      sestate.setAllowedToManage( true );
+      sestate.setAllowedToConfigure( true );
     if ( rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) ||
          rc.isInRole( LtiRoleClaims.INSTITUTION_STAFF_ROLE    ) ||
          rc.isInRole( LtiRoleClaims.INSTITUTION_FACULTY_ROLE  )    )

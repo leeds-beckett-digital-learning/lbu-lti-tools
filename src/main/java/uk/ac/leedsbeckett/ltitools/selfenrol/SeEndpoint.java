@@ -447,6 +447,9 @@ public class SeEndpoint extends ToolEndpoint
   public void handleConfigurationRequest( Session session, ToolMessage message )
           throws IOException, HandlerAlertException
   {
+    if ( !seState.isAllowedToConfigure() )
+      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
+    
     logger.info( "Fetching config for platform " + platformName );
     SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
@@ -457,8 +460,8 @@ public class SeEndpoint extends ToolEndpoint
   public void handleConfigure( Session session, ToolMessage message, SeConfigurationMessage configMessage )
           throws IOException, HandlerAlertException
   {
-    if ( !seState.isAllowedToManage() )
-      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to manage the tool.", message.getId() );
+    if ( !seState.isAllowedToConfigure() )
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
             
     SelfEnrolConfiguration config = configMessage.getConfiguration();
     if ( config == null )

@@ -27,7 +27,7 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
  */
 public class SeToolLaunchState extends ToolLaunchState implements Serializable
 {
-  private boolean allowedToManage=false;
+  private boolean allowedToConfigure=false;
   private boolean allowedToParticipate=false;
 
   /**
@@ -35,19 +35,19 @@ public class SeToolLaunchState extends ToolLaunchState implements Serializable
    * 
    * @return Is allowed?
    */
-  public boolean isAllowedToManage()
+  public boolean isAllowedToConfigure()
   {
-    return allowedToManage;
+    return allowedToConfigure;
   }
 
   /**
    * Simple setter.
    * 
-   * @param allowedToManage Is the user allowed to manage the resource.
+   * @param allowedToConfigure Is the user allowed to manage the resource.
    */
-  public void setAllowedToManage( boolean allowedToManage )
+  public void setAllowedToConfigure( boolean allowedToConfigure )
   {
-    this.allowedToManage = allowedToManage;
+    this.allowedToConfigure = allowedToConfigure;
   }
 
   /**
@@ -72,7 +72,7 @@ public class SeToolLaunchState extends ToolLaunchState implements Serializable
   
   public boolean isAllowedToAccess()
   {
-    return allowedToParticipate || allowedToManage;
+    return allowedToParticipate || allowedToConfigure;
   }
 
 }

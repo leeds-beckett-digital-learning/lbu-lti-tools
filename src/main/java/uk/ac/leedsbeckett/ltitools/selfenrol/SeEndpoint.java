@@ -167,6 +167,9 @@ public class SeEndpoint extends ToolEndpoint
   public void handleSearch( Session session, ToolMessage message, SeSearch search )
           throws IOException, HandlerAlertException
   {
+    if ( !seState.isAllowedToParticipate() )
+      throw new HandlerAlertException( "You are not permitted to search here.", message.getId() );
+    
     mostRecentSearchResults.clear();
     // In case of unsuccessful search clear this:
     mostRecentScope = "";
@@ -256,6 +259,9 @@ public class SeEndpoint extends ToolEndpoint
   public void handleEnrolRequest( Session session, ToolMessage message, SeEnrolRequest request )
           throws IOException, HandlerAlertException
   {
+    if ( !seState.isAllowedToParticipate() )
+      throw new HandlerAlertException( "You are not permitted to enrol here.", message.getId() );
+    
     String id = request.getCourseId();
     
     if ( StringUtils.isEmpty( id ) )

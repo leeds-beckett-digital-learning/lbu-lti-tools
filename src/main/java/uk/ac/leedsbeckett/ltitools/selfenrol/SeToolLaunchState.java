@@ -27,28 +27,8 @@ import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
  */
 public class SeToolLaunchState extends ToolLaunchState implements Serializable
 {
-  private boolean allowedToConfigure=false;
   private boolean allowedToParticipate=false;
 
-  /**
-   * Is the user connected to this state object allowed to manage the resource?
-   * 
-   * @return Is allowed?
-   */
-  public boolean isAllowedToConfigure()
-  {
-    return allowedToConfigure;
-  }
-
-  /**
-   * Simple setter.
-   * 
-   * @param allowedToConfigure Is the user allowed to manage the resource.
-   */
-  public void setAllowedToConfigure( boolean allowedToConfigure )
-  {
-    this.allowedToConfigure = allowedToConfigure;
-  }
 
   /**
    * Find out if user is allowed to fill in data.

@@ -31,6 +31,7 @@ import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
 import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.config.PlatformConfiguration;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
@@ -121,12 +122,10 @@ public class PeerGroupAssessmentTool extends Tool
    * @param state The general LTI state.
    */
   @Override
-  public void initToolLaunchState( ToolLaunchState toolstate, LtiClaims lticlaims, ToolSetLtiState state )
+  public void initToolLaunchState( PlatformConfiguration platformConfiguration, ToolLaunchState toolstate, LtiClaims lticlaims, ToolSetLtiState state )
   {
-    super.initToolLaunchState( toolstate, lticlaims, state );
+    super.initToolLaunchState( platformConfiguration, toolstate, lticlaims, state );
     PgaToolLaunchState pgastate = (PgaToolLaunchState)toolstate;
-    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE ) )
-      pgastate.setAllowedToConfigure( true );
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) )
       pgastate.setAllowedToManage( true );
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) )
@@ -155,7 +154,7 @@ public class PeerGroupAssessmentTool extends Tool
                deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )
              )
              ||
-             deepstate.rc.isInRole( LtiRoleClaims.SYSTEM_ADMINISTRATOR_ROLE );
+            deepstate.isAllowedToConfigure();
     }
     catch ( IOException ex )
     {

@@ -189,7 +189,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           </table>
         </div>
       <h4>Link to Existing Resource</h4>
-      <div id="optionsresource" class="block">
+      <div id="optionsresource" class="block" style="margin-left: 4em;">
       <p><em>Not yet implemented.</em></p>
       </div>
 

@@ -379,6 +379,17 @@ public class SeEndpoint extends ToolEndpoint
     UserV1 user = (UserV1)result.getResult();
     logger.fine( user.getExternalId() );
     logger.fine( user.getContact().getEmail() );
+
+    String reasontext = "-";
+    switch ( request.getAuthType() )
+    {
+      case "coursedirector":  reasontext = "I am course director"; break;
+      case "moduleleader":    reasontext = "I am module leader"; break;
+      case "admin":           reasontext = "I am course administrator"; break;
+      case "directorpermit":  reasontext = "Authorised by course director"; break;
+      case "leaderpermit":    reasontext = "Authorised by module leader"; break;
+      case "sysadmin":        reasontext = "I am a sys admin"; break;
+    }
     
     emailbody = emailbody.replaceAll( "\r", "" );
     emailbody = emailbody.replaceAll( "</p>", "\n" );  // End of para replaced with new line
@@ -388,6 +399,7 @@ public class SeEndpoint extends ToolEndpoint
     emailbody = emailbody.replaceAll( "\\$\\{username}", user.getExternalId() );
     emailbody = emailbody.replaceAll( "\\$\\{coursename}", id );    
     emailbody = emailbody.replaceAll( "\\$\\{reason}", request.getAuthType() );    
+    emailbody = emailbody.replaceAll( "\\$\\{reasontext}", reasontext );    
     switch ( request.getAuthType() )
     {
       case "directorpermit":
@@ -399,52 +411,14 @@ public class SeEndpoint extends ToolEndpoint
         emailbody = emailbody.replaceAll( "\\$\\{authname}", "self" );    
         emailbody = emailbody.replaceAll( "\\$\\{authemail}", "-" );    
     }
-    emailbody = emailbody.replaceAll( "\\$\\{reason}", request.getAuthName() );    
-    
-    
-    
-    StringBuilder sb = new StringBuilder();
-    sb.append( "<p>This automated email has been sent from LBU Digital Learning Service staff self enrol tool.</p>\n" );
-    sb.append( "<table>\n" );
-    sb.append( "<tr><th>Person Self Enrolling:</th><td>" );
-    sb.append( user.getName().getGiven() );
-    sb.append( " " );
-    sb.append( user.getName().getFamily() );
-    sb.append( " &lt;" );
-    sb.append( user.getContact().getEmail() );
-    sb.append( "&gt;</td></tr>\n" );
-    sb.append( "<tr><th>Module/Community:</th><td>" );
-    sb.append( id );
-    sb.append( "</td></tr>\n" );
-    if ( authneeded )
-    {
-      sb.append( "<tr><th>Person who authorised enrollment:<br/>(According to person who self enrolled.)</th><td>" );
-      switch ( request.getAuthType() )
-      {
-        case "directorpermit":
-        case "leaderpermit":
-          sb.append( request.getAuthName() );
-          sb.append( " &lt;" );
-          sb.append( request.getAuthEmail() );
-          sb.append( "&gt;" );
-          break;
-        default:
-          sb.append( "Self" );
-          sb.append( "(as " );
-          sb.append( request.getAuthType() );
-          sb.append( ")" );
-      }
-      sb.append( "</td></tr>\n" );
-    }
-    sb.append( "</table>\n" );
-    
     
     MailSender sender = tool.getMailSender( platformName );
     sender.processOneEmail( 
             user.getContact().getEmail(),
             authnotself?request.getAuthEmail().trim():null,
-            "Automated Message - Staff Self Enrol Tool", 
+            "Automated Message - Staff Self Enrol Tool {" + request.getAuthType() + "}", 
             emailbody,
+            "text/plain",
             true
     );
   }

@@ -45,7 +45,7 @@ public class MailSender
     this.sender = sender;
   }
   
-  public void processOneEmail( String to, String cc, String subject, String body, boolean ccself )
+  public void processOneEmail( String to, String cc, String subject, String body, String mimeType, boolean ccself )
   {
     logger.log(Level.INFO, "Sending Email {0} {1} {2} {3}", new Object[ ]{sender, to, cc, subject});
     
@@ -65,7 +65,7 @@ public class MailSender
         ccs[ccn++]      = from;
       if ( cc != null )
         ccs[ccn++]      = new InternetAddress( cc );
-      sendHtmlEmail( subject, from, new InternetAddress[0], recipients, ccs, body );
+      sendHtmlEmail( subject, from, new InternetAddress[0], recipients, ccs, body, mimeType );
     }
     catch (MessagingException ex)
     {
@@ -80,7 +80,8 @@ public class MailSender
           InternetAddress[] reply, 
           InternetAddress[] recipients, 
           InternetAddress[] courtesycopies, 
-          String message) throws MessagingException
+          String message,
+          String mimeType ) throws MessagingException
   {
     MimeMessage email = getBbEmail();
     MimeMultipart multipart = new MimeMultipart();
@@ -90,7 +91,7 @@ public class MailSender
     if ( reply != null && reply.length > 0 )
       email.setReplyTo( reply );
     email.setFrom( from );
-    messageBodyPart.setContent(message, "text/html");
+    messageBodyPart.setContent(message, mimeType);
     multipart.addBodyPart(messageBodyPart);
     email.setRecipients( javax.mail.Message.RecipientType.TO, recipients );
     if ( courtesycopies != null && courtesycopies.length > 0 )

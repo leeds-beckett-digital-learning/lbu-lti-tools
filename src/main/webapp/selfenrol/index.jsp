@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="../style/buttons.css"/>
     <style>
       body { font-family: sans-serif; padding: 1em 1em 1em 1em; max-width: 50em; }
-      h2 { padding-top: 3em; }
+      h2 { padding-top: 2em; }
       input { margin: 1em 1em 1em 1em; }
       .stage {}
       .stage-label { font-weight: bold }

@@ -89,8 +89,6 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
                   <option value="sysadmin">Myself - I am a Digital Learning Service system administrator.</option>
                 </select>
                 <div id="authDiv" style="display: none;">
-                  <h4>Name of the <span id="authNameTitle">authoriser</span></h4>
-                  <p><input id="authName"/></p>
                   <h4>Email address of the <span id="authEmailTitle">authoriser</span></h4>
                   <p><input id="authEmail"/></p>
                 </div>
@@ -105,6 +103,38 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         </div>
       </div>
 
+      <div role="dialog" id="usersearchdialog" aria-labelledby="usersearchdialogLabel" aria-modal="true" class="hidden">
+        <h3 id="usersearchdialogLabel">Confirm Authoriser</h3>
+        <div>
+          <table>
+            <tr>
+              <th valign="top">Address</th>
+              <td valign="top" id="usersearchAddress"></td>
+            </tr>
+            <tr>
+              <th valign="top">Name</th>
+              <td valign="top"">
+                
+                <div id="usersearchdialogWait">
+                  <p>Waiting for email search result...</p>
+                </div>
+                <div id="usersearchdialogNotFound" class="hidden">
+                  <p>The email address was not found. A common reason is wrong initials.
+                  Please consider copying and pasting the address from Outlook's address book.</p>
+                </div>
+                <div id="usersearchdialogFound" class="hidden"><span id="usersearchName"></span></div>
+                
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="usersearch_dialog_form_actions">
+          <button id="usersearchdialogSelectButton" value="Close">Confirm</button>
+          <button id="usersearchdialogCancelButton" value="Close">Cancel</button>
+        </div>
+      </div>
+      
+      
       <c:if test="${support.allowedToConfigure}">
       <div role="dialog" id="configdialog" aria-labelledby="configdialogLabel" aria-modal="true" class="hidden">
         <h3 id="configdialogLabel">Configure Staff Self Enrol</h3>

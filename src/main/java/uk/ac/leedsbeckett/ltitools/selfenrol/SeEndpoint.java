@@ -92,6 +92,9 @@ public class SeEndpoint extends ToolEndpoint
   // Needed to know what role to enrol with.
   String mostRecentScope = "";
   
+  String mostRecentEmail = "";
+  String mostRecentName = "";
+  
   // Don't store a reference to the resource or other data here.
   // It will get out of sync with instances held by other endpoint instances.
   // Rely on efficient caching and fetching at the start of every transaction.
@@ -254,6 +257,37 @@ public class SeEndpoint extends ToolEndpoint
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.CourseInfoList, list );
     sendToolMessage( session, tmf );
   }
+
+
+  /**
+   * Client requested the resource data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @param search  The detail of the requested search.
+   * @throws IOException Indicates failure to process. 
+   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   */
+  @EndpointMessageHandler()
+  public void handleUserSearch( Session session, ToolMessage message, SeUserSearch search )
+          throws IOException, HandlerAlertException
+  {
+    mostRecentEmail = "";
+    mostRecentName = "";
+    
+    if ( !seState.isAllowedToParticipate() )
+      throw new HandlerAlertException( "You are not permitted to search here.", message.getId() );
+    
+    mostRecentEmail = search.getEmail();
+    // SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
+    // ToDo validation of email address using options from configuration
+    mostRecentName = "Fred Bloggs";
+    
+    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.UserInfo, mostRecentName );
+    sendToolMessage( session, tmf );
+  }
+
+
   
   @EndpointMessageHandler()
   public void handleEnrolRequest( Session session, ToolMessage message, SeEnrolRequest request )

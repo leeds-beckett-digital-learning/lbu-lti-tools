@@ -58,6 +58,8 @@ function init()
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
   finder.reason.addEventListener( 'change', () => changeReason() );
+  finder.usersearchdialogSelectButton.addEventListener( 'click', () => enrolOnCourseConfirmedAuthorisor() );
+  finder.usersearchdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog(finder.usersearchdialog)    );
 
  if ( dynamicData.allowedToConfigure )
   {
@@ -93,9 +95,16 @@ function init()
       finder.searchresults.innerHTML = content;
     },
     
+    handleUserInfo( message )
+    {
+      console.log( "Rxed user info " + message.payload );
+      updateUserInfo( message.payload );
+    },
+    
     handleEnrolSuccess( message )
     {
       alert( "Enrolment succeeded." );
+      arialib.closeDialog(finder.usersearchdialog);
       arialib.closeDialog(finder.searchdialog);
     },
 
@@ -156,8 +165,16 @@ function clearSearch()
   finder.searchresults.innerHTML = "<option value=\"\">Waiting for results...</option>";
   finder.authDiv.style.display = "none";
   finder.reason.value = "none";
-  finder.authName.value = "";
   finder.authEmail.value = "";
+}
+
+function clearUserSearch()
+{
+  finder.usersearchdialogWait.style.display = "block";
+  finder.usersearchdialogNotFound.style.display = "none";
+  finder.usersearchdialogFound.style.display = "none";
+  finder.usersearchAddress.innerHTML = "";
+  finder.usersearchName.innerHTML = "";
 }
 
 function changeReason()
@@ -169,11 +186,23 @@ function changeReason()
     return;
   }
   var s = ( "directorpermit" === r )?"course director":"module leader";
-  finder.authNameTitle.innerHTML = s;
   finder.authEmailTitle.innerHTML = s;
   finder.authDiv.style.display = "block";
 }
 
+function searchForUsers()
+{
+  var spec = finder.authSurname.value;
+  spec = spec.trim();
+  if ( spec.length < 2 )
+  {
+    alert( "Please provide at least two letters for the surname. Usually more letters are needed to avoid too long a list." );
+    return;
+  }
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "course", spec ) );
+  clearSearch();
+  arialib.openDialog( 'searchdialog', finder.searchCourseButton );
+}
 
 function searchForCourses()
 {
@@ -220,7 +249,6 @@ function enrolOnCourse()
     return;
   }
   var reason = "";
-  var name = "";
   var email = "";
 
   if ( currentSearch !== "training" )
@@ -233,13 +261,7 @@ function enrolOnCourse()
     }  
     if ( reason === "directorpermit" || reason === "leaderpermit" )
     {
-      name = finder.authName.value;
       email = finder.authEmail.value;
-      if ( name === null || name.trim().length === 0 )
-      {
-        alert( "You need to provide the name of the person who authorised you to self-enrol." );
-        return;
-      }
       if ( email === null || email.trim().length === 0 )
       {
         alert( "You need to provide the EMail address of the person who authorised you to self-enrol." );
@@ -255,11 +277,44 @@ function enrolOnCourse()
       {
         alert( "The email isn't a Leeds Beckett address." );
         return;
-      }
+      }      
+      // defer enrol request until after the user has been confirmed.
+      toolsocket.sendMessage( new selfenrol.UserSearchMessage( id, email ) );
+      clearUserSearch();
+      finder.usersearchAddress.innerHTML = email;
+      arialib.openDialog( 'usersearchdialog', finder.searchdialogEnrolButton );
+      return;
     }
   }  
   toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id, reason, name, email ) );  
 }
+
+function updateUserInfo( name )
+{
+  finder.usersearchdialogWait.style.display = "none";
+  if ( name.length === 0 )
+    finder.usersearchdialogNotFound.style.display = "block";
+  else
+  {
+    finder.usersearchName.innerHTML = name;
+    finder.usersearchdialogFound.style.display = "block";
+  }
+}
+
+function enrolOnCourseConfirmedAuthorisor()
+{
+  var id = finder.searchresults.value;
+  var reason = finder.reason.value;
+  var name = finder.usersearchName.innerHTML;
+  var email = finder.authEmail.value;
+  if ( name && name.length > 0 )
+  {
+    toolsocket.sendMessage( new selfenrol.EnrolRequestMessage( id, reason, name, email ) );  
+    return;
+  }
+  alert( "Cannot enrol - the email address was not found." );
+}
+
 
 function openConfig()
 {

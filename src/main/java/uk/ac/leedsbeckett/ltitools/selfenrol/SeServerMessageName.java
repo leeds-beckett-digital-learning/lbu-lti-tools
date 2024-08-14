@@ -33,7 +33,8 @@ public enum SeServerMessageName implements ToolMessageName
   CourseInfoList(       "CourseInfoList",       SeCourseInfoList.class),
   EnrolSuccess(         "EnrolSuccess",         SeEnrolSuccess.class),
   Configuration(        "Configuration",        SeConfigurationMessage.class ),
-  ConfigurationSuccess( "ConfigurationSuccess", String.class);
+  ConfigurationSuccess( "ConfigurationSuccess", String.class),
+  UserInfo(             "UserInfo",             String.class );
   
   /**
    * Each constant has a name which can be used in encoded messages passing

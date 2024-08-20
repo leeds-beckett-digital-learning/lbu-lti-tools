@@ -279,7 +279,7 @@ function enrolOnCourse()
         return;
       }      
       // defer enrol request until after the user has been confirmed.
-      toolsocket.sendMessage( new selfenrol.UserSearchMessage( id, email ) );
+      toolsocket.sendMessage( new selfenrol.UserSearchMessage( email ) );
       clearUserSearch();
       finder.usersearchAddress.innerHTML = email;
       arialib.openDialog( 'usersearchdialog', finder.searchdialogEnrolButton );

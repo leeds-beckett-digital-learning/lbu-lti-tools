@@ -38,6 +38,7 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseMembershi
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseMembershipV1Input;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.CourseV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetCoursesV3Results;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetUsersV1Results;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
@@ -281,7 +282,37 @@ public class SeEndpoint extends ToolEndpoint
     mostRecentEmail = search.getEmail();
     // SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     // ToDo validation of email address using options from configuration
-    mostRecentName = "Fred Bloggs";
+
+    BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
+    JsonResult result = bp.getV1UsersByEmail( mostRecentEmail );
+    if ( result.getResult() == null )
+      throw new HandlerAlertException( "Technical problem running search.", message.getId() );
+    if ( !result.isSuccessful() )
+    {
+      if ( result.getResult() instanceof RestExceptionMessage )
+      {
+        RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
+        throw new HandlerAlertException( "Unable to find users with email. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to users by email from the platform. Unknown error.", message.getId() );
+    }
+    
+    GetUsersV1Results results = (GetUsersV1Results)result.getResult();
+    if ( !results.getResults().isEmpty() )
+    {
+      for ( UserV1 user : results.getResults() )
+      {
+        String fullname = user.getName().getGiven() + " " + user.getName().getFamily();
+        logger.info( fullname );
+        for ( String role : user.getInstitutionRoleIds() )
+          if ( "STAFF".equals( role ) )
+          {
+            mostRecentName = fullname;
+            break;
+          }
+      }
+    }
     
     ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.UserInfo, mostRecentName );
     sendToolMessage( session, tmf );
@@ -349,6 +380,10 @@ public class SeEndpoint extends ToolEndpoint
           throw new HandlerAlertException( "Name of authorising person missing.", message.getId() );
         if ( request.getAuthEmail() == null || request.getAuthEmail().trim().length() == 0 )
           throw new HandlerAlertException( "Email of authorising person missing.", message.getId() );
+        if ( !mostRecentName.equals( request.getAuthName() ) )
+          throw new HandlerAlertException( "Name of authorising person doesn't match previous user search.", message.getId() );
+        if ( !mostRecentEmail.equals( request.getAuthEmail() ) )
+          throw new HandlerAlertException( "Email of authorising person doesn't match previous user search.", message.getId() );
         String[] parts = request.getAuthEmail().trim().split( "@" );
         if ( parts.length != 2 )
           throw new HandlerAlertException( "Email seems invalid.", message.getId() );

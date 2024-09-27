@@ -30,6 +30,7 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
   private String namesRoleServiceUrl=null;
+  private String assessmentAndGradesServiceLineItemsUrl=null;
   
   private boolean blackboardLearnRestAvailable=false;
   
@@ -86,6 +87,16 @@ public class PgaToolLaunchState extends ToolLaunchState implements Serializable
   public void setNamesRoleServiceUrl( String namesRoleServiceUrl )
   {
     this.namesRoleServiceUrl = namesRoleServiceUrl;
+  }
+
+  public String getAssessmentAndGradesServiceLineItemsUrl()
+  {
+    return assessmentAndGradesServiceLineItemsUrl;
+  }
+
+  public void setAssessmentAndGradesServiceLineItemsUrl( String assessmentAndGradesServiceLineItemsUrl )
+  {
+    this.assessmentAndGradesServiceLineItemsUrl = assessmentAndGradesServiceLineItemsUrl;
   }
 
   public boolean isBlackboardLearnRestAvailable()

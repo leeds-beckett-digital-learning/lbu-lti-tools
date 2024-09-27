@@ -15,11 +15,14 @@
  */
 package uk.ac.leedsbeckett.ltitools.peergroupassessment;
 
+import uk.ac.leedsbeckett.lti.services.ags.data.LineItems;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGroupSets;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaScoreProgress;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PgaProperties;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
@@ -69,6 +72,16 @@ public enum PgaServerMessageName implements ToolMessageName
    */
   Export(             "Export",             String.class       ),
   
+  /**
+   * A list of LTI AGS line items.
+   */
+  AssessmentLineItems( "AssessmentLineItems", LineItems.class       ),
+
+  /**
+   * A progress report on exporting scores to the platform.
+   */
+  AssessmentScoreExportProgress( "AssessmentScoreExportProgress", PgaScoreProgress.class       ),
+
   /**
    * A list of data objects for multiple groups.
    */

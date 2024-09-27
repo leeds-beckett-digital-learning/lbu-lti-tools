@@ -25,6 +25,9 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembers
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -40,6 +43,10 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScope;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScopeSet;
+import uk.ac.leedsbeckett.lti.services.ags.LtiAssessmentAndGradesServiceClaim;
+import uk.ac.leedsbeckett.lti.services.ags.data.LineItem;
+import uk.ac.leedsbeckett.lti.services.ags.data.LineItems;
+import uk.ac.leedsbeckett.lti.services.ags.data.Score;
 import uk.ac.leedsbeckett.lti.services.data.ServiceStatus;
 import uk.ac.leedsbeckett.lti.services.nrps.LtiNamesRoleServiceClaim;
 import uk.ac.leedsbeckett.lti.services.nrps.data.NrpsMembershipContainer;
@@ -60,6 +67,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaScoreProgress;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
@@ -76,6 +84,8 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GroupUserV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GroupV2;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.services.LtiAgsBackchannel;
+import uk.ac.leedsbeckett.ltitoolset.backchannel.services.LtiNrpsBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 
@@ -104,7 +114,8 @@ public class PgaEndpoint extends MultitonToolEndpoint
   PgaToolLaunchState pgaState;
   StoreCluster store;
 
-  LtiBackchannelKey ltibackchannelkey;
+  LtiBackchannelKey ltinrpsbackchannelkey;
+  LtiBackchannelKey ltiagsbackchannelkey;
   BlackboardBackchannelKey bbbckey;
 
   String platformName=null;
@@ -134,15 +145,26 @@ public class PgaEndpoint extends MultitonToolEndpoint
     logger.log( Level.INFO, "URL for NRPS {0}", pgaState.getNamesRoleServiceUrl() );
     
     // A set of scopes that we intend to use in our LTI backchannel
-    LtiServiceScopeSet set = new LtiServiceScopeSet();
+    LtiServiceScopeSet nrpsset = new LtiServiceScopeSet();
     // Just this one
-    set.addScope( LtiNamesRoleServiceClaim.SCOPE );
+    nrpsset.addScope( LtiNamesRoleServiceClaim.SCOPE );
     // The key specifies the backchannel in a way we can share
     // with other endpoints.
-    ltibackchannelkey = new LtiBackchannelKey( 
+    if ( pgaState.getNamesRoleServiceUrl() != null )
+      ltinrpsbackchannelkey = new LtiBackchannelKey( 
             getPlatformHost(), 
+            LtiNrpsBackchannel.class,
             pgaState.getNamesRoleServiceUrl(),
-            set );
+            nrpsset );
+    
+    LtiServiceScopeSet agsset = new LtiServiceScopeSet();
+    agsset.addScope( LtiAssessmentAndGradesServiceClaim.SCOPE_LINEITEM_READONLY );
+    if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() != null )
+      ltiagsbackchannelkey = new LtiBackchannelKey( 
+            getPlatformHost(), 
+            LtiAgsBackchannel.class,
+            pgaState.getAssessmentAndGradesServiceLineItemsUrl(),
+            agsset );
     bbbckey = new BlackboardBackchannelKey( getPlatformHost() );
   }
   
@@ -679,7 +701,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
 
     // Get a backchannel (which might be new or reused and which knows how
     // to authenticate/authorize itself.
-    LtiBackchannel backchannel = (LtiBackchannel)getToolCoordinator().getBackchannel( this, ltibackchannelkey, getState() );
+    LtiNrpsBackchannel backchannel = (LtiNrpsBackchannel)getToolCoordinator().getBackchannel(this, ltinrpsbackchannelkey, getState() );
 
     // Call the backchannel and wait for result.
     JsonResult jresult = backchannel.getNamesRoles();
@@ -1085,7 +1107,235 @@ public class PgaEndpoint extends MultitonToolEndpoint
         
     sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Export, sb.toString() ) );
   }
+  
+  @EndpointMessageHandler()
+  public void handleLineItemsRequest( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    logger.log(  Level.INFO, "Attempting to get line items for this resource..." );
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to fetch assessment line items.", message.getId() );
+    if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() == null )
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message.getId() );
 
+    // Get a backchannel (which might be new or reused and which knows how
+    // to authenticate/authorize itself.
+    LtiAgsBackchannel backchannel = (LtiAgsBackchannel)getToolCoordinator().getBackchannel(this, ltiagsbackchannelkey, getState() );
+
+    // Call the backchannel and wait for result.
+    JsonResult jresult = backchannel.getLineItems();
+    logger.log( Level.INFO, jresult.getRawValue() );
+    if ( jresult.getResult() == null )
+      throw new HandlerAlertException( "Unable to get line item information from the platform.", message.getId() );
+
+    if ( !jresult.isSuccessful() )
+    {
+      if ( jresult.getResult() instanceof ServiceStatus )
+      {
+        ServiceStatus ss = (ServiceStatus)jresult.getResult();
+        throw new HandlerAlertException( "Unable to get line item data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+      }
+      else
+        throw new HandlerAlertException( "Unable to get line item data from the platform. Unknown error.", message.getId() );
+    }
+    
+    LineItems lineItems = (LineItems)jresult.getResult();
+    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.AssessmentLineItems, lineItems ) );
+  }  
+  
+  @EndpointMessageHandler()
+  public void handleLineItemsResults( Session session, ToolMessage message )
+          throws IOException, HandlerAlertException
+  {
+    logger.log(  Level.INFO, "Attempting to export scores to platform..." );
+    if ( !pgaState.isAllowedToManage() )
+      throw new HandlerAlertException( "Only managers of a resource are allowed to export assessment results.", message.getId() );
+    if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() == null )
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message.getId() );
+    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    if ( resource.getStage() != Stage.RESULTS )
+      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
+
+    PeerGroupForm form = store.getForm( resource.getFormId() );
+    HashMap<String,String>    memberscore = new HashMap<>();
+    int reportedprogress = 1;    
+    int progress;
+
+    ToolMessage tmprog = new ToolMessage( 
+            message.getId(), 
+            PgaServerMessageName.AssessmentScoreExportProgress, 
+            new PgaScoreProgress( 1 ) );
+    sendToolMessage( session, tmprog );
+
+    // Get a backchannel (which might be new or reused and which knows how
+    // to authenticate/authorize itself.
+    LtiAgsBackchannel backchannel = (LtiAgsBackchannel)getToolCoordinator().getBackchannel(this, ltiagsbackchannelkey, getState() );
+    
+    // Define the new lineitem we want...
+    LineItem[] lineItems = new LineItem[3];
+    LineItem[] actualLineItems = new LineItem[3];
+    String[] liNames = {
+      " - Score",
+      " - Group Size",
+      " - Group Total"};
+    BigDecimal[] liMax = 
+      { 
+        BigDecimal.valueOf( 120 ), 
+        BigDecimal.valueOf( 10 ), 
+        BigDecimal.valueOf( 1200 )
+      };
+    for ( int i=0; i<3; i++ )
+    {
+      lineItems[i]= new LineItem(
+                      null,
+                      liMax[i],
+                      resource.getTitle() + liNames[i],
+                      pgaState.getResourceKey().getResourceId(),
+                      false,
+                      null,
+                      null );
+        
+      // Call the backchannel and wait for result.
+      JsonResult jresult = backchannel.postLineItem( lineItems[i] );
+      logger.log( Level.INFO, jresult.getRawValue() );
+      if ( jresult.getResult() == null )
+        throw new HandlerAlertException( "Unable to create line item in the platform.", message.getId() );
+
+      if ( !jresult.isSuccessful() )
+      {
+        if ( jresult.getResult() instanceof ServiceStatus )
+        {
+          ServiceStatus ss = (ServiceStatus)jresult.getResult();
+          throw new HandlerAlertException( "Unable to create line item in the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        }
+        else
+          throw new HandlerAlertException( "Unable to create line item in the platform. Unknown error.", message.getId() );
+      }
+
+      actualLineItems[i] = (LineItem)jresult.getResult();
+      logger.log(Level.INFO, "Success, column item ID = {0}", actualLineItems[i].getId());
+    }
+    logger.log( Level.INFO, "All three columns created." );
+        
+    for ( int i=0; i < resource.groupIdsInOrder.size(); i++ )
+    {
+      progress = Math.round( 100.0f * (float)i / (float)resource.groupIdsInOrder.size() );
+      if ( progress > reportedprogress )
+      {
+        tmprog = new ToolMessage( 
+                message.getId(), 
+                PgaServerMessageName.AssessmentScoreExportProgress, 
+                new PgaScoreProgress( progress ) );
+        sendToolMessage( session, tmprog );
+        reportedprogress = progress;
+      }
+      
+      String gid = resource.groupIdsInOrder.get( i );      
+      Group g = resource.getGroupById( gid );
+      PeerGroupDataKey dk = new PeerGroupDataKey( resource.getKey(), gid );
+      PeerGroupData data = store.getData( dk, false );
+      int groupcount=0;
+      int grouptotal=0;
+      boolean groupcomplete=true;
+      for ( Member m : g.getMembers() )
+      {
+        groupcount++;
+        ParticipantData pdata=null;
+        if ( data != null )
+          pdata = data.getParticipantData().get( m.getLtiId() );
+        if ( pdata == null )
+        {
+          memberscore.put( m.getLtiId(), "\"None\"" );
+          groupcomplete=false;
+          continue;
+        }
+        
+        int total=0;
+        boolean complete=true;
+        for ( Field field : form.getFields().values() )
+        {
+          ParticipantDatum datum = pdata.getParticipantData().get( field.getId() );
+          if ( datum != null && datum.isValid() )
+            total += Integer.parseInt( datum.getValue() );
+          else
+            complete = false;
+        }
+        if ( complete )
+        {
+          memberscore.put( m.getLtiId(), Integer.toString( total ) );
+          grouptotal += total;
+        }
+        else
+        {
+          memberscore.put( m.getLtiId(), "\"Incomplete\"" );
+          groupcomplete = false;
+        }
+      }
+
+      // Only if all scores for all group members are valid
+      // send each member's scores to the platform.
+      if ( groupcomplete )
+      {
+        for ( Member m : g.getMembers() )
+        {
+          String score = memberscore.get( m.getLtiId() );
+          if ( score == null ) score = "";
+
+          Instant ts = Instant.now();
+          Score[] ltiscores = new Score[3];
+          ltiscores[0] = new Score( 
+                  m.getLtiId(),
+                  new BigDecimal( score, MathContext.UNLIMITED ),
+                  liMax[0],
+                  null,
+                  ts,
+                  "Completed",
+                  "FullyGraded",
+                  null
+          );
+          ltiscores[1] = new Score( 
+                  m.getLtiId(),
+                  new BigDecimal( groupcount, MathContext.UNLIMITED ),
+                  liMax[1],
+                  null,
+                  ts,
+                  "Completed",
+                  "FullyGraded",
+                  null
+          );
+          ltiscores[2] = new Score( 
+                  m.getLtiId(),
+                  new BigDecimal( grouptotal, MathContext.UNLIMITED ),
+                  liMax[2],
+                  null,
+                  ts,
+                  "Completed",
+                  "FullyGraded",
+                  null
+          );
+
+          for ( int j=0; j<3; j++ )
+          {
+            // Call the backchannel and wait for result.
+            JsonResult jresult = backchannel.postScores( actualLineItems[j], ltiscores[j] );
+            logger.log( Level.INFO, jresult.getRawValue() );
+            if ( jresult.getResult() == null )
+              throw new HandlerAlertException( "Unable to post score information to the platform.", message.getId() );
+            if ( !jresult.isSuccessful() )
+              throw new HandlerAlertException( "Unable to post score information to the platform. " + jresult.getErrorMessage(), message.getId() );                
+          }
+        }
+      }
+    }
+    // Ensure client page knows we have completed without an exception.
+    tmprog = new ToolMessage( 
+            message.getId(), 
+            PgaServerMessageName.AssessmentScoreExportProgress, 
+            new PgaScoreProgress( 100 ) );
+    sendToolMessage( session, tmprog );    
+  }
+  
+  
   @EndpointMessageHandler()
   public void handleConfigurationRequest( Session session, ToolMessage message )
           throws IOException, HandlerAlertException

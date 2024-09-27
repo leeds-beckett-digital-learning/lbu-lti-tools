@@ -306,8 +306,26 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           <button id="bbgroupsetsdialogCloseButtonBottom" value="Close">Close</button>
         </div>
       </div>
-      
-      
+
+      <div role="dialog" id="exportplatformdialog" aria-labelledby="exportplatformdialogLabel" aria-modal="true" class="hidden">
+        <h3 id="exportlineitemsdialogLabel">Export to Platform</h3>
+        <div><p>When you export to the platform line items are created in your
+          platform's assessment table which will contain the current snapshot
+          of results. If you export again at a later date more line items are
+          created with a more recent snapshot of results. (As distinct from
+          overwriting scores in the first set of line items.) This is intended
+          to provide better data security if you export by mistake. Note that 
+          if a single input for a single student is invalid then the entire 
+          group will be skipped in the export process. You are advised to 
+          review the line items in your platform immediately after exporting
+          in case you need to configure visibility of the data by students.</p></div>
+        <div><p>Progress: <span id='exportlineitemsprogress'>0</span>%</p></div>
+        <div class="dialog_form_actions">
+          <button id="exportplatformdialogExportButton" value="Close">Export</button>
+          <button id="exportplatformdialogCloseButton" value="Close">Close</button>
+        </div>
+      </div>
+            
       <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
         <h3 id="debugdialogLabel">Debug Information</h3>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>
@@ -394,7 +412,11 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             </thead>
             <tbody id="overviewtablebody"></tbody>
           </table>
-          <p><button id="exportButton">Export</button></p>
+          <p><button id="exportButton">Export to Spreadsheet</button>
+            <c:if test="${support.allowedToExportToPlatform}">
+              <button id="exportPlatformButton">Export to Platform</button>
+            </c:if>
+          </p>
           </div>
         </c:if>
           

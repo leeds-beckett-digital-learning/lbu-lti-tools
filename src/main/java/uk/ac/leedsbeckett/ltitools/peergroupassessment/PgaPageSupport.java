@@ -74,6 +74,9 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
     dynamicPageData.setAllowedToConfigure( pgaState.isAllowedToConfigure() );
     dynamicPageData.setAllowedToParticipate( pgaState.isAllowedToParticipate() );
     dynamicPageData.setAllowedToManage( pgaState.isAllowedToManage() );
+    dynamicPageData.setAllowedToExportToPlatform( 
+            pgaState.isAllowedToManage() && 
+            pgaState.getAssessmentAndGradesServiceLineItemsUrl() != null );
   }
 
   /**
@@ -158,6 +161,11 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
   public boolean isBlackboardLearnRestAvailable()
   {
     return pgaState.isBlackboardLearnRestAvailable();
+  }
+
+  public boolean isAllowedToExportToPlatform()
+  {
+    return dynamicPageData.isAllowedToExportToPlatform();
   }
   
   /**

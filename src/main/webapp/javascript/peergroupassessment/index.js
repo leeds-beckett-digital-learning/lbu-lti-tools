@@ -90,6 +90,12 @@ function init()
     finder.exportdialogCloseButtonTop        .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonTop)    );
     finder.exportdialogCloseButtonBottom     .addEventListener( 'click', () => arialib.closeDialog(finder.exportdialogCloseButtonBottom)    );
     finder.exportButton                      .addEventListener( 'click', () => getExport(finder.exportButton)                      );
+    if ( dynamicData.allowedToExportToPlatform )
+    {
+      finder.exportplatformdialogCloseButton .addEventListener( 'click', () => arialib.closeDialog(finder.exportplatformdialogCloseButton) );
+      finder.exportplatformdialogExportButton.addEventListener( 'click', () => exportToPlatform(finder.exportplatformdialogExportButton) );
+      finder.exportPlatformButton            .addEventListener( 'click', () => getExportPlatform(finder.exportPlatformButton)              );
+    }    
     if ( finder.importButton )
       finder.importButton                      .addEventListener( 'click', () => getImport(finder.importButton)                      );
     if ( finder.importBlackboardButton )
@@ -190,6 +196,21 @@ function init()
       console.log( "handleExport" );
       console.log( message.payload );
       finder.exporttextarea.value = message.payload;
+    },
+    
+    handleAssessmentLineItems( message )
+    {
+      console.log( "handleAssessmentLineItems" );
+      console.log( message.payload );
+    },
+    
+    handleAssessmentScoreExportProgress( message )
+    {
+      console.log( "handleAssessmentScoreExportProgress" );
+      console.log( message.payload );
+      finder.exportlineitemsprogress.innerHTML = message.payload.percentage;
+      if ( message.payload.percentage === 100 )
+        arialib.closeDialog( finder.exportplatformdialog );
     },
     
     handleBlackboardGroupSets( message )
@@ -928,6 +949,28 @@ function getExport( openerelement )
   finder.exporttextarea.innerText = "Waiting for data...";
   toolsocket.sendMessage( new peergroupassessment.GetExportMessage() );
   arialib.openDialog( 'exportdialog', openerelement );  
+}
+
+function getExportPlatform( openerelement )
+{
+  if ( resource.properties.stage !== "RESULTS" )
+  {
+    alert( "Result export to platform is only available in the final stage when results are frozen." );
+    return;
+  }
+  arialib.openDialog( 'exportplatformdialog', openerelement );  
+}
+
+function exportToPlatform( openerelement )
+{
+  if ( resource.properties.stage !== "RESULTS" )
+  {
+    alert( "Result export to platform is only available in the final stage when results are frozen." );
+    return;
+  }
+  // Tell server to export scores to line items on LTI service of platform.
+  toolsocket.sendMessage( new peergroupassessment.LineItemsResultsMessage() );
+  //arialib.closeDialog( finder.exportplatformdialogExportButton );
 }
 
 function getImport( openerelement )

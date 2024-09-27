@@ -26,6 +26,7 @@ public class PgaDynamicPageData extends DynamicPageData
   private boolean allowedToManage;
   private boolean allowedToParticipate;
   private boolean allowedToConfigure;
+  private boolean allowedToExportToPlatform;
 
   public boolean isAllowedToManage()
   {
@@ -56,6 +57,14 @@ public class PgaDynamicPageData extends DynamicPageData
   {
     this.allowedToConfigure = allowedToConfigure;
   }
-  
-  
+
+  public boolean isAllowedToExportToPlatform()
+  {
+    return allowedToExportToPlatform;
+  }
+
+  public void setAllowedToExportToPlatform( boolean allowedToExportToPlatform )
+  {
+    this.allowedToExportToPlatform = allowedToExportToPlatform;
+  }  
 }

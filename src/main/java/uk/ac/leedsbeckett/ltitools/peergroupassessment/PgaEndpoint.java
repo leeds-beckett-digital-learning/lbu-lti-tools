@@ -1024,13 +1024,26 @@ public class PgaEndpoint extends MultitonToolEndpoint
     PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
       throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
+
+    ScoreComputer scorer = new ScoreComputer( 
+            store,
+            resource,
+            "",
+            pgaState.getResourceKey().getResourceId() );
     
     PeerGroupForm form = store.getForm( resource.getFormId() );
     HashMap<String,String>    memberscore = new HashMap<>();
     HashMap<String,String>  memberendorse = new HashMap<>();
 
     StringBuilder sb = new StringBuilder();
-    sb.append( "Group\tName\tScore\tEndorsed\tGroupCount\tGroupTotal\n" );
+    sb.append( "\"Group\"\t\"Name\"\t\"Endorsed\"" );
+    for ( LineItemType t : LineItemType.values() )
+    {
+      sb.append( "\t\"" );
+      sb.append( t.getName() );
+      sb.append( "\"" );
+    }
+    sb.append( "\n" );
     
     for ( String gid : resource.groupIdsInOrder )
     {
@@ -1039,6 +1052,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
       PeerGroupData data = store.getData( dk, false );
       int groupcount=0;
       int grouptotal=0;
+      int groupmax=0;
       boolean groupcomplete=true;
       for ( Member m : g.getMembers() )
       {
@@ -1067,6 +1081,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         if ( complete )
         {
           memberscore.put( m.getLtiId(), Integer.toString( total ) );
+          if ( total > groupmax ) groupmax = total;
           grouptotal += total;
         }
         else
@@ -1097,16 +1112,20 @@ public class PgaEndpoint extends MultitonToolEndpoint
         sb.append( "\"\t\"" );
         sb.append( m.getName() );
         sb.append( "\"\t" );
-        sb.append( score );
-        sb.append( "\t" );
         sb.append( endorse );
-        sb.append( "\t" );
-        sb.append( groupcount );
-        sb.append( "\t" );
         if ( groupcomplete )
-          sb.append( grouptotal );
+        {
+          Map<LineItemType,Score> scoremap = scorer.getScores( m.getLtiId(), Integer.parseInt( score ), groupmax, grouptotal, groupcount );
+          for ( LineItemType t : LineItemType.values() )
+          {
+            Score s = scoremap.get( t );
+            sb.append( "\t" );
+            sb.append( s.getScoreGiven() );
+          }        
+        }
         else
-          sb.append( "\"incomplete\"" );
+          for ( int n=0; n<LineItemType.values().length; n++ )
+            sb.append( "\t\"incomplete\"" );
         sb.append( "\n" );        
       }
     }

@@ -314,11 +314,30 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           of results. If you export again at a later date more line items are
           created with a more recent snapshot of results. (As distinct from
           overwriting scores in the first set of line items.) This is intended
-          to provide better data security if you export by mistake. Note that 
+          to provide better data security if you export by mistake. <p>Note that 
           if a single input for a single student is invalid then the entire 
-          group will be skipped in the export process. You are advised to 
+          group will be skipped in the export process.</p> <p>You are advised to 
           review the line items in your platform immediately after exporting
           in case you need to configure visibility of the data by students.</p></div>
+
+        <div>
+          <p>Which numbers do you want to export to the platform?</p>
+          <input id="exportlineitems_opt_0" type="checkbox"/>
+          <label for="exportlineitems_opt_0">Individual Score</label><br/>
+          <input id="exportlineitems_opt_1" type="checkbox"/>
+          <label for="exportlineitems_opt_1">Highest in Group</label><br/>
+          <input id="exportlineitems_opt_2" type="checkbox"/>
+          <label for="exportlineitems_opt_2">Score as % of Highest</label><br/>
+          <input id="exportlineitems_opt_3" type="checkbox"/>
+          <label for="exportlineitems_opt_3">Group Size</label><br/>
+          <input id="exportlineitems_opt_4" type="checkbox"/>
+          <label for="exportlineitems_opt_4">Group Scores Total</label><br/>
+          <input id="exportlineitems_opt_5" type="checkbox"/>
+          <label for="exportlineitems_opt_5">Group Mean Score</label><br/>
+          <input id="exportlineitems_suffix" cols="20" value=""/>
+          <label for="exportlineitems_suffix">Suffix to use for line items.</label><br/>
+        </div>
+        
         <div><p>Progress: <span id='exportlineitemsprogress'>0</span>%</p></div>
         <div class="dialog_form_actions">
           <button id="exportplatformdialogExportButton" value="Close">Export</button>

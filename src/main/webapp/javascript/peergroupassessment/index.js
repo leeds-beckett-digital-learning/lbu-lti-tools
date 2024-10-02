@@ -958,6 +958,7 @@ function getExportPlatform( openerelement )
     alert( "Result export to platform is only available in the final stage when results are frozen." );
     return;
   }
+  finder.exportlineitems_suffix.value = finder.mainTitle.innerText;
   arialib.openDialog( 'exportplatformdialog', openerelement );  
 }
 
@@ -969,8 +970,21 @@ function exportToPlatform( openerelement )
     return;
   }
   // Tell server to export scores to line items on LTI service of platform.
-  toolsocket.sendMessage( new peergroupassessment.LineItemsResultsMessage() );
-  //arialib.closeDialog( finder.exportplatformdialogExportButton );
+  var suffix = finder.exportlineitems_suffix.value.trim();
+  
+  var lineItemIncluded = new Array();
+  var valid = false;
+  for ( var i=0; i<6; i++ )
+  {
+    var fieldname = "exportlineitems_opt_" + i;
+    lineItemIncluded[i] = finder[fieldname].checked;
+    if ( lineItemIncluded[i] )
+      valid = true;
+  }
+  if ( valid )
+    toolsocket.sendMessage( new peergroupassessment.LineItemsResultsMessage( suffix, lineItemIncluded ) );
+  else
+    alert( "At least one optional number must be selected to export." );
 }
 
 function getImport( openerelement )

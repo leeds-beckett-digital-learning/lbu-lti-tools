@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -41,6 +43,7 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import org.apache.commons.lang3.StringUtils;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScope;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScopeSet;
 import uk.ac.leedsbeckett.lti.services.ags.LtiAssessmentAndGradesServiceClaim;
@@ -67,11 +70,14 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaDataList;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaEndorseData;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaLineItemOptions;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaScoreProgress;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.predicate.AllowedToSeeGroupData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.Stage;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.scoring.LineItemType;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.scoring.ScoreComputer;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.Configuration;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannel;
@@ -1144,7 +1150,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   }  
   
   @EndpointMessageHandler()
-  public void handleLineItemsResults( Session session, ToolMessage message )
+  public void handleLineItemsResults( Session session, ToolMessage message, PgaLineItemOptions options )
           throws IOException, HandlerAlertException
   {
     logger.log(  Level.INFO, "Attempting to export scores to platform..." );
@@ -1155,7 +1161,9 @@ public class PgaEndpoint extends MultitonToolEndpoint
     PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
       throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
-
+    if ( options == null || options.getLineItemIncluded() == null || options.getLineItemIncluded().length != 6 )
+      throw new HandlerAlertException( "Invalid export options.", message.getId() );
+    
     PeerGroupForm form = store.getForm( resource.getFormId() );
     HashMap<String,String>    memberscore = new HashMap<>();
     int reportedprogress = 1;    
@@ -1170,37 +1178,23 @@ public class PgaEndpoint extends MultitonToolEndpoint
     // Get a backchannel (which might be new or reused and which knows how
     // to authenticate/authorize itself.
     LtiAgsBackchannel backchannel = (LtiAgsBackchannel)getToolCoordinator().getBackchannel(this, ltiagsbackchannelkey, getState() );
-    
-    // Define the new lineitem we want...
-    LineItem[] lineItems = new LineItem[3];
-    LineItem[] actualLineItems = new LineItem[3];
-    String[] liNames = {
-      " - Score",
-      " - Group Size",
-      " - Group Total"};
-    BigDecimal[] liMax = 
-      { 
-        BigDecimal.valueOf( 120 ), 
-        BigDecimal.valueOf( 10 ), 
-        BigDecimal.valueOf( 1200 )
-      };
-    for ( int i=0; i<3; i++ )
+                
+    ScoreComputer scorer = new ScoreComputer( 
+            store,
+            resource,
+            StringUtils.isEmpty( options.getSuffix() ) ? "" : (" " + options.getSuffix()),
+            pgaState.getResourceKey().getResourceId() );
+
+    int n=0;
+    for ( LineItemType t : LineItemType.values() )
     {
-      lineItems[i]= new LineItem(
-                      null,
-                      liMax[i],
-                      resource.getTitle() + liNames[i],
-                      pgaState.getResourceKey().getResourceId(),
-                      false,
-                      null,
-                      null );
-        
+      if ( !options.getLineItemIncluded()[n++] )
+        continue;
       // Call the backchannel and wait for result.
-      JsonResult jresult = backchannel.postLineItem( lineItems[i] );
+      JsonResult jresult = backchannel.postLineItem( scorer.getLineItem( t ) );
       logger.log( Level.INFO, jresult.getRawValue() );
       if ( jresult.getResult() == null )
         throw new HandlerAlertException( "Unable to create line item in the platform.", message.getId() );
-
       if ( !jresult.isSuccessful() )
       {
         if ( jresult.getResult() instanceof ServiceStatus )
@@ -1211,12 +1205,13 @@ public class PgaEndpoint extends MultitonToolEndpoint
         else
           throw new HandlerAlertException( "Unable to create line item in the platform. Unknown error.", message.getId() );
       }
-
-      actualLineItems[i] = (LineItem)jresult.getResult();
-      logger.log(Level.INFO, "Success, column item ID = {0}", actualLineItems[i].getId());
+      scorer.setLineItem(t, (LineItem)jresult.getResult());
+      logger.log(Level.INFO, "Success, column item ID = {0}", scorer.getLineItem( t ).getId());
     }
-    logger.log( Level.INFO, "All three columns created." );
-        
+    logger.log( Level.INFO, "All columns created." );
+
+    
+    // Process group by group
     for ( int i=0; i < resource.groupIdsInOrder.size(); i++ )
     {
       progress = Math.round( 100.0f * (float)i / (float)resource.groupIdsInOrder.size() );
@@ -1230,12 +1225,14 @@ public class PgaEndpoint extends MultitonToolEndpoint
         reportedprogress = progress;
       }
       
+      // Start by computing scores for the group
       String gid = resource.groupIdsInOrder.get( i );      
       Group g = resource.getGroupById( gid );
       PeerGroupDataKey dk = new PeerGroupDataKey( resource.getKey(), gid );
       PeerGroupData data = store.getData( dk, false );
       int groupcount=0;
       int grouptotal=0;
+      int groupmax=0;
       boolean groupcomplete=true;
       for ( Member m : g.getMembers() )
       {
@@ -1263,13 +1260,11 @@ public class PgaEndpoint extends MultitonToolEndpoint
         if ( complete )
         {
           memberscore.put( m.getLtiId(), Integer.toString( total ) );
+          if ( total > groupmax ) groupmax = total;
           grouptotal += total;
         }
         else
-        {
-          memberscore.put( m.getLtiId(), "\"Incomplete\"" );
           groupcomplete = false;
-        }
       }
 
       // Only if all scores for all group members are valid
@@ -1278,46 +1273,15 @@ public class PgaEndpoint extends MultitonToolEndpoint
       {
         for ( Member m : g.getMembers() )
         {
-          String score = memberscore.get( m.getLtiId() );
-          if ( score == null ) score = "";
-
-          Instant ts = Instant.now();
-          Score[] ltiscores = new Score[3];
-          ltiscores[0] = new Score( 
-                  m.getLtiId(),
-                  new BigDecimal( score, MathContext.UNLIMITED ),
-                  liMax[0],
-                  null,
-                  ts,
-                  "Completed",
-                  "FullyGraded",
-                  null
-          );
-          ltiscores[1] = new Score( 
-                  m.getLtiId(),
-                  new BigDecimal( groupcount, MathContext.UNLIMITED ),
-                  liMax[1],
-                  null,
-                  ts,
-                  "Completed",
-                  "FullyGraded",
-                  null
-          );
-          ltiscores[2] = new Score( 
-                  m.getLtiId(),
-                  new BigDecimal( grouptotal, MathContext.UNLIMITED ),
-                  liMax[2],
-                  null,
-                  ts,
-                  "Completed",
-                  "FullyGraded",
-                  null
-          );
-
-          for ( int j=0; j<3; j++ )
+          String score = memberscore.get( m.getLtiId() );  // Cannot be null
+          Map<LineItemType,Score> scoremap = scorer.getScores( m.getLtiId(), Integer.parseInt( score ), groupmax, grouptotal, groupcount );
+          n = 0;
+          for ( LineItemType t : LineItemType.values() )
           {
+            if ( !options.getLineItemIncluded()[n++] )
+              continue;
             // Call the backchannel and wait for result.
-            JsonResult jresult = backchannel.postScores( actualLineItems[j], ltiscores[j] );
+            JsonResult jresult = backchannel.postScores( scorer.getLineItem( t ), scoremap.get( t ) );
             logger.log( Level.INFO, jresult.getRawValue() );
             if ( jresult.getResult() == null )
               throw new HandlerAlertException( "Unable to post score information to the platform.", message.getId() );

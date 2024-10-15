@@ -137,7 +137,8 @@ public class PeerGroupAssessmentTool extends Tool
       if ( lticlaims.getLtiAssessmentAndGradesService().getLineItemsUrl() != null )
         pgastate.setAssessmentAndGradesServiceLineItemsUrl( lticlaims.getLtiAssessmentAndGradesService().getLineItemsUrl() );
     }
-    if ( "Blackboard, Inc.".equals( lticlaims.getLtiToolPlatform().getName() ) &&
+    // Platform name is configurable - not fixed at Blackboard, Inc.
+    if ( //"Blackboard, Inc.".equals( lticlaims.getLtiToolPlatform().getName() ) &&
          "BlackboardLearn".equals( lticlaims.getLtiToolPlatform().getProductFamilyCode() ) )
       pgastate.setBlackboardLearnRestAvailable( true );
   }

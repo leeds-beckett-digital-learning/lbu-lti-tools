@@ -18,6 +18,7 @@ package uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm;
@@ -25,6 +26,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Fi
 import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.FULLYENDORSED;
 import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.NOTENDORSED;
 import static uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PgaEndorsementStatus.PARTLYENDORSED;
+import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Group;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.resourcedata.PeerGroupResource.Member;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
@@ -63,6 +65,18 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
   public HashMap<String, ParticipantData> getParticipantData()
   {
     return participantData;
+  }
+
+  public void removeUnwantedParticipantData( PeerGroupResource.Group group )
+  {
+    // copy of people IDs in data object
+    ArrayList<String> ids = new ArrayList<>( this.participantData.keySet() );
+    // Check each one
+    for ( String id : ids )
+      // If not in the group according to resource
+      if ( id != null && !group.isMember( id ) )
+        // Remove the data
+        this.participantData.remove( id );    
   }
 
   public void setParticipantData( HashMap<String, ParticipantData> participantData )

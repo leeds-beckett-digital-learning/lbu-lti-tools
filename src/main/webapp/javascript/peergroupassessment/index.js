@@ -844,9 +844,11 @@ function updateOverviewDataGroup( d )
   for ( const mid in d.participantData )
   {
     let td = finder[ "overviewCount_" + mid ];
-    td.innerText = groupcount;
+    if ( td )
+      td.innerText = groupcount;
     td = finder[ "overviewTotal_" + mid ];
-    td.innerText = groupcomplete?grouptotal:'incomplete';
+    if ( td )
+      td.innerText = groupcomplete?grouptotal:'incomplete';
   }
 }
 

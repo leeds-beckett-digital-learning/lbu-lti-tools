@@ -450,9 +450,15 @@ public class PgaEndpoint extends MultitonToolEndpoint
         // No data for 'unattached' group
         if ( gid == null)
           continue;
-        logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );
+        // The newly edited group:
+        Group g = pgaResource.groupsById.get( gid );
         PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid );
         PeerGroupData data = store.getData( key, true );
+        // Remove entries that are no longer in the group
+        data.removeUnwantedParticipantData( g );
+        // and save
+        store.updateData( data );
+        logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );
         sendToolMessage( 
                 new AllowedToSeeGroupData( gid, pgaResource ),
                 new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );

@@ -456,6 +456,8 @@ public class PgaEndpoint extends MultitonToolEndpoint
         PeerGroupData data = store.getData( key, true );
         // Remove entries that are no longer in the group
         data.removeUnwantedParticipantData( g );
+        // If there was some data endorsements they need to be cleared
+        data.clearEndorsements();
         // and save
         store.updateData( data );
         logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );

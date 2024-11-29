@@ -23,7 +23,8 @@
     <link rel="stylesheet" href="../style/dialog.css"/>
     <link rel="stylesheet" href="../style/buttons.css"/>
    <style>
-      body { font-family: 'Nobile', sans-serif; padding: 1em 1em 1em 1em; }
+      body { font-family: 'Nobile', sans-serif; padding: 1em 1em 1em 1em; background-color: white; }
+      p { margin: 0em 0em 0em 0em; }
       .section { margin: 2em 0em 2em 0em; }
       .block { max-width: 50em; }
       .stage {
@@ -68,6 +69,7 @@
                    background: white; }
 
       th { 
+        vertical-align: top;
         padding: 0.25em 0.5em 0.25em 0.5em;
       }
       
@@ -82,6 +84,7 @@
       }
       
       td {
+        vertical-align: top;
         padding: 0.25em 0.5em 0.25em 0.5em;
       }
       
@@ -89,6 +92,23 @@
         writing-mode: vertical-lr;
         transform: rotate( 180deg );
       }      
+
+      table#grouptable {
+        border-spacing: 0px;
+      }
+      
+      table#grouptable>tbody:nth-child(odd) {
+        background-color: mintcream;
+      }
+      
+      table#grouptable>tbody:nth-child(even) {
+        background-color: rgb(240,245,255);        
+      }
+      
+      table#grouptable td {
+        padding-top: 0px;
+        padding-bottom: 0px;
+      }
       
       .emptyinput {
         background-color: white;
@@ -101,7 +121,13 @@
       .invalidinput {
         background-color: hotpink;
       }
-
+      .grouptitle {
+        font-size: 110%;
+        font-weight: bold;
+      }
+      .groupstatus {
+        margin-top: 1em;
+      }
 
 .alertList {
   padding: 10px;
@@ -377,6 +403,11 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
           <button id="importBlackboardButton">Import Blackboard Sub-groups</button> 
         </c:if>
         <button id="importButton">Import Class</button></p>
+        <p style="margin-top: 0.5em;"><button id="exportButton">Export to Spreadsheet</button>
+          <c:if test="${support.allowedToExportToPlatform}">
+            <button id="exportPlatformButton">Export to Platform</button>
+          </c:if>
+        </p>
         <p style="display: none;"><em>These and other buttons on the page are only shown to managers of this resource.</em></p>
       </c:if>
     </div>
@@ -385,60 +416,21 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
         <div class="section">
         <table id="grouptable">
-          <thead>
-            <tr>
-              <th scope="col">Group</th>
-              <c:if test="${support.allowedToManage}">        
-               <th scope="col">Actions</th>
-              </c:if>
-              <th scope="col">Members</th>
-              <c:if test="${support.allowedToManage}">        
-                <th scope="col">Actions</th>
-              </c:if>
-            </tr>
-          </thead>
-          <tbody id="grouptablebody"></tbody>
-          <tfoot>
+          <tbody id="grouptablefooter">
             <c:if test="${support.allowedToManage}">        
-              <tr><td><button id="addgroupButton">Add Group</button></td><td></td><td></td><td></td></tr>
+              <tr><td></td><td style="padding: 1em 1em 1em 1em;"><button id="addgroupButton">Add Group</button></td></tr>
             </c:if>
-              <tr>
-                <th scope="row"></th>
-                <c:if test="${support.allowedToManage}">        
-                  <td></td>
-                </c:if>
-                  <td id="unattachedParticipants"></td>
-                <c:if test="${support.allowedToManage}">        
-                  <td></td>
-                </c:if>
+              <tr id="groupUnattachedRow">
+                <td colspan="2"><p class="grouptitle">Unattached Participants</strong></p>
               </tr>
-          </tfoot>
+              <tr>
+                <td></td>
+                <td id="unattachedParticipants"></td>
+              </tr>
+          </tbody>
         </table>
         </div>
-          
-        <c:if test="${support.allowedToManage}">
-          <div class="section">
-          <table id="overviewtable">
-            <thead>
-              <tr>
-                <th>Group</th>
-                <th>Name</th>
-                <th>Score</th>
-                <th>Endorsed</th>
-                <th>Group<br />Count</th>
-                <th>Group<br />Total</th>
-              </tr>
-            </thead>
-            <tbody id="overviewtablebody"></tbody>
-          </table>
-          <p><button id="exportButton">Export to Spreadsheet</button>
-            <c:if test="${support.allowedToExportToPlatform}">
-              <button id="exportPlatformButton">Export to Platform</button>
-            </c:if>
-          </p>
-          </div>
-        </c:if>
-          
+                    
       </c:when>
       <c:otherwise>
         <p>Your role set by system that launched this tool means that you

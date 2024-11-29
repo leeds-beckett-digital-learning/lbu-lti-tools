@@ -63,10 +63,7 @@ function init()
   arialib.setDialogAlertClass( 'alertList' );
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );
-  
-  if ( dynamicData.allowedToManage )
-    finder.addgroupButton              .addEventListener( 'click', () => addGroup()                     );
-    
+      
   if ( dynamicData.allowedToManage )
     finder.editpropsSaveButtonBottom   .addEventListener( 'click', () => saveEditProps()                );
   finder.editpropsCloseButtonBottom    .addEventListener( 'click', () => arialib.closeDialog( finder.editpropsCloseButtonBottom )       );
@@ -141,11 +138,10 @@ function init()
     {
       formuptodate = false;
       resource = message.payload;
-      updateResource( resource.properties );
+      updateResource();
       updateGroups();
       if ( dynamicData.allowedToManage )
       {
-        updateOverview();
         toolsocket.sendMessage( new peergroupassessment.GetAllDataMessage() );
       }
     },
@@ -154,13 +150,16 @@ function init()
     {
       let stagechanged = !(message.payload.stage === resource.properties.stage);
       resource.properties = message.payload;
-      updateResource( resource.properties );
+      updateResource();
       if ( stagechanged )
       {
         updateGroups();
         // because buttons need to be enabled disabled
         updateForm();      
-        updateFormData();      
+        updateFormData();
+        // group table was cleared so a manager needs status for each group
+        if ( dynamicData.allowedToManage )
+          toolsocket.sendMessage( new peergroupassessment.GetAllDataMessage() );
       }
     },
     
@@ -273,8 +272,10 @@ function addAlert( text )
   arialib.addAlert( text );
 }
 
-function updateResource( properties )
+function updateResource()
 {
+  var properties = resource.properties;
+  
   console.log( "stage       = " + properties.stage       );
   console.log( "title       = " + properties.title       );
   console.log( "description = " + properties.description );
@@ -331,16 +332,26 @@ function updateResource( properties )
 function updateGroups()
 {
   finder.unattachedParticipants.innerHTML = "";
+
+  // Save footer
+  var foothtml = finder.grouptablefooter.innerHTML;
+  // Reset table to footer only
+  finder.grouptable.innerHTML = "<tbody id=\"grouptablefooter\">" + foothtml + "</tbody>\n";
+
   if ( finder.addgroupButton )
+  {
     finder.addgroupButton.style.display = resource.properties.stage === "SETUP"?"initial":"none";
+    finder.addgroupButton.addEventListener( 'click', () => addGroup() );
+  }
   
   if ( resource.groupIdsInOrder.length === 0 )
   {
-    finder.grouptablebody.innerHTML = "<tr><td colspan=\"2\"><em>No groups yet.</em></td></tr>";
+    var tbody = document.createElement( "tbody" );
+    finder.grouptable.insertBefore( tbody, finder.grouptablefooter );
+    tbody.innerHTML = "<tr><td colspan=\"2\"><em>No groups.</em></td></tr>";
   }
   else
   {
-    finder.grouptablebody.innerHTML = "\n";
     for ( const gid of resource.groupIdsInOrder )
     {
       const g = resource.groupsById[gid];
@@ -359,12 +370,12 @@ function updateUnattachedGroup()
   finder.unattachedParticipants.innerHTML = "";
   const set = resource.groupOfUnattached.membersbyid;
   
-  let html = "";
+  let html = "<table>\n";
   let empty = true;
   for ( let id in set )
   {
     empty = false;
-    html += "<span>";
+    html += "<tr><td><span>";
     if ( dynamicData.allowedToManage && ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" ))
     {
       html += "<input type=\"checkbox\" id=\"unattachedMember_" + id + "\" data-id=\"" + id + "\" data-name=\"" + set[id].name + "\"></input>";
@@ -372,19 +383,23 @@ function updateUnattachedGroup()
     }
     else
       html += set[id].name;
-    html += "</span>";
-    html += "<br>";
+    html += "</span></td></tr>\n";
   }
   
-  if ( !empty )
-    html = "<em>Not in group</em><br />" + html;
-  
-  finder.unattachedParticipants.innerHTML = html;
-  for ( let id in set )
+  if ( empty )
   {
-    var checkbox = finder[ "unattachedMember_" + id ];
-    unattachedcheckboxes.push( checkbox );
-  }    
+    finder.groupUnattachedRow.style.display = "none";
+  }
+  else
+  {
+    finder.unattachedParticipants.innerHTML = html;
+    for ( let id in set )
+    {
+      var checkbox = finder[ "unattachedMember_" + id ];
+      unattachedcheckboxes.push( checkbox );
+    }
+    finder.groupUnattachedRow.style.display = "table-row";
+  }
 }
 
 function isMemberOf( g )
@@ -401,42 +416,69 @@ function updateGroup( g )
   }
   
   resource.groupsById[g.id] = g;
+  let grouptbody = finder[ "group-tbody-" + g.id ];
+  if ( !grouptbody )
+  {
+    grouptbody = document.createElement( "tbody" );
+    grouptbody.id = "group-tbody-" + g.id;
+    finder.grouptable.insertBefore( grouptbody, finder.grouptablefooter );
+  }
+
+  let titlerow = finder[ "group-title-" + g.id ];
+  if ( !titlerow )
+  {
+    titlerow = document.createElement( "tr" );
+    titlerow.id = "group-title-" + g.id;
+    grouptbody.appendChild( titlerow );
+  }
   let row = finder[ "group-" + g.id ];
   if ( !row )
   {
     row = document.createElement( "tr" );
     row.id = "group-" + g.id;
-    finder.grouptablebody.appendChild( row );
+    grouptbody.appendChild( row );
   }
 
-  let html = "";
-  
+  let titlehtml = "<td colspan=\"2\">";
+  titlehtml += "<p class=\"grouptitle\">";
   if ( dynamicData.allowedToManage || isMemberOf( g ) )
-    html += "<th scope=\"row\"><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a></th>\n";
+    titlehtml += "<span id=\"groupViewStatus" + g.id + "\" class=\"groupstatus\"></span><a id=\"groupViewLink"   + g.id + "\" href=\".\">" + g.title + "</a>";
   else
-    html += "<th scope=\"row\">" + g.title + "</th>\n";
+    titlehtml += g.title;
+  titlehtml += "</p></td>\n";
+  titlerow.innerHTML = titlehtml;
 
+
+  let html = "<td>";
+  let buttonhtml = "";
   if ( dynamicData.allowedToManage )
   {
-    html += "<td>";
     if ( resource.properties.stage === "SETUP" )
     {
-      html +=     "<button id=\"groupDeleteButton" + g.id + "\">Delete</button>\n";
-      html +=     "<button id=\"groupEditButton"   + g.id + "\">Edit</button>\n";
+      buttonhtml += "<p style=\"padding-bottom: 0.5em;\"><button id=\"groupDeleteButton" + g.id + "\">Delete</button></p>\n";
+      buttonhtml += "<p style=\"padding-bottom: 0.5em;\"><button id=\"groupEditButton"   + g.id + "\">Edit</button></p>\n";
     }
-    html += "</td>";
+    if ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" )
+      buttonhtml += "<p style=\"padding-bottom: 0.5em;\"><button id=\"groupAddToButton_" + g.id + "\" class=\"addtobutton\">Add Selected</button></p>\n";
   }
+  if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
+    buttonhtml += "<p style=\"padding-bottom: 0.5em;\"><button id=\"groupJoinButton_" + g.id + "\" class=\"joinbutton\">Join</button></p>\n";
+
+  if ( buttonhtml.length > 0 )
+    html += buttonhtml;
+
+  html += "</td>\n<td>\n";
   
-  html += "<td>";
+  html += "<table>";
   let first = true;
   for ( const mid in g.membersbyid )
   {
     if ( first )
       first = false;
-    else
-      html += "<br>\n";
     let m = g.membersbyid[mid];
+    html += "<tr><td>";
     html += m.name;
+    html += "</td><td>";
     if (
          ( mid === dynamicData.myId && resource.properties.stage === "JOIN" ) || 
          ( dynamicData.allowedToManage && 
@@ -444,23 +486,16 @@ function updateGroup( g )
                 resource.properties.stage === "JOIN" ) )
        )
       html += " <button id=\"groupUnjoinButton_" + mid + "\" class=\"unjoinbutton\">Unjoin</button>";
-  }
-  if ( dynamicData.allowedToParticipate && resource.properties.stage === "JOIN" && !isMemberOf(g) )
-  {
-    if ( !first )
-      html += "<br>\n";
-    html += "<button id=\"groupJoinButton_" + g.id + "\" class=\"joinbutton\">Join</button>";
-  }
-  html += "</td>\n";
-
-  if ( dynamicData.allowedToManage )
-  {
-    html += "<td>";
-    if ( resource.properties.stage === "SETUP" || resource.properties.stage === "JOIN" )
-      html += "<button id=\"groupAddToButton_" + g.id + "\" class=\"addtobutton\">Add Selected</button>";
     html += "</td>";
+    if ( dynamicData.allowedToManage )
+    {
+      html += "<td id=\"overviewScore_"    + mid + "\"></td>";
+      html += "<td id=\"overviewEndorsed_" + mid + "\"></td>";
+    }
+    html += "</tr>\n";
   }
-  
+  html += "</table>\n</td>\n";
+
   console.log( "Adding table row" );
   console.log( html );
   
@@ -750,42 +785,6 @@ function updateFormData()
   dataentryopening=false;
 }
 
-
-function updateOverview()
-{
-  console.log( "updateOverview" );
-  finder.overviewtablebody.innerHTML = '';
-  for ( const gid of resource.groupIdsInOrder )
-    updateOverviewGroup( resource.groupsById[gid] );
-}
-
-function updateOverviewGroup( g )
-{
-  console.log( "updateOverview group " + g.title );
-  for ( let mid in g.membersbyid )
-  {
-    let m = g.membersbyid[mid];
-    console.log( "updateOverview member " );
-    console.log( m );
-    let tr  = document.createElement( "tr" );
-    let td = [];
-    for ( let i=0; i<6; i++ )
-    {
-      td[i] = document.createElement( "td" );
-      tr.append( td[i] );
-    }
-    td[0].innerText = g.title;
-    td[1].innerText = m.name;
-    for ( let i=2; i<6; i++ )
-      td[i].innerText = '?';
-    td[2].id = "overviewScore_"    + mid;
-    td[3].id = "overviewEndorsed_" + mid;
-    td[4].id = "overviewCount_"    + mid;
-    td[5].id = "overviewTotal_"    + mid;
-    finder.overviewtablebody.append( tr );
-  }
-}
-
 function updateOverviewData( datalist )
 {  
   console.log( "updateOverviewData" );
@@ -798,13 +797,20 @@ function updateOverviewDataGroup( d )
 {  
   console.log( "updateOverviewDataGroup" );
   console.log( d );
-  let groupcount=0;
-  let grouptotal=0;
-  let groupcomplete=true;
+  
+  let pstatus = finder[ "groupViewStatus" + d.key.groupId ];
+  if ( pstatus )
+  {
+    if ( d.status === "PARTLYENDORSED" )
+      pstatus.innerHTML = "<img src=\"../style/incomplete.png\" style=\"vertical-align: middle;\" alt=\"Some participants endorsed.\" />";
+    else if ( d.status === "FULLYENDORSED" )
+      pstatus.innerHTML = "<img src=\"../style/complete.png\"   style=\"vertical-align: middle;\" alt=\"All participants endorsed.\" />";
+    else
+      pstatus.innerHTML = "<img src=\"../style/circle.png\"     style=\"vertical-align: middle;\" alt=\"All participants endorsed.\" />";
+  }
   
   for ( const mid in d.participantData )
   {
-    groupcount++;
     console.log( "mid = " + mid );
     let memberdata = d.participantData[mid];
     console.log( "memberdata = " + memberdata );
@@ -822,33 +828,18 @@ function updateOverviewDataGroup( d )
       else
         complete = false;
     }
-    if ( complete )
-      grouptotal += total;
-    else
-      groupcomplete = false;
     let td = finder[ "overviewScore_" + mid ];
-    if ( td ) td.innerText = complete ? total : "incomplete";
-    
+    if ( td ) td.innerText = complete ? total : "incomplete";    
     td = finder[ "overviewEndorsed_" + mid ];
     if ( td )
     {
       if ( memberdata.endorsedDate )
-        td.innerText = "Yes";
+        td.innerText = "Endorsed";
       else if ( memberdata.managerEndorsedDate )
         td.innerText = "Override";
       else
-        td.innerText = "No";
+        td.innerText = "";
     }
-  }
-  
-  for ( const mid in d.participantData )
-  {
-    let td = finder[ "overviewCount_" + mid ];
-    if ( td )
-      td.innerText = groupcount;
-    td = finder[ "overviewTotal_" + mid ];
-    if ( td )
-      td.innerText = groupcomplete?grouptotal:'incomplete';
   }
 }
 

@@ -128,7 +128,10 @@ public class PeerGroupAssessmentTool extends Tool
     PgaToolLaunchState pgastate = (PgaToolLaunchState)toolstate;
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) )
       pgastate.setAllowedToManage( true );
-    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) )
+    // Instructors can be in a group and enter data if they want
+    // Perhaps for a 'test' group so they can try things out.
+    if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) ||
+          lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )  )
       pgastate.setAllowedToParticipate( true );
     if ( lticlaims.getLtiNamesRoleService() != null )
       pgastate.setNamesRoleServiceUrl( lticlaims.getLtiNamesRoleService().getContextMembershipsUrl() );

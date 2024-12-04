@@ -23,9 +23,11 @@
     <link rel="stylesheet" href="../style/dialog.css"/>
     <link rel="stylesheet" href="../style/buttons.css"/>
    <style>
-      body { font-family: 'Nobile', sans-serif; padding: 1em 1em 1em 1em; background-color: white; }
+      body { font-family: 'Nobile', sans-serif; font-size: 12px; padding: 0.2em 1em 0.2em 1em; background-color: white; }
+      h2 { margin: 0em 0em 0.75em 0em; }
+      h3 { margin: 0.5em 0em 0.25em 0em; }
       p { margin: 0em 0em 0em 0em; }
-      .section { margin: 2em 0em 2em 0em; }
+      .section { margin: 0em 0em 4em 0em; }
       .block { max-width: 50em; }
       .stage {
         padding-bottom: 1em;
@@ -41,6 +43,7 @@
         padding: 0px;
       }
       .stage-text {
+        font-size: 14px; 
         border: black 3px solid;
         border-radius: 0.5em;
         margin: 0px;
@@ -73,6 +76,20 @@
         padding: 0.25em 0.5em 0.25em 0.5em;
       }
       
+      th.thcollapsed {
+        padding: 0em;
+        margin: 0em;
+        border: none;
+      }
+      
+      .nonvisual {
+        overflow: hidden;
+        height: 0px;
+        padding: 0em;
+        margin: 0em;
+        border: none;        
+      }
+      
       th.vertical {
         writing-mode: vertical-lr;
         transform: rotate( 180deg );
@@ -92,22 +109,17 @@
         writing-mode: vertical-lr;
         transform: rotate( 180deg );
       }      
-
-      table#grouptable {
-        border-spacing: 0px;
+      
+      #groups>div {
+        max-width: 40em;
       }
       
-      table#grouptable>tbody:nth-child(odd) {
+      #groups>div:nth-child(odd) {
         background-color: mintcream;
       }
       
-      table#grouptable>tbody:nth-child(even) {
+      #groups>div:nth-child(even) {
         background-color: rgb(240,245,255);        
-      }
-      
-      table#grouptable td {
-        padding-top: 0px;
-        padding-bottom: 0px;
       }
       
       .emptyinput {
@@ -128,22 +140,26 @@
       .groupstatus {
         margin-top: 1em;
       }
-
+      .grouptable {
+        width: 100%;
+      }
 .alertList {
-  padding: 10px;
+  padding: 10px 10px 10px 40px;
   border: 2px solid hsl(206deg 74% 54%);
   border-radius: 4px;
   background: hsl(206deg 74% 90%);
 }
 
 .alertList:empty {
-  display: none;
-  padding: 10px;
-  border: 2px white;
-  border-radius: 4px;
-  background: white;
+  padding: 0px;
+  border: none;
+  background: none;
 }
 
+.alertList li::marker {
+  content: "Alert: ";
+  font-weight: bold;
+}
       
     </style>
     <script lang="JavaScript">
@@ -228,7 +244,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div class="dialog_form">
           Are you sure that you want to delete this group?
           <input id="deletegroupId"    type="hidden"/>
-          <input id="deletegroupTitle" type="hidden""/>
+          <input id="deletegroupTitle" type="hidden"/>
         </div>
         <div class="dialog_form_actions">    
           <button id="deletegroupDeleteButtonBottom" value="Delete">Delete</button>
@@ -382,9 +398,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     </div>
 
 
-    <div id="basePage">
-      
-    <h1>Peer Group Assessment Tool</h1>
+    <div id="basePage">      
     <div class="section">
     <div class="block">
       <p class="important">${support.importantMessage}</p>
@@ -414,23 +428,20 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     
     <c:choose>
       <c:when test="${support.allowedToManage || support.allowedToParticipate}">
-        <div class="section">
-        <table id="grouptable">
-          <tbody id="grouptablefooter">
-            <c:if test="${support.allowedToManage}">        
-              <tr><td></td><td style="padding: 1em 1em 1em 1em;"><button id="addgroupButton">Add Group</button></td></tr>
-            </c:if>
-              <tr id="groupUnattachedRow">
-                <td colspan="2"><p class="grouptitle">Unattached Participants</strong></p>
-              </tr>
-              <tr>
-                <td></td>
-                <td id="unattachedParticipants"></td>
-              </tr>
-          </tbody>
-        </table>
-        </div>
-                    
+        <div id="groups" class="section">
+
+          <c:if test="${support.allowedToManage}">
+            <div><button id="addgroupButton">Add Group</button></div>
+          </c:if>
+            <tr id="groupUnattachedRow">
+              <td colspan="2"><p class="grouptitle">Unattached Participants</strong></p>
+            </tr>
+            <tr>
+              <td></td>
+              <td id="unattachedParticipants"></td>
+            </tr>
+
+        </div>                    
       </c:when>
       <c:otherwise>
         <p>Your role set by system that launched this tool means that you
@@ -438,17 +449,13 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       </c:otherwise>
     </c:choose>
     
-    <h4 style="display: none;">Notifications</h4>
     <div class="block">
+      <h2 class="nonvisual">Notifications Nonvisual</h2>
       <ul id="toplevelalert" class="alertList"></ul>
-      <p style="display: none;">Notifications will appear above this paragraph. These are mainly intended
-        for users who use browsers that are adapted for accessibility. This is 
-        because different elements of this page can change in response to the
-        actions of other users and that could cause problems for sight impaired
-        users. To help those users, whenever a change occurs to the content of this
-        page an alert is added in a way that adapted browsers can notice
-        and report to you. You can choose to navigate to the relevant part of the
-        page and 'read' the changed content.
+      <p class="nonvisual">Notifications will appear above this paragraph. 
+        They will tell you about live changes to the content
+        of this page in response to the actions of other participants or
+        yourself. These notifications are intended for users of screen readers.
       </p>
     </div>
     

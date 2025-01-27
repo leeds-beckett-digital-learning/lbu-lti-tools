@@ -57,6 +57,7 @@ function init()
   finder.searchCourseButton.addEventListener( 'click', () => searchForCourses() );
   finder.searchOrgButton.addEventListener( 'click', () => searchForOrgs() );
   finder.searchTrainingButton.addEventListener( 'click', () => searchForTraining() );
+  finder.searchResourceButton.addEventListener( 'click', () => searchForResource() );
   finder.reason.addEventListener( 'change', () => changeReason() );
   finder.usersearchdialogSelectButton.addEventListener( 'click', () => enrolOnCourseConfirmedAuthorisor() );
   finder.usersearchdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog(finder.usersearchdialog)    );
@@ -138,6 +139,7 @@ function init()
       finder.courseadvice.innerHTML   = platformconfig.courseAdvice;
       finder.orgadvice.innerHTML      = platformconfig.organizationAdvice;
       finder.trainingadvice.innerHTML = platformconfig.trainingAdvice;
+      finder.resourceadvice.innerHTML = platformconfig.resourceAdvice;
     },
     
     handleConfigurationSuccess( message )
@@ -162,6 +164,7 @@ function addAlert( text )
 function clearSearch()
 {
   finder.whoBlock.style.display = ( currentSearch === "training" ) ? "none" : "block";
+  finder.whoBlock.style.display = ( currentSearch === "resource" ) ? "none" : "block";
   finder.searchresults.innerHTML = "<option value=\"\">Waiting for results...</option>";
   finder.authDiv.style.display = "none";
   finder.reason.value = "none";
@@ -240,6 +243,14 @@ function searchForTraining()
   arialib.openDialog( 'searchdialog', finder.searchTrainingButton );
 }
 
+function searchForResource()
+{
+  currentSearch = "resource";
+  toolsocket.sendMessage( new selfenrol.SearchMessage( "resource", "" ) );  
+  clearSearch();
+  arialib.openDialog( 'searchdialog', finder.searchResourceButton );
+}
+
 function enrolOnCourse()
 {
   var id = finder.searchresults.value;
@@ -251,7 +262,7 @@ function enrolOnCourse()
   var reason = "";
   var email = "";
 
-  if ( currentSearch !== "training" )
+  if ( currentSearch !== "training" && currentSearch !== "resource" )
   {
     var reason = finder.reason.value;
     if ( reason === "" || reason === "none" )

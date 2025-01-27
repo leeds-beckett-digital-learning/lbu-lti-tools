@@ -86,6 +86,7 @@ public class SeEndpoint extends ToolEndpoint
         
   // match anything because search spec is set by admin.
   Pattern trainingSearchValidation = Pattern.compile( ".*" ); 
+  Pattern resourceSearchValidation = Pattern.compile( ".*" ); 
 
   // Info about this user's most recent search. Used to screen the request
   // to enrol looking for faked course ID.
@@ -207,6 +208,13 @@ public class SeEndpoint extends ToolEndpoint
         specification = config.getTrainingSearchSpecification();
         validation = trainingSearchValidation;
         strfilter = config.getTrainingSearchFilter().replace( "@", specification );
+        org = false;
+        availability = "Yes";
+        break;
+      case "resource":
+        specification = config.getResourceSearchSpecification();
+        validation = resourceSearchValidation;
+        strfilter = config.getResourceSearchFilter().replace( "@", specification );
         org = false;
         availability = "Yes";
         break;
@@ -355,6 +363,10 @@ public class SeEndpoint extends ToolEndpoint
         break;
       case "training":
         role="Student";
+        emailbody="";
+        break;
+      case "resource":
+        role=config.getResourceRole();
         emailbody="";
         break;
       default:

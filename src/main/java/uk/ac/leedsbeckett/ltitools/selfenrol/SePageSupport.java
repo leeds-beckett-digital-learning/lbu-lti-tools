@@ -164,6 +164,11 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
     return config.getTrainingAdvice();
   }
   
+  public String getResourceAdvice()
+  {
+    return config.getResourceAdvice();
+  }
+  
   /**
    * Used by JSP page to find out if the page support has logging level set
    * to FINE or even more detailed.

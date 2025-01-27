@@ -147,10 +147,15 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             <tr><th>Post Search Filter RegEx</th>        <td><input id="config_courseSearchFilter"/></td>         <td><input id="config_organizationSearchFilter"/></td></tr>
             <tr><th>Advice</th>                          <td><textarea id="config_courseAdvice"></textarea></td>  <td><textarea id="config_organizationAdvice"></textarea></td></tr>
             <tr><th>Email text</th>                      <td><textarea id="config_courseEmail"></textarea></td>   <td><textarea id="config_organizationEmail"></textarea></td></tr>
-            <tr><th></th><th>Staff Training Enrol</th></tr>
-            <tr><th>Search Term</th>                     <td><input id="config_trainingSearchSpecification"/></td></tr>
-            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_trainingSearchFilter"/></td></tr>
-            <tr><th>Advice</th>                          <td><textarea id="config_trainingAdvice"></textarea></td></tr>
+            <tr><th></th><th>Staff Training Enrol</th><th>Resource Module Enrol</th></tr>
+            <tr><th>Role</th>                            <td></td>
+                                                         <td><input id="config_resourceRole"/></td></tr>
+            <tr><th>Search Term</th>                     <td><input id="config_trainingSearchSpecification"/></td>
+                                                         <td><input id="config_resourceSearchSpecification"/></td></tr>
+            <tr><th>Post Search Filter RegEx</th>        <td><input id="config_trainingSearchFilter"/></td>
+                                                         <td><input id="config_resourceSearchFilter"/></td></tr>
+            <tr><th>Advice</th>                          <td><textarea id="config_trainingAdvice"></textarea></td>
+                                                         <td><textarea id="config_resourceAdvice"></textarea></td></tr>
             <tr><th></th><th>Email notification</th></tr>
             <tr><th>SMTP Host Name</th>                  <td><input id="config_smtpHost"/></td></tr>
             <tr><th>Admin Email Address</th>             <td><input id="config_adminEmailAddress"/></td></tr>
@@ -193,6 +198,12 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <div id="trainingadvice">${support.trainingAdvice}</div>
         <p><form action="javascript:void(0);" aria-labelledby="trainingtitle">
           <button id="searchTrainingButton">Search Training Modules</button>
+        </form></p>
+          
+        <h2 id="resourcetitle">Enrol on a resource module</h2>
+        <div id="resourceadvice">${support.resourceAdvice}</div>
+        <p><form action="javascript:void(0);" aria-labelledby="resourcetitle">
+          <button id="searchResourceButton">Search Resource Modules</button>
         </form></p>
           
       </c:when>

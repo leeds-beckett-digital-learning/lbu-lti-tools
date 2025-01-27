@@ -42,11 +42,15 @@ public class SelfEnrolConfiguration
   private final String organizationSearchFilter;
   private final String trainingSearchSpecification;
   private final String trainingSearchFilter;
+  private final String resourceRole;
+  private final String resourceSearchSpecification;
+  private final String resourceSearchFilter;
   private final String smtpHost;
   private final String adminEmailAddress;
   private final String courseAdvice;
   private final String organizationAdvice;
   private final String trainingAdvice;
+  private final String resourceAdvice;
   private final String courseEmail;
   private final String organizationEmail;
 
@@ -58,11 +62,15 @@ public class SelfEnrolConfiguration
           @JsonProperty( value ="organizationSearchFilter", required = true )        String organizationSearchFilter,
           @JsonProperty( value ="trainingSearchSpecification", required = true )     String trainingSearchSpecification,
           @JsonProperty( value ="trainingSearchFilter", required = true )            String trainingSearchFilter,
+          @JsonProperty( value ="resourceRole", required = false )                   String resourceRole,
+          @JsonProperty( value ="resourceSearchSpecification", required = false )    String resourceSearchSpecification,
+          @JsonProperty( value ="resourceSearchFilter", required = false )           String resourceSearchFilter,
           @JsonProperty( value ="smtpHost", required = true )                        String smtpHost,
           @JsonProperty( value ="adminEmailAddress", required = true )               String adminEmailAddress,
           @JsonProperty( value ="courseAdvice", required = true )                    String courseAdvice,
           @JsonProperty( value ="organizationAdvice", required = true )              String organizationAdvice,
           @JsonProperty( value ="trainingAdvice", required = true )                  String trainingAdvice,
+          @JsonProperty( value ="resourceAdvice", required = false )                 String resourceAdvice,
           @JsonProperty( value ="courseEmail", required = true )                     String courseEmail,
           @JsonProperty( value ="organizationEmail", required = true )               String organizationEmail
           )
@@ -75,11 +83,15 @@ public class SelfEnrolConfiguration
     this.organizationSearchFilter     = organizationSearchFilter;
     this.trainingSearchSpecification  = trainingSearchSpecification;
     this.trainingSearchFilter         = trainingSearchFilter;
+    this.resourceRole                 = (resourceRole==null)?"Instructor":resourceRole;
+    this.resourceSearchSpecification  = (resourceSearchSpecification==null)?"RESOURCE":resourceSearchSpecification;
+    this.resourceSearchFilter         = (resourceSearchFilter==null)?"^RESOURCE$":resourceSearchFilter;
     this.smtpHost                     = smtpHost;
     this.adminEmailAddress            = adminEmailAddress;
     this.courseAdvice                 = courseAdvice;
     this.organizationAdvice           = organizationAdvice;
     this.trainingAdvice               = trainingAdvice;
+    this.resourceAdvice               = (resourceAdvice==null)?"Default advice":resourceAdvice;
     this.courseEmail                  = courseEmail;
     this.organizationEmail            = organizationEmail;
   }
@@ -118,6 +130,21 @@ public class SelfEnrolConfiguration
   {
     return trainingSearchFilter;
   }
+
+  public String getResourceRole()
+  {
+    return resourceRole;
+  }
+
+  public String getResourceSearchSpecification()
+  {
+    return resourceSearchSpecification;
+  }
+
+  public String getResourceSearchFilter()
+  {
+    return resourceSearchFilter;
+  }
   
   public String getSmtpHost()
   {
@@ -144,6 +171,11 @@ public class SelfEnrolConfiguration
     return trainingAdvice;
   }
 
+  public String getResourceAdvice()
+  {
+    return resourceAdvice;
+  }
+
   public String getCourseEmail()
   {
     return courseEmail;
@@ -164,11 +196,15 @@ public class SelfEnrolConfiguration
             "^@$",
             "TRAINING",
             "^TRAINING$",
+            "Instructor",
+            "RESOURCE",
+            "^RESOURCE$",
             "mailrelayhere.com",
             "admin@mailrelayhere.com",
             "Course advice HTML here.",
             "Org advice HTML here.",
             "Training advice HTML here.",
+            "Resource advice HTML here.",
             "Email text here.",
             "Email text here."
     );

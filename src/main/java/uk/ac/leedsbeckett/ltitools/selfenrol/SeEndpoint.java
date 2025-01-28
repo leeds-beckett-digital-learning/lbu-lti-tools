@@ -17,7 +17,7 @@ package uk.ac.leedsbeckett.ltitools.selfenrol;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -90,7 +90,7 @@ public class SeEndpoint extends ToolEndpoint
 
   // Info about this user's most recent search. Used to screen the request
   // to enrol looking for faked course ID.
-  final HashSet<String> mostRecentSearchResults = new HashSet<>();
+  final HashMap<String,SeCourseInfo> mostRecentSearchResults = new HashMap<>();
   // Needed to know what role to enrol with.
   String mostRecentScope = "";
   
@@ -255,8 +255,9 @@ public class SeEndpoint extends ToolEndpoint
         throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message.getId() );
       if ( filter.matcher( id ).matches() )
       {
-        list.add( new SeCourseInfo( id, c.getName(), c.getDescription() ) );
-        mostRecentSearchResults.add( id );
+        SeCourseInfo seci = new SeCourseInfo( id, c.getName(), c.getDescription(), c.getParentId() );
+        list.add( seci );
+        mostRecentSearchResults.put( id, seci );
       }
     }
 
@@ -340,9 +341,10 @@ public class SeEndpoint extends ToolEndpoint
     if ( StringUtils.isEmpty( id ) )
       throw new HandlerAlertException( "No course ID was received.", message.getId() );
 
-    if ( !this.mostRecentSearchResults.contains(  id ) )
+    if ( !this.mostRecentSearchResults.containsKey( id ) )
       throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message.getId() );
-
+    SeCourseInfo seci = this.mostRecentSearchResults.get( id );
+    
     SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     
     String role;
@@ -433,8 +435,14 @@ public class SeEndpoint extends ToolEndpoint
     }
     
     // Success so tell client
-    CourseMembershipV1 memb = (CourseMembershipV1)result.getResult();  
-    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.EnrolSuccess, new SeEnrolSuccess( memb.getId() ) );
+    CourseMembershipV1 memb = (CourseMembershipV1)result.getResult();
+    String messagetouser = null;
+    if ( seci.getParentId() != null )
+      messagetouser = "You were enrolled on a merged module/community AND its parent. Only the parent will appear on your personal list.";
+    ToolMessage tmf = new ToolMessage( 
+            message.getId(), 
+            SeServerMessageName.EnrolSuccess, 
+            new SeEnrolSuccess( memb.getId(), messagetouser ) );
     sendToolMessage( session, tmf );
 
     if ( StringUtils.isEmpty( emailbody ) )

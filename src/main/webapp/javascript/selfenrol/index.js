@@ -104,7 +104,9 @@ function init()
     
     handleEnrolSuccess( message )
     {
-      alert( "Enrolment succeeded." );
+      var extra = message.payload.message;
+      if ( extra === null ) extra = "";
+      alert( "Enrolment succeeded. " + extra );
       arialib.closeDialog(finder.usersearchdialog);
       arialib.closeDialog(finder.searchdialog);
     },

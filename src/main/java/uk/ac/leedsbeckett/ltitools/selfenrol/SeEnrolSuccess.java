@@ -24,14 +24,21 @@ import java.io.Serializable;
 public class SeEnrolSuccess implements Serializable
 {
   private final String id;
+  private final String message;
 
-  public SeEnrolSuccess( String id )
+  public SeEnrolSuccess( String id, String message )
   {
     this.id = id;
+    this.message = message;
   }
 
   public String getId()
   {
     return id;
   }
+
+  public String getMessage()
+  {
+    return message;
+  }  
 }

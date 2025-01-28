@@ -28,12 +28,14 @@ public class SeCourseInfo  implements Serializable
   private final String externalId;
   private final String name;
   private final String description;
+  private final String parentId;
           
-  public SeCourseInfo( String externalId, String name, String description )
+  public SeCourseInfo( String externalId, String name, String description, String parentId )
   {
     this.externalId  = externalId;
     this.name        = name;
     this.description = description;
+    this.parentId    = parentId;
   }
 
   public String getExternalId()
@@ -49,5 +51,10 @@ public class SeCourseInfo  implements Serializable
   public String getDescription()
   {
     return description;
+  }
+
+  public String getParentId()
+  {
+    return parentId;
   }
 }

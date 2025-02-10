@@ -630,7 +630,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
       for ( Member m : group.getMembers() )
       {
         if ( !data.isEndorsedByParticipant( m.getLtiId() ) )
-          data.setEndorsementDate( m.getLtiId(), now, true);
+          data.setEndorsementDate( m.getLtiId(), now, true, group );
       }
     }
     else
@@ -641,7 +641,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         throw new HandlerAlertException( "You cannot endorse data in a group you don't belong to.", message.getId() );
       if ( !pgaResource.getGroupById( endorse.getGroupId() ).isMember( pgaState.getPersonId() ) )
         return;
-      data.setEndorsementDate( pgaState.getPersonId(), now, false);
+      data.setEndorsementDate( pgaState.getPersonId(), now, false, group );
     }
     
     store.updateData( data );

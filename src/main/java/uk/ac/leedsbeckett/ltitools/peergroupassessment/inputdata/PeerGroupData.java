@@ -129,7 +129,15 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
     }
   }
   
-  public void setEndorsementDate( String memberId, Date value, boolean manager )
+  /**
+   * Set the endorsement date for a participant in a group.
+   * 
+   * @param memberId
+   * @param value
+   * @param manager
+   * @param group This is the group so this routine can check if none/some/all participants have endorsed.
+   */
+  public void setEndorsementDate( String memberId, Date value, boolean manager, Group group )
   {
     synchronized ( participantData )
     {
@@ -149,6 +157,11 @@ public class PeerGroupData implements Serializable, Entry<PeerGroupDataKey>
       boolean hasfills  = false;
       for ( ParticipantData each : participantData.values() )
       {
+        // This is necessary because data is left in this structure if a
+        // participant is removed. (So, the participant can be put back
+        // with no loss of data if removed in error.)
+        if ( !group.isMember( each.getParticipantId() ) )
+          continue;
         if ( each.endorsedDate == null && each.managerEndorsedDate == null )
           hasblanks = true;
         else

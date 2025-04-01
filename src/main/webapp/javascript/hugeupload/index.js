@@ -47,6 +47,8 @@ let oldstage = "unknown";
 
 let platformconfig = null;
 
+const fileProgress = new Object();
+
 function init()
 {
   console.log( "init" );
@@ -74,6 +76,8 @@ function init()
     finder.configdialogCancelButton.addEventListener( 'click', () => arialib.closeDialog( finder.configdialog ) );
   }
 
+  finder.blobuploadtestbutton.addEventListener( 'click', () => blobUploadTest() );
+  
   let handler =
   {
     open()
@@ -153,6 +157,89 @@ function updateResource()
 {
 }
 
+async function blobUploadTest()
+{
+    console.log( "Uploading starting" );
+    const fileInput = document.querySelector("input[type=file]");
+    if ( fileInput.files.length < 1 )
+    {
+        alert( "No files selected." );
+        return;
+    }
+
+    fileProgress.file = null;
+    fileProgress.maxChunkSize = 10 * 1000 * 1000; // 10 MB
+    fileProgress.chunkSize=0;
+    fileProgress.chunkNo=0;
+    fileProgress.chunkCount=0;
+    fileProgress.chunk = null;
+    fileProgress.reader = new FileReader();
+    fileProgress.reader.addEventListener( 'load', (e) => sendIncomingChunk( e ) );
+
+    
+    for ( var f=0; f<fileInput.files.length; f++ )
+    {
+        processOneFile( fileInput.files[f] );
+    }
+
+    console.log( "Uploading done" );
+}
+
+
+function processOneFile( file )
+{    
+    console.log( " Name of file: " + file.name );
+    console.log( "Last modified: " + file.lastModified );
+    console.log( "         Size: " + file.size );
+    console.log( "         Type: " + file.type );
+
+    fileProgress.file = file;
+    fileProgress.chunkNo=0;
+    fileProgress.chunkCount=Math.floor( file.size / fileProgress.maxChunkSize );
+    if ( (file.size % fileProgress.maxChunkSize) > 0 )
+        fileProgress.chunkCount++;
+    console.log( fileProgress );
+    startChunk();
+}
+
+function startChunk()
+{
+    const start = fileProgress.chunkNo * fileProgress.maxChunkSize;
+    const end   = ( (start + fileProgress.maxChunkSize) > fileProgress.file.size ) ? fileProgress.file.size : start + fileProgress.maxChunkSize;
+    fileProgress.chunkSize=end-start;
+    
+    console.log( "Processing chunk " + fileProgress.chunkNo + " from " + start + " to " + end );
+    
+    fileProgress.chunk = fileProgress.file.slice( start, end );
+    fileProgress.reader.readAsArrayBuffer( fileProgress.chunk );
+}
+
+async function sendIncomingChunk( e )
+{
+    console.log( e );
+    console.log( fileProgress );
+    const data = fileProgress.reader.result;
+    const hash = await crypto.subtle.digest( "SHA-256", data );
+    const hashArray = Array.from(new Uint8Array(hash)); // convert buffer to byte array
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    console.log( "Hash = " + hashHex );
+        
+    const url = "https://digles-tools-test.leedsbeckett.ac.uk/lbu-lti-tools/blobex";
+    const requestOptions = {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': fileProgress.chunkSize
+          },
+          body: data
+      };
+    const response = await fetch( url, requestOptions);
+    console.log( "status = " + response.status );
+        
+    if ( Math.floor( response.status / 100 ) === 2 )
+      if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
+        setTimeout( startChunk, 10 );
+}
 
 
 function saveEditProps()

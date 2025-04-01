@@ -65,10 +65,10 @@ public class HugeUploadPageSupport extends ToolPageSupport<HuDynamicPageData>
     huState = (HuToolLaunchState)state.getToolLaunchState();
     if ( huState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
-    logger.log(Level.FINE, "resource key = {0}", huState.getResourceKey() );
-    tool = (HugeUploadTool)toolCoordinator.getTool( state.getToolKey() );
+    logger.log(Level.FINE, "resource key = {0}", huState.getPlatformResourceKey() );
+    tool = (HugeUploadTool)toolCoordinator.getTool( state.getToolId() );
     store = tool.getHuStore();
-    huResource = store.getResource(huState.getResourceKey(), true );
+    huResource = store.getResource(huState.getPlatformResourceKey(), true );
 
     dynamicPageData.setAllowedToConfigure(huState.isAllowedToConfigure() );
     dynamicPageData.setAllowedToParticipate(huState.isAllowedToParticipate() );

@@ -206,6 +206,8 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div class="block">
       <p class="important">${support.importantMessage}</p>
       <p>Some content here.</p>
+      <p><form><input type="file"/></form></p>
+    <p><button id="blobuploadtestbutton">Test Upload</button></p>
     </div>
       <c:if test="${support.allowedToManage}">
         <p>User allowed to manage.</p>

@@ -66,8 +66,8 @@ public class SePageSupport extends ToolPageSupport<SeDynamicPageData>
     seState = (SeToolLaunchState)state.getToolLaunchState();
     if ( seState == null )
       throw new ServletException( "Could not find self enrol. session data." );
-    logger.log(Level.FINE, "resource key = {0}", seState.getResourceKey() );
-    tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolKey() );
+    logger.log(Level.FINE, "resource key = {0}", seState.getPlatformResourceKey() );
+    tool = (SelfEnrolTool)toolCoordinator.getTool( state.getToolId() );
     try
     {
       config = tool.getPlatformConfig( state.getPlatformName() );

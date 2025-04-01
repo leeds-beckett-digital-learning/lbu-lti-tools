@@ -133,8 +133,8 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <h3 id="linkcreatedialogLabel">Link or Create Resource</h3>
         <table>
           <tr><th>Tool</th>        <td id="linkcreatedialogTool"></td>                              </tr>
-          <tr><th>ID</th>          <td id="linkcreatedialogID"></td>                                </tr>
-          <tr><th>Type</th>        <td id="linkcreatedialogType"></td>                              </tr>
+          <tr><th>ID</th>          <td id="linkcreatedialogToolID"></td>                            </tr>
+          <tr><th>Type</th>        <td id="linkcreatedialogFacetID"></td>                           </tr>
           <tr><th>Title</th>       <td><input    id="linkcreatedialogTitle"/></td>                  </tr>
           <tr><th>Description</th> <td><textarea id="linkcreatedialogDescription"></textarea></td>  </tr>
         </table>
@@ -175,16 +175,29 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
             </tbody>
           </table>
         </div>
-      <h4>Link to Site-Wide Tool</h4>
-        <div id="optionssiteempty" class="block" style="display: none; margin-left: 4em;">
+      <h4>Link to Course-Wide Tool</h4>
+        <div id="optionscourseempty" class="block" style="display: none; margin-left: 4em;">
           <p>There are no tools in this category.</p>
         </div>
-        <div id="optionssite" class="block" style="display: none; margin-left: 4em;">
+        <div id="optionscourse" class="block" style="display: none; margin-left: 4em;">
           <table>
             <thead>
               <tr><th>Select</th><th>Tool</th></tr>
             </thead>
-            <tbody id="optionssitetablebody">
+            <tbody id="optionscoursetablebody">
+            </tbody>
+          </table>
+        </div>
+      <h4>Link to Site-Wide Tool</h4>
+        <div id="optionsplatformempty" class="block" style="display: none; margin-left: 4em;">
+          <p>There are no tools in this category.</p>
+        </div>
+        <div id="optionsplatform" class="block" style="display: none; margin-left: 4em;">
+          <table>
+            <thead>
+              <tr><th>Select</th><th>Tool</th></tr>
+            </thead>
+            <tbody id="optionsplatformtablebody">
             </tbody>
           </table>
         </div>

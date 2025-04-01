@@ -75,6 +75,6 @@ public class HuResourceStore extends Store<PlatformResourceKey,HugeUploadResourc
   public Path getPath( PlatformResourceKey key )
   {
     Path d = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
-    return d.resolve( URLEncoder.encode( key.getResourceId(), StandardCharsets.UTF_8 ) );
+    return d.resolve( URLEncoder.encode( key.getPlatformResourceId(), StandardCharsets.UTF_8 ) );
   }  
 }

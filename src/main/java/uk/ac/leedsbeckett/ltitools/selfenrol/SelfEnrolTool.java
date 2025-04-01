@@ -26,12 +26,12 @@ import uk.ac.leedsbeckett.ltitools.mail.MailSender;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationLevel;
 import uk.ac.leedsbeckett.ltitoolset.config.PlatformConfiguration;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFacet;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolProperties;
 
 /**
  * This class helps set up websocket endpoints and page requests based on
@@ -49,8 +49,8 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  * 
  * @author maber01
  */
-@ToolMapping( id = "selfenrol", type = "system", title = "LBU Self Enrol", launchURI = "/selfenrol/index.jsp" )
-@ToolFunctionality( instantiationType = ToolInstantiationType.SINGLETON )
+@ToolProperties( id = "selfenrol", title = "LBU Self Enrol", defaultFacetId = "platform" )
+@ToolFacet( id = "platform", title = "LBU Self Enrol", launchURI = "/selfenrol/index.jsp", instantiationLevel = ToolInstantiationLevel.PLATFORM )
 public class SelfEnrolTool extends Tool
 {
   static final Logger logger = Logger.getLogger(SelfEnrolTool.class.getName() );
@@ -160,11 +160,11 @@ public class SelfEnrolTool extends Tool
 
 
   @Override
-  public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
+  public boolean allowDeepLink( String facetId, DeepLinkingLaunchState deepstate )
   {
     try
     {
-      SelfEnrolConfiguration sec = getPlatformConfig( deepstate.getResourceKey().getPlatformId() );    
+      SelfEnrolConfiguration sec = getPlatformConfig( deepstate.getPlatformResourceKey().getPlatformId() );    
       return ( 
                sec.isMembershipInstructorDeepLinkPermitted() && 
                deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )

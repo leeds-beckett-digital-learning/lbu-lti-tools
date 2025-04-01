@@ -25,15 +25,11 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaAddMembers
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.PeerGroupDataKey;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaChangeDatum;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,7 +40,6 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.apache.commons.lang3.StringUtils;
-import uk.ac.leedsbeckett.lti.services.LtiServiceScope;
 import uk.ac.leedsbeckett.lti.services.LtiServiceScopeSet;
 import uk.ac.leedsbeckett.lti.services.ags.LtiAssessmentAndGradesServiceClaim;
 import uk.ac.leedsbeckett.lti.services.ags.data.LineItem;
@@ -61,7 +56,7 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.blackboard.BlackboardGrou
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.formdata.PeerGroupForm.Field;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
-import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
@@ -80,7 +75,6 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.scoring.LineItemType;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.scoring.ScoreComputer;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.Configuration;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.JsonResult;
-import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.LtiBackchannelKey;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannel;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.BlackboardBackchannelKey;
@@ -112,7 +106,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
         prefix="Pga",
         messageEnum="uk.ac.leedsbeckett.ltitools.peergroupassessment.PgaServerMessageName"
 )
-public class PgaEndpoint extends MultitonToolEndpoint
+public class PgaEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger(PgaEndpoint.class.getName() );
   
@@ -131,6 +125,19 @@ public class PgaEndpoint extends MultitonToolEndpoint
   // Rely on efficient caching and fetching at the start of every transaction.
 
   /**
+   * Override default to ask ToolCoordinator to index user sessions with this
+   * endpoint by platform resource.
+   * 
+   * @return 
+   */
+  @Override
+  public boolean indexByPlatformResource()
+  {
+    return true;
+  }
+
+  
+  /**
    * Most work is done by the super-class. This sub-class fetches references
    * to tool specific objects.
    * 
@@ -145,7 +152,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
     
     platformName = getState().getPlatformName();
     pgaState = (PgaToolLaunchState)getState().getToolLaunchState();
-    tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolKey() );
+    tool = (PeerGroupAssessmentTool)getToolCoordinator().getTool( getState().getToolId() );
     store = tool.getPeerGroupAssessmentStore();
 
     logger.log( Level.INFO, "URL for NRPS {0}", pgaState.getNamesRoleServiceUrl() );
@@ -224,7 +231,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
     // All users can have the resource at all stages.
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
     // Check if caller is new participant...
     boolean groupnotify=false;
@@ -243,7 +250,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
     ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
     
     if ( groupnotify )
-      sendToolMessageToResourceUsers( tm );      
+      sendToolMessageToPlatformResourceUsers( tm );      
     else
       sendToolMessage( session, tm );
 
@@ -271,7 +278,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot set resource properties, you don't have management access here.", message.getId() );
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     logger.log( Level.INFO, "State       [{0}]", p.getStage().toString() );
     logger.log( Level.INFO, "Title       [{0}]", p.getTitle() );
     logger.log( Level.INFO, "Description [{0}]", p.getDescription() );
@@ -280,7 +287,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
     {
       store.updateResource( pgaResource );
       ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.ResourceProperties, pgaResource.getProperties() );
-      sendToolMessageToResourceUsers( tm );
+      sendToolMessageToPlatformResourceUsers( tm );
     }
     catch ( IOException e )
     {
@@ -303,7 +310,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot set group properties, you don't have management access here.", message.getId() );    
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
       throw new HandlerAlertException( "Can only change group properties during the set-up stage.", message.getId() );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
@@ -319,7 +326,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         // PgaChangeGroup change = new PgaChangeGroup( g.getId(), g.getTitle() );
         // Send whole resource because the order of the groups may have changed.
         ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
-        sendToolMessageToResourceUsers( tm );
+        sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
       {
@@ -343,7 +350,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot delete group, you don't have management access here.", message.getId() );    
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
       throw new HandlerAlertException( "Can only delete groups during the set-up stage.", message.getId() );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
@@ -357,7 +364,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         store.updateResource( pgaResource );
         // Send whole resource.
         ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
-        sendToolMessageToResourceUsers( tm );
+        sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
       {
@@ -381,7 +388,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Cannot add a group, you don't have management access here.", message.getId() );
     
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
       throw new HandlerAlertException( "Can only add groups during the set-up stage.", message.getId() );
     Group g = pgaResource.addGroup( "New Group" );
@@ -392,7 +399,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         store.updateResource( pgaResource );
         //PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
         ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
-        sendToolMessageToResourceUsers( tm );
+        sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
       {
@@ -416,7 +423,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   public void handleMembership( Session session, ToolMessage message, PgaAddMembership m )
           throws IOException, HandlerAlertException
   {
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( pgaState.isAllowedToManage() )
     {
@@ -443,7 +450,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
       
       // Tell users about the resource change.
       ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
-      sendToolMessageToResourceUsers( tm );
+      sendToolMessageToPlatformResourceUsers( tm );
 
       for ( String gid : affectedGids )
       {
@@ -487,7 +494,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
           throws IOException, HandlerAlertException
   {
     String gid = gidObject.getId();
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
 
     if (  gid == null )
@@ -522,7 +529,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to look at data across all groups.", message.getId() );
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     PgaDataList list = store.getAllData( pgaResource );
     sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.DataList, list ) );    
   }
@@ -540,7 +547,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   public void handleChangeDatum( Session session, ToolMessage message, PgaChangeDatum datum )
           throws IOException, HandlerAlertException
   {
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
     PeerGroupForm form = store.getForm( pgaResource.getFormId() );
     
@@ -590,7 +597,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   public void handleEndorseData( Session session, ToolMessage message, PgaEndorseData endorse )
           throws IOException, HandlerAlertException
   {
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
     logger.log( 
             Level.INFO, 
@@ -664,7 +671,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   public void handleClearEndorsements( Session session, ToolMessage message, Id id )
           throws IOException, HandlerAlertException
   {
-    PeerGroupResource pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     logger.log( 
             Level.INFO, 
             "handleClearEndorsements() {0}", 
@@ -705,7 +712,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message.getId() );
-    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP && resource.getStage() != Stage.JOIN )
       throw new HandlerAlertException( "You can only import participants in setup and join phases.", message.getId() );
@@ -768,7 +775,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
-    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP )
       throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
@@ -859,7 +866,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
-    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP )
       throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
@@ -991,7 +998,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
         store.updateResource( resource );
         //PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
         ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, resource );
-        sendToolMessageToResourceUsers( tm );
+        sendToolMessageToPlatformResourceUsers( tm );
         
         for ( String gid : affectedGids )
         {
@@ -1029,7 +1036,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
   {
     if ( !pgaState.isAllowedToManage() )
       throw new HandlerAlertException( "Only managers of a resource are allowed to export all data.", message.getId() );
-    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
       throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
 
@@ -1037,7 +1044,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
             store,
             resource,
             "",
-            pgaState.getResourceKey().getResourceId() );
+            pgaState.getPlatformResourceKey().getPlatformResourceId() );
     
     PeerGroupForm form = store.getForm( resource.getFormId() );
     HashMap<String,String>    memberscore = new HashMap<>();
@@ -1185,7 +1192,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
       throw new HandlerAlertException( "Only managers of a resource are allowed to export assessment results.", message.getId() );
     if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() == null )
       throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message.getId() );
-    PeerGroupResource resource = store.getResource( pgaState.getResourceKey(), true );
+    PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
       throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
     if ( options == null || options.getLineItemIncluded() == null || options.getLineItemIncluded().length != 6 )
@@ -1210,7 +1217,7 @@ public class PgaEndpoint extends MultitonToolEndpoint
             store,
             resource,
             StringUtils.isEmpty( options.getSuffix() ) ? "" : (" " + options.getSuffix()),
-            pgaState.getResourceKey().getResourceId() );
+            pgaState.getPlatformResourceKey().getPlatformResourceId() );
 
     int n=0;
     for ( LineItemType t : LineItemType.values() )

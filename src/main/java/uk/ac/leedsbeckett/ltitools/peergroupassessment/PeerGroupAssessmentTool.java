@@ -28,13 +28,12 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.store.ConfigurationEntry;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationLevel;
 import uk.ac.leedsbeckett.ltitoolset.config.PlatformConfiguration;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
-import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFacet;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolProperties;
 
 /**
  * This class helps set up websocket endpoints and page requests based on
@@ -42,8 +41,8 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
  * 
  * @author maber01
  */
-@ToolMapping( id = "peergrpassess", type = "coursecontent", title = "LBU Peer Group Assessment", launchURI = "/peergroupassessment/index.jsp" )
-@ToolFunctionality( instantiationType = ToolInstantiationType.MULTITON, instantiateOnDeepLinking = true )
+@ToolProperties( id = "peergrpassess", title = "LBU Peer Group Assessment", defaultFacetId = "resource" )
+@ToolFacet( id = "resource", title = "LBU Peer Group Assessment", launchURI = "/peergroupassessment/index.jsp", instantiationLevel = ToolInstantiationLevel.PLATFORM_RESOURCE )
 public class PeerGroupAssessmentTool extends Tool
 {
   static final Logger logger = Logger.getLogger( PeerGroupAssessmentTool.class.getName() );
@@ -153,11 +152,11 @@ public class PeerGroupAssessmentTool extends Tool
   }
 
   @Override
-  public boolean allowDeepLink( DeepLinkingLaunchState deepstate )
+  public boolean allowDeepLink( String facetid, DeepLinkingLaunchState deepstate )
   {
     try
     {
-      Configuration c = getPlatformConfig( deepstate.getResourceKey().getPlatformId() );    
+      Configuration c = getPlatformConfig( deepstate.getPlatformResourceKey().getPlatformId() );    
       return ( 
                c.isMembershipInstructorDeepLinkPermitted() && 
                deepstate.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )

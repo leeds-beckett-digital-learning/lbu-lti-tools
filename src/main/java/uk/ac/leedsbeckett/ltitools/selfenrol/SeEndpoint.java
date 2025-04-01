@@ -116,7 +116,7 @@ public class SeEndpoint extends ToolEndpoint
     
     platformName = getState().getPlatformName();
     seState = (SeToolLaunchState)getState().getToolLaunchState();
-    tool = (SelfEnrolTool)getToolCoordinator().getTool( getState().getToolKey() );
+    tool = (SelfEnrolTool)getToolCoordinator().getTool( getState().getToolId() );
     bbbckey = new BlackboardBackchannelKey( getPlatformHost() );
   }
   

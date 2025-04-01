@@ -77,7 +77,7 @@ public class InputDataStore extends Store<PeerGroupDataKey,PeerGroupData>
   public Path getPath( PeerGroupDataKey key )
   {
     Path d = basepath.resolve( URLEncoder.encode( key.getResourceKey().getPlatformId(), StandardCharsets.UTF_8 ) );
-    Path dd = d.resolve(       URLEncoder.encode( key.getResourceKey().getResourceId(), StandardCharsets.UTF_8 ) );
+    Path dd = d.resolve(       URLEncoder.encode( key.getResourceKey().getPlatformResourceId(), StandardCharsets.UTF_8 ) );
     return dd.resolve(         URLEncoder.encode( key.getGroupId(), StandardCharsets.UTF_8 ) );
   }
   

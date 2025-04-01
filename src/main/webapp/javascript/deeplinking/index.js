@@ -23,6 +23,7 @@ let dynamicData = dynamicPageData;
 let toolsocket;
 let options;
 let selectedti;
+let selectedfi;
 
 function init()
 {
@@ -81,35 +82,58 @@ function init()
 
 function updateAvailableTools()
 {
-  var singHtml = "";
+  var html;
   var multHtml = "";
+  var courseHtml = "";
+  var platformHtml = "";
   var button;
+  var buttonid = 1000;
   
+  options.toolMap = {};
   for ( var i=0; i<options.toolInformations.length; i++ )
   {
     var ti = options.toolInformations[i];
-    console.log( 'Tool title ' + ti.title );  
-    if ( ti.instantiationType === "SINGLETON" )
+    options.toolMap[ti.id] = ti;
+    ti.facetMap = {};
+    console.log( 'Tool title ' + ti.title );
+    for ( var j=0; j<ti.facets.length; j++ )
     {
-      singHtml += "<tr><td><button id=\"toolbutton_" + ti.id + "\">Link</button></td><td>" + ti.title + "</td></tr>\n";
-    }
-    if ( ti.instantiationType === "MULTITON" )
-    {
-      if ( ti.instantiateOnDeepLinking )
-        multHtml += "<tr><td><button id=\"toolbutton_" + ti.id + "\">Create</button></td><td>" + ti.title + "</td></tr>\n";
+      var facet = ti.facets[j];
+      ti.facetMap[facet.id] = facet;      
+      html = "<tr><td><button id=\"toolbutton_" + buttonid++ 
+              + "\" data-toolid=\"" + ti.id + "\" data-facetid=\"" + facet.id +
+                      "\">Link</button></td><td>" + ti.title + "</td></tr>\n";
+      if ( facet.instantiationLevel === "PLATFORM_RESOURCE" || facet.instantiationLevel === "TOOL_RESOURCE" )
+        multHtml += html;
+      else if ( facet.instantiationLevel === "COURSE" )
+        courseHtml += html;
+      else if ( facet.instantiationLevel === "PLATFORM" )
+        platformHtml += html;
     }
   }
   
-  if ( singHtml.length === 0 )
+  if ( platformHtml.length === 0 )
   {
-    finder.optionssiteempty.style.display = 'block';
-    finder.optionssite.style.display = 'none';
+    finder.optionsplatformempty.style.display = 'block';
+    finder.optionsplatform.style.display = 'none';
   }
   else
   {
-    finder.optionssitetablebody.innerHTML = singHtml;
-    finder.optionssiteempty.style.display = 'none';
-    finder.optionssite.style.display = 'block';
+    finder.optionsplatformtablebody.innerHTML = platformHtml;
+    finder.optionsplatformempty.style.display = 'none';
+    finder.optionsplatform.style.display = 'block';
+  }
+  
+  if ( courseHtml.length === 0 )
+  {
+    finder.optionscourseempty.style.display = 'block';
+    finder.optionscourse.style.display = 'none';
+  }
+  else
+  {
+    finder.optionscoursetablebody.innerHTML = courseHtml;
+    finder.optionscourseempty.style.display = 'none';
+    finder.optionscourse.style.display = 'block';
   }
   
   if ( multHtml.length === 0 )
@@ -124,15 +148,11 @@ function updateAvailableTools()
     finder.optionsnewresource.style.display = 'block';    
   }
   
-  for ( var i=0; i<options.toolInformations.length; i++ )
+  for ( var i=1000; i<buttonid; i++ )
   {
-    // ti declared const here so different for each iteration
-    // to make sure each event listener sees separate ti
-    const ti = options.toolInformations[i];
-    console.log( 'Tool title ' + ti.title );  
-    button = finder[ "toolbutton_" + ti.id ];
+    button = finder[ "toolbutton_" + i ];
     if ( button )
-      button.addEventListener( 'click', () => openToolDialog( button, ti ) );
+      button.addEventListener( 'click', (event) => openToolDialog( event ) );
   }
   
 }
@@ -142,7 +162,7 @@ function sendMakeLink()
 {
   let title = finder.linkcreatedialogTitle.value;
   let desc  = finder.linkcreatedialogDescription.value;
-  toolsocket.sendMessage( new deeplinking.MakeLinkMessage( selectedti.id, selectedti.type, title, desc, null ) )  ;
+  toolsocket.sendMessage( new deeplinking.MakeLinkMessage( selectedti.id, selectedfi.id, title, desc, null ) )  ;
 }
 
 function updateAlerts()
@@ -155,16 +175,24 @@ function addAlert( text )
   arialib.addAlert( text );
 }
 
-function openToolDialog( openerElement, ti )
+function openToolDialog( event )
 {
-  selectedti = ti;
-  arialib.openDialog( 'linkcreatedialog', openerElement );
-  finder.linkcreatedialogTool.innerHTML    = ti.title;
-  finder.linkcreatedialogID.innerHTML      = ti.id;
-  finder.linkcreatedialogType.innerHTML    = ti.type;
-  finder.linkcreatedialogTitle.value       = ti.title;
+  console.log( event );
+  var button = event.target;
+  
+  const toolid = button.dataset.toolid;
+  const facetid = button.dataset.facetid;
+  selectedti = options.toolMap[toolid];
+  selectedfi = selectedti.facetMap[facetid];
+  
+  arialib.openDialog( 'linkcreatedialog', button );
+  finder.linkcreatedialogTool.innerHTML    = selectedfi.title;
+  finder.linkcreatedialogToolID.innerHTML  = toolid;
+  finder.linkcreatedialogFacetID.innerHTML = facetid;
+  finder.linkcreatedialogTitle.value       = selectedfi.title;
   finder.linkcreatedialogDescription.value = "";
   finder.linkcreatedialogForm.action       = dynamicData.deepLinkReturnUrl;
+  
 }
 
 function createOrLink( jwt )

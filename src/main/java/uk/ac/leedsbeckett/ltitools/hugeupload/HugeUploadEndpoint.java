@@ -39,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.Configuration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
-import uk.ac.leedsbeckett.ltitoolset.websocket.MultitonToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
@@ -64,7 +64,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
         prefix="Hu",
         messageEnum="uk.ac.leedsbeckett.ltitools.hugeupload.HuServerMessageName"
 )
-public class HugeUploadEndpoint extends MultitonToolEndpoint
+public class HugeUploadEndpoint extends ToolEndpoint
 {
   static final Logger logger = Logger.getLogger(HugeUploadEndpoint.class.getName() );
   
@@ -78,6 +78,21 @@ public class HugeUploadEndpoint extends MultitonToolEndpoint
   // It will get out of sync with instances held by other endpoint instances.
   // Rely on efficient caching and fetching at the start of every transaction.
 
+  
+  /**
+   * Ask ToolCoordinator to index user sessions with this endpoint by
+   * tool resource.
+   * 
+   * @return 
+   */
+  @Override
+  public boolean indexByToolResource()
+  {
+    return true;
+  }
+
+  
+  
   /**
    * Most work is done by the super-class. This sub-class fetches references
    * to tool specific objects.
@@ -93,7 +108,7 @@ public class HugeUploadEndpoint extends MultitonToolEndpoint
     
     platformName = getState().getPlatformName();
     pgaState = (HuToolLaunchState)getState().getToolLaunchState();
-    tool = (HugeUploadTool)getToolCoordinator().getTool( getState().getToolKey() );
+    tool = (HugeUploadTool)getToolCoordinator().getTool( getState().getToolId() );
     store = tool.getHuStore();    
   }
   
@@ -147,7 +162,7 @@ public class HugeUploadEndpoint extends MultitonToolEndpoint
   public void handleGetResource( Session session, ToolMessage message ) throws IOException
   {
     // All users can have the resource at all stages.
-    HugeUploadResource huResource = store.getResource( pgaState.getResourceKey(), true );
+    HugeUploadResource huResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     logger.log( Level.INFO, "Sending resource [{0}]", huResource.toString() );
     ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
     sendToolMessage( session, tm );

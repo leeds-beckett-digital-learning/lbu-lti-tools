@@ -27,7 +27,8 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolSetMapping;
         launchUrl="/launch", 
         jwksUrl="/jwks", 
         autoRegUrl="/autoreg/*",
-        deepLinkingUrl="/deeplinking/index.jsp" )
+        deepLinkingUrl="/deeplinking/index.jsp",
+        blobExchangeUrl="/blobex")
 public class ToolSet
 {
 }

@@ -66,10 +66,10 @@ public class PgaPageSupport extends ToolPageSupport<PgaDynamicPageData>
     pgaState = (PgaToolLaunchState)state.getToolLaunchState();
     if ( pgaState == null )
       throw new ServletException( "Could not find peer group assessment tool session data." );
-    logger.log( Level.FINE, "resource key = {0}", pgaState.getResourceKey() );
-    tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolKey() );
+    logger.log( Level.FINE, "resource key = {0}", pgaState.getPlatformResourceKey() );
+    tool = (PeerGroupAssessmentTool)toolCoordinator.getTool( state.getToolId() );
     store = tool.getPeerGroupAssessmentStore();
-    pgaResource = store.getResource( pgaState.getResourceKey(), true );
+    pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     dynamicPageData.setAllowedToConfigure( pgaState.isAllowedToConfigure() );
     dynamicPageData.setAllowedToParticipate( pgaState.isAllowedToParticipate() );

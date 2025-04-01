@@ -41,7 +41,7 @@ public class AllowedToSeeGroupData implements ToolEndpointSessionRecordPredicate
     if ( !(t.getEndpoint().getToolState() instanceof PgaToolLaunchState ) )
       return false;
     PgaToolLaunchState othertoolstate = (PgaToolLaunchState)t.getEndpoint().getToolState();
-    if ( !pgaResource.getKey().equals( othertoolstate.getResourceKey() ) )
+    if ( !pgaResource.getKey().equals( othertoolstate.getPlatformResourceKey() ) )
       return false;
     if ( !othertoolstate.isAllowedToAccess() )
       return false;

@@ -24,22 +24,24 @@ import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import uk.ac.leedsbeckett.lti.claims.LtiClaims;
 import uk.ac.leedsbeckett.lti.claims.LtiRoleClaims;
+import uk.ac.leedsbeckett.lti.resourcelink.LtiResourceLinkIFrame;
 import uk.ac.leedsbeckett.ltitoolset.Tool;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.ToolSetLtiState;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFunctionality;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationType;
-import uk.ac.leedsbeckett.ltitoolset.annotations.ToolMapping;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolInstantiationLevel;
 import uk.ac.leedsbeckett.ltitoolset.config.PlatformConfiguration;
 import uk.ac.leedsbeckett.ltitoolset.deeplinking.DeepLinkingLaunchState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolFacet;
+import uk.ac.leedsbeckett.ltitoolset.annotations.ToolProperties;
 
 /**
  *
  * @author maber01
  */
-@ToolMapping( id = "hugeupload", type = "coursecontent", title = "LBU Huge Upload", launchURI = "/hugeupload/index.jsp" )
-@ToolFunctionality( instantiationType = ToolInstantiationType.MULTITON, instantiateOnDeepLinking = true )
+@ToolProperties( id = "hugeupload", title = "LBU Huge Upload", defaultFacetId="course" )
+@ToolFacet( id = "course", title = "LBU Huge Upload Course Settings", launchURI = "/hugeupload/course.jsp", instantiationLevel = ToolInstantiationLevel.COURSE )
+@ToolFacet( id = "item",   title = "LBU Huge Upload", launchURI = "/hugeupload/item.jsp", instantiationLevel = ToolInstantiationLevel.TOOL_RESOURCE )
 public class HugeUploadTool extends Tool
 {
   static final Logger logger = Logger.getLogger( HugeUploadTool.class.getName() );
@@ -104,23 +106,53 @@ public class HugeUploadTool extends Tool
   
   
   @Override
-  public boolean allowDeepLink( DeepLinkingLaunchState dlls )
+  public boolean allowDeepLink( String facetid, DeepLinkingLaunchState dlls )
   {
     try
     {
-      Configuration c = getPlatformConfig( dlls.getResourceKey().getPlatformId() );    
+      Configuration c = getPlatformConfig( dlls.getPlatformResourceKey().getPlatformId() );    
       return ( 
                c.isMembershipInstructorDeepLinkPermitted() && 
                dlls.rc.isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )
              )
              ||
-            dlls.isAllowedToConfigure();
+             ( 
+               c.isMembershipStudentDeepLinkPermitted() && 
+               dlls.rc.isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE )
+             )
+             ||
+              dlls.isAllowedToConfigure();
     }
     catch ( IOException ex )
     {
       logger.log( Level.SEVERE, null, ex );
       return false;
     }
+  }
+
+  @Override
+  public boolean createToolResource( String toolResourceId, String facetId, DeepLinkingLaunchState dlls )
+  {
+    logger.log(Level.INFO, "facetId = [{0}]", facetId );
+    if ( !"item".equals( facetId ) )
+    {
+      logger.log(Level.INFO, "Failed because not [item] facet");
+      return false;
+    }
+
+    // Should be saving the toolResourceId to a store along with other tool data.
+    logger.log( Level.INFO, "Success" );
+    return true;
+  }
+
+  
+  
+  @Override
+  public LtiResourceLinkIFrame getDeepLinkingIFrameOptions()
+  {
+    // Might depend on current configuration and might vary
+    // during lifetime of this tool instance.
+    return new LtiResourceLinkIFrame( 400, 600, null );
   }
 
   @Override

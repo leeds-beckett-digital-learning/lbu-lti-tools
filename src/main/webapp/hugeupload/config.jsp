@@ -3,8 +3,8 @@
     Created on : 18 Nov 2021, 08:56:17
     Author     : jon
 
-    The 'item' page for the huge upload tool.
-    Same starting point for instructors and students.
+    The config page for the huge upload tool.
+    For use in platform sysadmin pages to set global configuration parameters.
 
 --%>
 
@@ -167,19 +167,11 @@
 const dynamicPageData = ${support.dynamicPageDataAsJSON};
         
     </script>
-    <script type="module" src="../javascript/@BUILDTIMESTAMP@/hugeupload/item.js"></script>
+    <script type="module" src="../javascript/@BUILDTIMESTAMP@/hugeupload/config.js"></script>
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">
-            
-      <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
-        <h3 id="debugdialogLabel">Debug Information</h3>
-        <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>
-        <pre id="debugtext"></pre>
-        <div class="dialog_form_actions"><button id="debugdialogCloseButtonBottom" value="Close">Close</button></div>
-      </div>
-      
-      
+      <!-- no dialog boxes at present -->
     </div>
 
 
@@ -187,15 +179,32 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
     <div class="section">
     <div class="block">
       <p class="important">${support.importantMessage}</p>
-      <p>Some content here.</p>
-      <p><form><input type="file"/></form></p>
-    <p><button id="blobuploadtestbutton">Test Upload</button></p>
+      <h3>LBU Huge Upload Tool</h3>
+      <h4>Platform-wide Configuration</h4>
     </div>
-      <c:if test="${support.allowedToManage}">
-        <p>User allowed to manage.</p>
-      </c:if>
     </div>
-    
+
+    <div style="margin-top: 1em;">
+    <c:choose>
+      <c:when test="${support.allowedToConfigure}">
+          <div>
+            <table>
+              <tr><th></th><th>Permissions</th></tr>
+              <tr><th>Module/Community Instructor/Leader Can Deep Link</th>  <td><input type="checkbox" id="config_membershipInstructorDeepLinkPermitted"/></td></tr>
+              <tr><th>Student Can Deep Link</th>  <td><input type="checkbox" id="config_membershipStudentDeepLinkPermitted"/></td></tr>
+            </table>          
+            <button id="configdialogSaveButton" value="Close">Save</button>
+          </div>
+      </c:when>
+      <c:otherwise>
+          <p>Your role does not allow you to configure this tool.</p>        
+      </c:otherwise>
+    </c:choose>
+        <div style="margin-top: 1em;">
+          <p><button id="exitButton" value="Exit">Exit</button></p>
+        </div>
+    </div>
+      
     
     <div class="block">
       <h2 class="nonvisual">Notifications Nonvisual</h2>
@@ -206,6 +215,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         yourself. These notifications are intended for users of screen readers.
       </p>
     </div>
+    
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

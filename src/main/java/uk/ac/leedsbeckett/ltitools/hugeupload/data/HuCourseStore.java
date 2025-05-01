@@ -39,15 +39,15 @@ import uk.ac.leedsbeckett.ltitoolset.store.Store;
  * 
  * @author jon
  */
-public class HuResourceStore extends Store<HuResourceKey,HugeUploadResource>
+public class HuCourseStore extends Store<HuCourseKey,CourseConfigurationEntry>
 {
-  static final Logger logger = Logger.getLogger(HuResourceStore.class.getName() );
+  static final Logger logger = Logger.getLogger(HuCourseStore.class.getName() );
 
   Path basepath;
   
-  public HuResourceStore( Path basepath )
+  public HuCourseStore( Path basepath )
   {
-    super( "hugeuploadresourcestore" );
+    super( "hugeuploadcoursestore" );
     this.basepath = basepath;
     try
     {
@@ -60,22 +60,21 @@ public class HuResourceStore extends Store<HuResourceKey,HugeUploadResource>
   }
 
   @Override
-  public HugeUploadResource create( HuResourceKey key )
+  public CourseConfigurationEntry create( HuCourseKey key )
   {
-    return new HugeUploadResource( key );
+    return new CourseConfigurationEntry( key );
   }
 
   @Override
-  public Class<HugeUploadResource> getEntryClass()
+  public Class<CourseConfigurationEntry> getEntryClass()
   {
-    return HugeUploadResource.class;
+    return CourseConfigurationEntry.class;
   }
   
   @Override
-  public Path getPath( HuResourceKey key )
+  public Path getPath( HuCourseKey key )
   {
     Path p = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
-    Path c = p.resolve( URLEncoder.encode( key.getCourseId(), StandardCharsets.UTF_8 ) );
-    return c.resolve( URLEncoder.encode( key.getToolResourceId(), StandardCharsets.UTF_8 ) );
+    return p.resolve( URLEncoder.encode( key.getCourseId(), StandardCharsets.UTF_8 ) );
   }  
 }

@@ -17,8 +17,6 @@ package uk.ac.leedsbeckett.ltitools.hugeupload.data;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 
 /**
  *
@@ -29,12 +27,14 @@ public class HuStoreCluster
   Path basePath;
   
   HuResourceStore resourceStore;
+  HuCourseStore courseStore;
   PlatformConfigurationStore configStore;
-
+  
   public HuStoreCluster( Path basePath )
   {
     this.basePath = basePath;
     resourceStore = new HuResourceStore( basePath.resolve( "resources" ) );
+    courseStore   = new HuCourseStore( basePath.resolve( "courses" ) );
     configStore   = new PlatformConfigurationStore( basePath.resolve( "platformconfig" ) );
   }
 
@@ -56,7 +56,25 @@ public class HuStoreCluster
     configStore.update( entry );
   }  
 
-  public HugeUploadResource getResource( PlatformResourceKey key, boolean create )
+  public CourseConfiguration getCourseConfiguration( HuCourseKey courseKey, boolean create ) throws IOException
+  {
+    CourseConfigurationEntry entry = courseStore.get( courseKey, true );
+    if ( entry.getCourseConfig() == null )
+    {
+      entry.setCourseConfig( CourseConfiguration.getDefaultCourseConfiguration() );
+      courseStore.update( entry );
+    }
+    return entry.getCourseConfig();
+  }
+  
+  public void updateCourseConfiguration( HuCourseKey key, CourseConfiguration c ) throws IOException
+  {
+    CourseConfigurationEntry entry = courseStore.get( key, false );
+    entry.setCourseConfig( c );
+    courseStore.update( entry );
+  }  
+
+  public HugeUploadResource getResource( HuResourceKey key, boolean create )
   {
     return resourceStore.get( key, create );
   }

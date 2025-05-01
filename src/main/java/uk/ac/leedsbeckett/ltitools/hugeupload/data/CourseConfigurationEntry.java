@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Leeds Beckett University.
+ * Copyright 2024 maber01.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,55 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package uk.ac.leedsbeckett.ltitools.hugeupload.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
-import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
-
 
 /**
- * An object that represents the resource which the user is accessing after the
- * LTI launch.
- * 
- * @author jon
+ *
+ * @author maber01
  */
-public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
+public class CourseConfigurationEntry implements Serializable, Entry<HuCourseKey>
 {
-  HuResourceKey key;
-    
-  public HugeUploadResource( @JsonProperty("key") HuResourceKey key )
+  HuCourseKey key;
+  CourseConfiguration courseConfig;
+  
+  public CourseConfigurationEntry( @JsonProperty("key") HuCourseKey key )
   {
     this.key = key;
   }
-
+    
   @Override
-  public HuResourceKey getKey()
+  public HuCourseKey getKey()
   {
     return key;
   }
 
   @Override
-  public void setKey( HuResourceKey key )
+  public void setKey( HuCourseKey key )
   {
     if ( this.key != null )
       throw new IllegalArgumentException( "Not allowed to change resource key." );
     this.key = key;
   }
-  
-  /**
-   * Called by the resource store when an entirely new resource is needed.
-   */
-  @Override
-  public void initialize()
+
+  public CourseConfiguration getCourseConfig()
   {
+    return courseConfig;
+  }
+
+  public void setCourseConfig( CourseConfiguration courseConfig )
+  {
+    this.courseConfig = courseConfig;
   }
 
   @Override
-  public String toString()
+  public void initialize()
   {
-    return "A huge upload resource " + key.toString();
-  }
+  }  
 }

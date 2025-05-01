@@ -17,16 +17,6 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuStoreCluster;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -35,8 +25,10 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-import org.apache.commons.lang3.StringUtils;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.Configuration;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
@@ -69,7 +61,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
   static final Logger logger = Logger.getLogger(HugeUploadEndpoint.class.getName() );
   
   HugeUploadTool tool;
-  HuToolLaunchState pgaState;
+  HuToolLaunchState huState;
   HuStoreCluster store;
 
   String platformName=null;
@@ -107,7 +99,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     super.onOpen( session );
     
     platformName = getState().getPlatformName();
-    pgaState = (HuToolLaunchState)getState().getToolLaunchState();
+    huState = (HuToolLaunchState)getState().getToolLaunchState();
     tool = (HugeUploadTool)getToolCoordinator().getTool( getState().getToolId() );
     store = tool.getHuStore();    
   }
@@ -157,23 +149,59 @@ public class HugeUploadEndpoint extends ToolEndpoint
    * @param session The session this endpoint belongs to.
    * @param message The incoming message from the client end.
    * @throws IOException Indicates failure to process. 
+   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
    */
   @EndpointMessageHandler()
-  public void handleGetResource( Session session, ToolMessage message ) throws IOException
+  public void handleGetResource( Session session, ToolMessage message ) throws IOException, HandlerAlertException
   {
-    // All users can have the resource at all stages.
-    HugeUploadResource huResource = store.getResource( pgaState.getPlatformResourceKey(), true );
+    // Whether there is a resource for the session will depend on the facet 
+    // being used.
+    if ( !"item".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved request for resource data on an inappropriate facet of the tool.", message.getId() );
+    HuResourceKey rKey = huState.getHuResourceKey();
+    if ( rKey == null )
+      throw new HandlerAlertException( "Recieved request for resource data but launch didn't provide ID for it.", message.getId() );
+    
+    // No further checks - send data about the resource.
+    HugeUploadResource huResource = store.getResource( rKey, true );
     logger.log( Level.INFO, "Sending resource [{0}]", huResource.toString() );
     ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
     sendToolMessage( session, tm );
   }
+  
+  /**
+   * Client requested the resource data.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   */
+  @EndpointMessageHandler()
+  public void handleGetCourse( Session session, ToolMessage message ) throws IOException, HandlerAlertException
+  {
+    // Whether there is a resource for the session will depend on the facet 
+    // being used.
+    if ( !"course".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved request for course data on an inappropriate facet of the tool.", message.getId() );
+    HuCourseKey cKey = huState.getHuCourseKey();
+    if ( cKey == null )
+      throw new HandlerAlertException( "Recieved request for course data but launch didn't provide ID for it.", message.getId() );
+    
+    // No further checks - send data about the resource.
+    CourseConfiguration huCourse = store.getCourseConfiguration( cKey, true );
+    logger.log( Level.INFO, "Sending course config [{0}]", huCourse.toString() );
+    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Course, huCourse );
+    sendToolMessage( session, tm );
+  }
+  
   
   
   @EndpointMessageHandler()
   public void handleConfigurationRequest( Session session, ToolMessage message )
           throws IOException, HandlerAlertException
   {
-    if ( !pgaState.isAllowedToConfigure() )
+    if ( !huState.isAllowedToConfigure() )
       throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
     
     logger.info( "Fetching config for platform " + platformName );
@@ -186,7 +214,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
   public void handleConfigure( Session session, ToolMessage message, HuConfigurationMessage configMessage )
           throws IOException, HandlerAlertException
   {
-    if ( !pgaState.isAllowedToConfigure() )
+    if ( !huState.isAllowedToConfigure() )
       throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
             
     Configuration config = configMessage.getConfiguration();

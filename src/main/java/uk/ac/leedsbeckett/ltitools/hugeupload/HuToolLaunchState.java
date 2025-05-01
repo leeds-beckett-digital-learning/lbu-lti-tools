@@ -17,6 +17,8 @@
 package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import java.io.Serializable;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitoolset.ToolLaunchState;
 
 
@@ -29,6 +31,11 @@ public class HuToolLaunchState extends ToolLaunchState implements Serializable
 {
   private boolean allowedToManage=false;
   private boolean allowedToParticipate=false;
+  
+  private HuCourseKey huCourseKey = null;
+  private HuResourceKey huResourceKey = null;
+
+  private String returnURL = null;
   
   /**
    * Is the user connected to this state object allowed to manage the resource?
@@ -73,5 +80,51 @@ public class HuToolLaunchState extends ToolLaunchState implements Serializable
   public boolean isAllowedToAccess()
   {
     return allowedToParticipate || allowedToManage;
+  }
+
+  public HuCourseKey getHuCourseKey()
+  {
+    return huCourseKey;
+  }
+
+  public void setHuCourseKey( HuCourseKey huCourseKey )
+  {
+    this.huCourseKey = huCourseKey;
+  }
+
+  public void setHuCourseKey()
+  {
+    if ( getPlatformId() != null && getCourseId() != null )
+      huCourseKey = new HuCourseKey( getPlatformId(), getCourseId());
+    else
+      huCourseKey = null;
+  }
+  
+  public HuResourceKey getHuResourceKey()
+  {
+    return huResourceKey;
+  }
+
+  public void setHuResourceKey( HuResourceKey huResourceKey )
+  {
+    this.huResourceKey = huResourceKey;
+  }
+
+  public void setHuResourceKey()
+  {
+    if ( getPlatformId() != null && getCourseId() != null && getToolResourceId() != null )
+      huResourceKey = new HuResourceKey( getPlatformId(), getCourseId(), getToolResourceId());
+    else
+      huResourceKey = null;
+  }
+
+  public String getReturnURL()
+  {
+    return returnURL;
+  }
+
+  public void setReturnURL( String returnURL )
+  {
+    this.returnURL = returnURL;
   }
 }

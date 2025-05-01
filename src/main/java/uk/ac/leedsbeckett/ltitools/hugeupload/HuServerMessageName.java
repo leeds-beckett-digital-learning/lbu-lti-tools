@@ -15,6 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.hugeupload;
 
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
@@ -39,9 +40,14 @@ public enum HuServerMessageName implements ToolMessageName
   Resource(           "Resource",           HugeUploadResource.class ),
   
   /**
+   * Message contains the PGA as created by the manager(s).
+   */
+  Course(             "Course",             CourseConfiguration.class ),
+  
+  /**
    * Contains platform wide configuration.
    */
-  Configuration(        "Configuration",        HuConfigurationMessage.class ),
+  Configuration(      "Configuration",      HuConfigurationMessage.class ),
   
   /**
    * Indicates that configuration was saved successfully.

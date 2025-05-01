@@ -40,6 +40,7 @@ import uk.ac.leedsbeckett.ltitoolset.annotations.ToolProperties;
  * @author maber01
  */
 @ToolProperties( id = "hugeupload", title = "LBU Huge Upload", defaultFacetId="course" )
+@ToolFacet( id = "config", title = "LBU Huge Upload Platform Configuration", launchURI = "/hugeupload/config.jsp", instantiationLevel = ToolInstantiationLevel.PLATFORM )
 @ToolFacet( id = "course", title = "LBU Huge Upload Course Settings", launchURI = "/hugeupload/course.jsp", instantiationLevel = ToolInstantiationLevel.COURSE )
 @ToolFacet( id = "item",   title = "LBU Huge Upload", launchURI = "/hugeupload/item.jsp", instantiationLevel = ToolInstantiationLevel.TOOL_RESOURCE )
 public class HugeUploadTool extends Tool
@@ -94,6 +95,8 @@ public class HugeUploadTool extends Tool
   {
     super.initToolLaunchState( platformConfiguration, toolstate, lticlaims, state );
     HuToolLaunchState hustate = (HuToolLaunchState)toolstate;
+    hustate.setHuCourseKey();
+    hustate.setHuResourceKey();
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE ) )
       hustate.setAllowedToManage( true );
     // Instructors can be in a group and enter data if they want
@@ -101,6 +104,15 @@ public class HugeUploadTool extends Tool
     if ( lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_LEARNER_ROLE) ||
           lticlaims.getLtiRoles().isInRole( LtiRoleClaims.MEMBERSHIP_INSTRUCTOR_ROLE )  )
       hustate.setAllowedToParticipate( true );
+    if ( lticlaims.getLtiLaunchPresentation() != null )
+    {
+      logger.log(Level.FINE, "Launch presentation claim is present." );
+      if ( lticlaims.getLtiLaunchPresentation().getReturnUrl() != null )
+      {
+        logger.log( Level.FINE, "Launch presentation claim has return URL. {0}", lticlaims.getLtiLaunchPresentation().getReturnUrl() );
+        hustate.setReturnURL( lticlaims.getLtiLaunchPresentation().getReturnUrl() );
+      }
+    }
   }
   
   

@@ -23,12 +23,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuStoreCluster;
-import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitoolset.page.ToolPageSupport;
 
 /**
- * Support class for PeerGroupPage related JSP pages.
+ * Support class for huge upload related JSP pages.
  * 
  * @author jon
  */
@@ -37,9 +35,7 @@ public class HugeUploadPageSupport extends ToolPageSupport<HuDynamicPageData>
   static final Logger logger = Logger.getLogger(HugeUploadPageSupport.class.getName() );
   
   HugeUploadTool tool;
-  HuStoreCluster store;
   HuToolLaunchState huState;
-  HugeUploadResource huResource;
   
   /**
    * Get ready to provide services for the java server page.
@@ -67,23 +63,11 @@ public class HugeUploadPageSupport extends ToolPageSupport<HuDynamicPageData>
       throw new ServletException( "Could not find peer group assessment tool session data." );
     logger.log(Level.FINE, "resource key = {0}", huState.getPlatformResourceKey() );
     tool = (HugeUploadTool)toolCoordinator.getTool( state.getToolId() );
-    store = tool.getHuStore();
-    huResource = store.getResource(huState.getPlatformResourceKey(), true );
-
+    dynamicPageData.setReturnURL( huState.getReturnURL() );
+    dynamicPageData.setResourcePage( huState.getHuResourceKey() != null );
     dynamicPageData.setAllowedToConfigure(huState.isAllowedToConfigure() );
     dynamicPageData.setAllowedToParticipate(huState.isAllowedToParticipate() );
     dynamicPageData.setAllowedToManage(huState.isAllowedToManage() );
-  }
-
-  /**
-   * Gets the PGA resource. Bear in mind that the resource is likely to change
-   * while the user is still working on the page.
-   * 
-   * @return The resource in its state when the page loads.
-   */
-  public HugeUploadResource getHuResource()
-  {
-    return huResource;
   }
  
   /**
@@ -181,9 +165,6 @@ public class HugeUploadPageSupport extends ToolPageSupport<HuDynamicPageData>
       sb.append( "Web Socket\n" );
       sb.append( "=============\n" );
       sb.append( getWebsocketUri() );
-      sb.append( "\nResource\n" );    
-      sb.append( "=============\n" );
-      sb.append( mapper.writerWithDefaultPrettyPrinter().writeValueAsString( huResource ) );
     }
     catch ( JsonProcessingException ex )
     {

@@ -26,7 +26,7 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.data.Configuration;
 public class HuConfigurationMessage implements Serializable
 {
   // Might have other fields in the future
-  // That's why this class isn't a subclass of  SelfEnrolConfiguration
+  // That's why this class isn't a subclass of  Configuration
   final Configuration configuration;
 
   public HuConfigurationMessage( 

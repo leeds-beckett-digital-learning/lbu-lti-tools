@@ -22,7 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
- * Represents the configuration of the Self Enrol LTI tool. Loads from a JSON file.
+ * Represents the configuration of the Huge Upload tool on a specific
+ * platform. Loads from a JSON file.
  * 
  * @author jon
  */

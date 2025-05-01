@@ -23,9 +23,31 @@ import uk.ac.leedsbeckett.ltitoolset.page.DynamicPageData;
  */
 public class HuDynamicPageData extends DynamicPageData
 {
+  private String  returnURL;
+  private boolean resourcePage;
   private boolean allowedToManage;
   private boolean allowedToParticipate;
   private boolean allowedToConfigure;
+
+  public String getReturnURL()
+  {
+    return returnURL;
+  }
+
+  public void setReturnURL( String returnURL )
+  {
+    this.returnURL = returnURL;
+  }
+
+  public boolean isResourcePage()
+  {
+    return resourcePage;
+  }
+
+  public void setResourcePage( boolean resourcePage )
+  {
+    this.resourcePage = resourcePage;
+  }
 
   public boolean isAllowedToManage()
   {

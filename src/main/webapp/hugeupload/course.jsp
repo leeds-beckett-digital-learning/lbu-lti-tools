@@ -3,8 +3,9 @@
     Created on : 18 Nov 2021, 08:56:17
     Author     : jon
 
-    The 'home' page for the peergroupassessment tool.
-    Same starting point for instructors and students.
+    The course page for the huge upload tool.
+    Intended for sysadmins to set permission and limits for a specific
+    course in a specific platform.
 
 --%>
 
@@ -167,63 +168,86 @@
 const dynamicPageData = ${support.dynamicPageDataAsJSON};
         
     </script>
-    <script type="module" src="../javascript/@BUILDTIMESTAMP@/hugeupload/index.js"></script>
+    <script type="module" src="../javascript/@BUILDTIMESTAMP@/hugeupload/course.js"></script>
   </head>
   <body>
     <div id="dialogdiv" class="dialogs">
       
-      <c:if test="${support.allowedToConfigure}">
-      <div role="dialog" id="configdialog" aria-labelledby="configdialogLabel" aria-modal="true" class="hidden">
-        <h3 id="configdialogLabel">Configure Huge Upload Tool</h3>
-        <div>
-          <table>
-            <tr><th></th><th>Permissions</th></tr>
-            <tr><th>Module/Community Instructor/Leader Can Deep Link</th>  <td><input type="checkbox" id="config_membershipInstructorDeepLinkPermitted"/></td></tr>
-            <tr><th>Student Can Deep Link</th>  <td><input type="checkbox" id="config_membershipStudentDeepLinkPermitted"/></td></tr>
-          </table>          
-        </div>
-        <div class="dialog_form_actions">
-          <button id="configdialogSaveButton" value="Close">Save</button>
-          <button id="configdialogCancelButton" value="Close">Cancel</button>
-        </div>
-      </div>
-      </c:if>
-
-            
     </div>
 
 
-    <div id="basePage">      
-    <div class="section">
-    <div class="block">
-      <p class="important">${support.importantMessage}</p>
-      <p>Configure <strong>LBU Huge Uploads</strong> in this course.</p>
-    </div>
-    </div>
-
-    <div style="margin-top: 10em;">
-    <c:choose>
-      <c:when test="${support.allowedToConfigure}">
-          <p>Your role allows you to configure this tool.</p>
-          <p><button id="configureButton">Configure</button></p>          
-      </c:when>
-      <c:otherwise>
-          <p>Your role does not allow you to configure this tool.</p>        
-      </c:otherwise>
-    </c:choose>
-    </div>
+    <div id="basePage">
       
+    <div class="section">
+
+      <div class="block">
+        <p class="important">${support.importantMessage}</p>
+        <h2>LBU Huge Uploads</h2>
+        <h3>Settings for this Course</h3>
+      </div>
+      
+      <div class="block">
+        <h4>Instructor Limits</h4>
+          <fieldset>
+            <legend>Upload on/off</legend>
+            <div>
+              <input type="radio" id="forminstructorallow" name="forminstructoronoff" value="Allow"/>
+              <label for="forminstructorallow">Allow</label>
+            </div>
+            <div>
+              <input type="radio" id="forminstructordisallow" name="forminstructoronoff" value="Disallow"/>
+              <label for="forminstructordisallow">Disallow</label>
+            </div>
+          </fieldset>
+          <div>
+            <table>
+              <thead>
+                <tr><th>MIME type</th><th>Maximum File Size</th><th>Action</th></tr>
+              </thead>
+              <tbody id="instructorAllowanceTableBody"></tbody>
+              <tfoot>
+                <tr id="instructorAddAllowanceRow"><th cellspan="3"><button id="instructorAddButton">Add</button></th></tr>
+              </tfoot>
+            </table>
+          </div>
+      </div>
     
-    <div class="block">
-      <h2 class="nonvisual">Notifications Nonvisual</h2>
-      <ul id="toplevelalert" class="alertList"></ul>
-      <p class="nonvisual">Notifications will appear above this paragraph. 
-        They will tell you about live changes to the content
-        of this page in response to the actions of other participants or
-        yourself. These notifications are intended for users of screen readers.
-      </p>
-    </div>
+      <div class="block">
+        <h4>Student Limits</h4>
+          <fieldset>
+            <legend>Upload on/off</legend>
+            <div>
+              <input type="radio" id="formstudentallow" name="formstudentonoff" value="Allow"/>
+              <label for="formstudentallow">Allow</label>
+            </div>
+            <div>
+              <input type="radio" id="formstudentdisallow" name="formstudentonoff" value="Disallow"/>
+              <label for="formstudentdisallow">Disallow</label>
+            </div>
+          </fieldset>
+          <div>
+            <table>
+              <thead>
+                <tr><th>MIME type</th><th>Maximum File Size</th><th>Action</th></tr>
+              </thead>
+              <tbody id="studentAllowanceTableBody"></tbody>
+              <tfoot>
+                <tr id="studentAddAllowanceRow"><th cellspan="3"><button id="studentAddButton">Add</button></th></tr>
+              </tfoot>
+            </table>
+          </div>
+      </div>
     
+      <div class="block">
+        <h4 class="nonvisual">Notifications Nonvisual</h4>
+        <ul id="toplevelalert" class="alertList"></ul>
+        <p class="nonvisual">Notifications will appear above this paragraph. 
+          They will tell you about live changes to the content
+          of this page in response to the actions of other participants or
+          yourself. These notifications are intended for users of screen readers.
+        </p>
+      </div>
+    </div>    
     
     <c:if test="${support.debugging}">
       <div style="margin-top: 10em;">

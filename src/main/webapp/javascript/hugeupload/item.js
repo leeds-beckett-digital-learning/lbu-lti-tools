@@ -59,6 +59,16 @@ function init()
       toolsocket.sendMessage( new hugeupload.GetResourceMessage() );
     },
     
+    handleBinaryTest( message )
+    {
+      console.log( message.payload );
+    },
+    
+    handleBinaryChunkUploadAck( message )
+    {
+      processChunkAck( message.payload );
+    },
+    
     handleAlert( message )
     {
       alert( message.payload );
@@ -94,6 +104,15 @@ function updateResource()
   console.log( "Updating UI to reflect changes to resource." );
 }
 
+function blobUploadTestX()
+{
+  var btm = new hugeupload.BinaryTestMessage();
+  btm.payload.a = "hello";
+  btm.payload.b = 23;
+  btm.payload.c = new Uint8Array([11,22,33,44,55,66,77,88,99]);
+  toolsocket.sendMessage( btm );
+}
+  
 async function blobUploadTest()
 {
     console.log( "Uploading starting" );
@@ -105,11 +124,12 @@ async function blobUploadTest()
     }
 
     fileProgress.file = null;
-    fileProgress.maxChunkSize = 10 * 1000 * 1000; // 10 MB
+    fileProgress.maxChunkSize = 16 * 1024; // 10 MB
     fileProgress.chunkSize=0;
     fileProgress.chunkNo=0;
     fileProgress.chunkCount=0;
     fileProgress.chunk = null;
+    fileProgress.chunkAckWait = false;
     fileProgress.reader = new FileReader();
     fileProgress.reader.addEventListener( 'load', (e) => sendIncomingChunk( e ) );
 
@@ -149,35 +169,39 @@ function startChunk()
     
     fileProgress.chunk = fileProgress.file.slice( start, end );
     fileProgress.reader.readAsArrayBuffer( fileProgress.chunk );
+    fileProgress.chunkAckWait = true;
 }
 
 async function sendIncomingChunk( e )
 {
     console.log( e );
     console.log( fileProgress );
-    const data = fileProgress.reader.result;
+    const data = new Uint8Array( fileProgress.reader.result );  // result is an ArrayBuffer because of readAsArrayBuffer()
     const hash = await crypto.subtle.digest( "SHA-256", data );
     const hashArray = Array.from(new Uint8Array(hash)); // convert buffer to byte array
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     console.log( "Hash = " + hashHex );
-        
-    const url = "https://digles-tools-test.leedsbeckett.ac.uk/lbu-lti-tools/blobex";
-    const requestOptions = {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/octet-stream',
-            'Content-Length': fileProgress.chunkSize
-          },
-          body: data
-      };
-    const response = await fetch( url, requestOptions);
-    console.log( "status = " + response.status );
-        
-    if ( Math.floor( response.status / 100 ) === 2 )
-      if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
-        setTimeout( startChunk, 10 );
+
+    var bcm = new hugeupload.BinaryChunkMessage();
+    bcm.payload.id = "made up id";
+    bcm.payload.chunkNo = fileProgress.chunkNo;
+    bcm.payload.chunk = data;
+    toolsocket.sendMessage( bcm );
+  
 }
 
+function processChunkAck( message )
+{
+  if ( message.chunkNo !== fileProgress.chunkNo )
+  {
+    alert( "Received mis-matched chunk no acknowledgement." );
+    return;
+  }
+  
+  fileProgress.chunkAckWait = false;
+  if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
+    startChunk();
+}
 
 window.addEventListener( "load", function(){ init(); } );
 document.addEventListener( "DOMContentLoaded", function()

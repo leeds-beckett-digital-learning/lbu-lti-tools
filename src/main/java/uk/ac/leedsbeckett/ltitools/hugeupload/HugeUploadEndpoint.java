@@ -17,6 +17,8 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuStoreCluster;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -30,6 +32,9 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUpload;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
@@ -129,20 +134,74 @@ public class HugeUploadEndpoint extends ToolEndpoint
     logger.log( Level.SEVERE, "Web socket error.", throwable );
   }  
 
-  /**
-   * Simply passes on responsibility for processing to the super-class.
-   * 
-   * @param session The session this endpoint belongs to.
-   * @param message The incoming message from the client end.
-   * @throws IOException Indicates failure to process.
-   */
   @OnMessage
   @Override
-  public void onMessage(Session session, ToolMessage message) throws IOException
+  public void onMessage(Session session, ByteBuffer bb ) throws IOException
   {
-    super.onMessage( session, message );
+    super.onMessage( session, bb );
   }
 
+  @OnMessage
+  @Override
+  public void onMessage(Session session, String text) throws IOException
+  {
+    super.onMessage( session, text );
+  }
+  
+
+  @EndpointMessageHandler()
+  public void handleBinaryTest( Session session, ToolMessage message, HuBinaryTestMessage bin ) throws IOException, HandlerAlertException
+  {
+    // Whether there is a resource for the session will depend on the facet 
+    // being used.
+    if ( !"item".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
+    if ( bin != null )
+    {
+      logger.log(Level.INFO, "bin.a = {0}", bin.getA());
+      logger.log(Level.INFO, "bin.b = {0}", bin.getB());
+      if ( bin.getC() == null )
+        logger.info( "bin.c = null" );
+      else
+      {
+        byte[] c = bin.getC();
+        BigInteger bi = new BigInteger( c );
+        logger.log(Level.INFO, "bin.c = 0x{0}", bi.toString( 16 ) );
+        bi.shiftLeft( 8 );
+        bin.setC( bi.shiftLeft( 8 ).toByteArray() );
+        ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryTest, bin );
+        sendToolMessage( session, tm );
+        return;
+      }      
+    }
+    throw new HandlerAlertException( "Didn't get any binary data in the binary test message.", message.getId() );
+  }
+  
+  @EndpointMessageHandler()
+  public void handleBinaryChunk( Session session, ToolMessage message, HuBinaryChunkUpload chunkup ) 
+          throws IOException, HandlerAlertException
+  {
+    // Whether there is a resource for the session will depend on the facet 
+    // being used.
+    if ( !"item".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
+    if ( chunkup == null )
+      throw new HandlerAlertException( "Didn't get any data in the binary chunk upload test message.", message.getId() );
+    logger.log( Level.INFO, "id = {0}", chunkup.getId() );
+    logger.log( Level.INFO, "chunk no = {0}", chunkup.getChunkNo() );
+    if ( chunkup.getChunk() == null )
+      throw new HandlerAlertException( "Didn't get any binary data in the binary chunk upload test message.", message.getId() );
+    logger.log( Level.INFO, "chunk length = {0}", chunkup.getChunk().length );
+//    BigInteger bi = new BigInteger( chunkup.getChunk() );
+//    logger.log(Level.INFO, "bin.c = 0x{0}", bi.toString( 16 ) );
+    HuBinaryChunkUploadAck ack = new HuBinaryChunkUploadAck();
+    ack.setId( chunkup.getId() );
+    ack.setChunkNo( chunkup.getChunkNo() );
+    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadAck, ack );
+    sendToolMessage( session, tm );
+  }
+  
+  
   /**
    * Client requested the resource data.
    * 

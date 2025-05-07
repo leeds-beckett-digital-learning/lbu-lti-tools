@@ -17,7 +17,10 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
+import uk.ac.leedsbeckett.ltitoolset.websocket.TestObject;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageName;
 
 /**
@@ -32,22 +35,26 @@ public enum HuServerMessageName implements ToolMessageName
   /**
    * Message contains a simple alert message for the user.
    */
-  Alert(              "Alert",              String.class ),
+  Alert(                "Alert",                String.class ),
+  
+  BinaryTest(           "BinaryTest",           HuBinaryTestMessage.class ),
+  
+  BinaryChunkUploadAck( "BinaryChunkUploadAck", HuBinaryChunkUploadAck.class ),
   
   /**
    * Message contains the PGA as created by the manager(s).
    */
-  Resource(           "Resource",           HugeUploadResource.class ),
+  Resource(             "Resource",             HugeUploadResource.class ),
   
   /**
    * Message contains the PGA as created by the manager(s).
    */
-  Course(             "Course",             CourseConfiguration.class ),
+  Course(               "Course",               CourseConfiguration.class ),
   
   /**
    * Contains platform wide configuration.
    */
-  Configuration(      "Configuration",      HuConfigurationMessage.class ),
+  Configuration(        "Configuration",        HuConfigurationMessage.class ),
   
   /**
    * Indicates that configuration was saved successfully.

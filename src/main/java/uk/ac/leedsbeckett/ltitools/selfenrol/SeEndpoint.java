@@ -17,6 +17,7 @@ package uk.ac.leedsbeckett.ltitools.selfenrol;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -145,20 +146,20 @@ public class SeEndpoint extends ToolEndpoint
     logger.log( Level.SEVERE, "Web socket error.", throwable );
   }  
 
-  /**
-   * Simply passes on responsibility for processing to the super-class.
-   * 
-   * @param session The session this endpoint belongs to.
-   * @param message The incoming message from the client end.
-   * @throws IOException Indicates failure to process.
-   */
   @OnMessage
   @Override
-  public void onMessage(Session session, ToolMessage message) throws IOException
+  public void onMessage(Session session, ByteBuffer bb ) throws IOException
   {
-    super.onMessage( session, message );
+    super.onMessage( session, bb );
   }
 
+  @OnMessage
+  @Override
+  public void onMessage(Session session, String text) throws IOException
+  {
+    super.onMessage( session, text );
+  }
+  
   /**
    * Client requested the resource data.
    * 

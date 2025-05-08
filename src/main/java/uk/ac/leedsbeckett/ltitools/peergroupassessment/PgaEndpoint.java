@@ -209,13 +209,6 @@ public class PgaEndpoint extends ToolEndpoint
 
   @OnMessage
   @Override
-  public void onMessage(Session session, ByteBuffer bb ) throws IOException
-  {
-    super.onMessage( session, bb );
-  }
-
-  @OnMessage
-  @Override
   public void onMessage(Session session, String text) throws IOException
   {
     super.onMessage( session, text );

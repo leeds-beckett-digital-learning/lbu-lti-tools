@@ -31,6 +31,7 @@ import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
 {
   HuResourceKey key;
+  byte[] testData = {11,22};
     
   public HugeUploadResource( @JsonProperty("key") HuResourceKey key )
   {
@@ -50,6 +51,17 @@ public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
       throw new IllegalArgumentException( "Not allowed to change resource key." );
     this.key = key;
   }
+
+  public byte[] getTestData()
+  {
+    return testData;
+  }
+
+  public void setTestData( byte[] testData )
+  {
+    this.testData = testData;
+  }
+  
   
   /**
    * Called by the resource store when an entirely new resource is needed.

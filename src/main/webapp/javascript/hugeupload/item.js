@@ -77,6 +77,8 @@ function init()
     handleResource( message )
     {
       resource = message.payload;
+      console.log( "receiving resource data" );
+      console.log( resource );
       updateResource();
     },
             
@@ -124,7 +126,7 @@ async function blobUploadTest()
     }
 
     fileProgress.file = null;
-    fileProgress.maxChunkSize = 16 * 1024; // 10 MB
+    fileProgress.maxChunkSize = 2 * 1024 * 1024;
     fileProgress.chunkSize=0;
     fileProgress.chunkNo=0;
     fileProgress.chunkCount=0;

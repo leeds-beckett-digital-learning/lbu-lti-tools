@@ -17,8 +17,12 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuStoreCluster;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -34,8 +38,13 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUpload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadReq;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMap;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapChunk;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadChunkState;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
@@ -140,34 +149,95 @@ public class HugeUploadEndpoint extends ToolEndpoint
   {
     super.onMessage( session, text );
   }
-  
 
+  private HuBinaryChunkUploadReq getNextChunkRequest( HugeUploadResource huResource )
+  {
+    for ( int i=0; i < huResource.getUploadState().getChunkStates().size(); i++ )
+    {
+      HuUploadChunkState chunkState = huResource.getUploadState().getChunkStates().get( i );
+      if ( !chunkState.isUploaded() )
+      {
+        HuFileMapChunk chunk = huResource.getFileMap().getMap().get( i );
+        HuBinaryChunkUploadReq upreq = new HuBinaryChunkUploadReq();
+        upreq.setChunkNo( i );
+        upreq.setStart( chunk.getStart() );
+        upreq.setEnd( chunk.getEnd() );
+        upreq.setHash( chunk.getHash() );
+        return upreq;
+      }
+    }   
+    return null;
+  }
+  
   @EndpointMessageHandler()
-  public void handleBinaryTest( Session session, ToolMessage message, HuBinaryTestMessage bin ) throws IOException, HandlerAlertException
+  public void handleFileMap( Session session, ToolMessage message, HuFileMap fileMap ) throws IOException, HandlerAlertException
   {
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"item".equals( huState.getToolFacetId() ) )
       throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
-    if ( bin != null )
+
+    HuResourceKey rKey = huState.getHuResourceKey();
+    if ( rKey == null )
+      throw new HandlerAlertException( "Recieved request to set file map but cannot find resource data.", message.getId() );
+    
+    // No further checks - send data about the resource.
+    HugeUploadResource huResource = store.getResource( rKey, true );
+    if ( huResource == null )
+      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
+
+    logger.log(Level.INFO, "name    = {0}", fileMap.getName() );
+    logger.log(Level.INFO, "size    = {0}", fileMap.getSize() );
+    logger.log(Level.INFO, "type    = {0}", fileMap.getType() );
+    logger.log(Level.INFO, "lastmod = {0}", fileMap.getLastModified() );
+    int i=0;
+    for ( HuFileMapChunk chunk :  fileMap.getMap() )
     {
-      logger.log(Level.INFO, "bin.a = {0}", bin.getA());
-      logger.log(Level.INFO, "bin.b = {0}", bin.getB());
-      if ( bin.getC() == null )
-        logger.info( "bin.c = null" );
-      else
-      {
-        byte[] c = bin.getC();
-        BigInteger bi = new BigInteger( c );
-        logger.log(Level.INFO, "bin.c = 0x{0}", bi.toString( 16 ) );
-        bi.shiftLeft( 8 );
-        bin.setC( bi.shiftLeft( 8 ).toByteArray() );
-        ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryTest, bin );
-        sendToolMessage( session, tm );
-        return;
-      }      
+      logger.log( 
+              Level.INFO, 
+              "    chunk {0} = {1} {2} {3}", 
+              new Object[ ]{i++, chunk.getStart(), chunk.getEnd(), chunk.getHash()}
+      );
     }
-    throw new HandlerAlertException( "Didn't get any binary data in the binary test message.", message.getId() );
+    
+    
+    // ToDo see if the map is indentical to the current one
+    // and if so simply resume request chunk uploads
+
+    // validity checking
+    
+    Path pending = store.getResourcePendingFilePath( rKey );
+    if ( pending.toFile().exists() )
+      pending.toFile().delete();
+    
+    // Set the new file map.
+    huResource.setFileMap( fileMap );
+    // Create and set a new upload state.
+    HuUploadState upstate = new HuUploadState();
+    upstate.setFullyUploaded( false );
+    ArrayList<HuUploadChunkState> chunklist = new ArrayList<>();
+    for ( i=0; i < fileMap.getMap().size(); i++ )
+      chunklist.add( new HuUploadChunkState() );
+    upstate.setChunkStates( chunklist );
+    huResource.setUploadState( upstate );
+    store.updateResource( huResource );
+    // Tell the client that the fileMap has been accepted.
+    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
+    sendToolMessage( session, tm );
+    
+    // Send first chunk request.
+    HuBinaryChunkUploadReq upreq = getNextChunkRequest( huResource );
+    if ( upreq == null )
+      return;
+    
+    tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadReq, upreq );
+    sendToolMessage( session, tm );
+  }
+
+  @EndpointMessageHandler()
+  public void handleBinaryTest( Session session, ToolMessage message, HuBinaryTestMessage bin ) throws IOException, HandlerAlertException
+  {
+    throw new HandlerAlertException( "BinaryTest message not supported anymore.", message.getId() );
   }
   
   @EndpointMessageHandler()
@@ -185,13 +255,55 @@ public class HugeUploadEndpoint extends ToolEndpoint
     if ( chunkup.getChunk() == null )
       throw new HandlerAlertException( "Didn't get any binary data in the binary chunk upload test message.", message.getId() );
     logger.log( Level.INFO, "chunk length = {0}", chunkup.getChunk().length );
-//    BigInteger bi = new BigInteger( chunkup.getChunk() );
-//    logger.log(Level.INFO, "bin.c = 0x{0}", bi.toString( 16 ) );
-    HuBinaryChunkUploadAck ack = new HuBinaryChunkUploadAck();
-    ack.setId( chunkup.getId() );
-    ack.setChunkNo( chunkup.getChunkNo() );
-    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadAck, ack );
-    sendToolMessage( session, tm );
+
+    byte[] sample = Arrays.copyOfRange( chunkup.getChunk(), 0, Integer.min( 16, chunkup.getChunk().length ) );
+    BigInteger bigint = new BigInteger( sample );
+    logger.log(Level.INFO, "start of chunk = 0x{0}", bigint.toString( 16 ));
+    
+    HuResourceKey rKey = huState.getHuResourceKey();
+    if ( rKey == null )
+      throw new HandlerAlertException( "Cannot find resource data.", message.getId() );
+    HugeUploadResource huResource = store.getResource( rKey, true );
+    if ( huResource == null )
+      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
+
+    HuFileMapChunk mapchunk = huResource.getFileMap().getMap().get( chunkup.getChunkNo() );
+    Path pending = store.getResourcePendingFilePath( rKey );
+    HuUploadState uploadState = huResource.getUploadState();
+    
+    try ( RandomAccessFile raf = new RandomAccessFile( pending.toFile(), "rw" ) )
+    {
+      raf.seek( mapchunk.getStart() );
+      raf.write( chunkup.getChunk() );
+    }
+
+    int uploadChunkCount=0;
+    for ( int i=0; i<uploadState.getChunkStates().size(); i++ )
+    {
+      if ( i == chunkup.getChunkNo() )
+        uploadState.getChunkStates().get( i ).setUploaded( true );
+      if ( uploadState.getChunkStates().get( i ).isUploaded() )
+        uploadChunkCount++;
+    }
+    if ( uploadChunkCount == uploadState.getChunkStates().size() )
+      uploadState.setFullyUploaded( true );
+        
+    store.updateResource( huResource );
+
+    // Send another chunk request.
+    HuBinaryChunkUploadReq upreq = getNextChunkRequest( huResource );
+    if ( upreq != null )
+    {
+      upreq.setRecentChunkAck( chunkup.getChunkNo() );
+      ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadReq, upreq );
+      sendToolMessage( session, tm );
+    }
+    else
+    {
+      // Send update for whole resource
+      ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
+      sendToolMessage( session, tm );
+    }
   }
   
   

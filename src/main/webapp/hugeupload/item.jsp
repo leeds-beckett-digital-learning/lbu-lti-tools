@@ -185,12 +185,31 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
 
     <div id="basePage">      
     <div class="section">
-    <div class="block">
+      <div class="block">
       <p class="important">${support.importantMessage}</p>
       <p>Some content here.</p>
-      <p><form><input type="file"/></form></p>
-    <p><button id="blobuploadtestbutton">Test Upload</button></p>
-    </div>
+      <p style="margin-top: 0.5em;">
+        <label for="fileselection" class="buttonLabel">Select File</label>
+        <input id="fileselection" style="display:none;" type="file"/>
+      </p>
+      <table id="filetable">
+        <tr><th>Name</th><td id="filename"></td></tr>
+        <tr><th>Size</th><td id="filesize"></td></tr>
+        <tr><th>Map</th><td id="filemapstatus"></td></tr>
+        <tr>
+          <th>Upload</th>
+          <td>
+            <div id="uploadbuttondiv">
+              <p style="margin-top: 0.5em;"><button id="startuploadbutton">Start</button></p>
+              <p style="margin-top: 0.5em;"><button id="stopuploadbutton">Stop</button></p>
+            </div>
+          </td>
+        </tr>
+        <tr><th colspan="2">Upload Progress</th></tr>
+        <tr><th>Uploaded</th><td></td></tr>
+        <tr><th>Left</th><td></td></tr>
+      </table>
+      </div>
       <c:if test="${support.allowedToManage}">
         <p>User allowed to manage.</p>
       </c:if>

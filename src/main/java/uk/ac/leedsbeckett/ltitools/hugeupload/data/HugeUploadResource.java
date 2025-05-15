@@ -18,8 +18,9 @@ package uk.ac.leedsbeckett.ltitools.hugeupload.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMap;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
-import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 
 
 /**
@@ -31,7 +32,8 @@ import uk.ac.leedsbeckett.ltitoolset.resources.PlatformResourceKey;
 public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
 {
   HuResourceKey key;
-  byte[] testData = {11,22};
+  HuFileMap fileMap = null;
+  HuUploadState uploadState = null;
     
   public HugeUploadResource( @JsonProperty("key") HuResourceKey key )
   {
@@ -52,16 +54,26 @@ public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
     this.key = key;
   }
 
-  public byte[] getTestData()
+  public HuFileMap getFileMap()
   {
-    return testData;
+    return fileMap;
   }
 
-  public void setTestData( byte[] testData )
+  public void setFileMap( HuFileMap fileMap )
   {
-    this.testData = testData;
+    this.fileMap = fileMap;
   }
-  
+
+  public HuUploadState getUploadState()
+  {
+    return uploadState;
+  }
+
+  public void setUploadState( HuUploadState uploadState )
+  {
+    this.uploadState = uploadState;
+  }
+
   
   /**
    * Called by the resource store when an entirely new resource is needed.

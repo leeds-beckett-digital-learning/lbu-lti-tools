@@ -31,26 +31,29 @@ let platformconfig = null;
 
 const fileProgress = new Object();
 
+let pendingFileMap = new Object();
+
 function init()
 {
   console.log( "init" );
-  console.log( finder.toplevelalert );
 
-  console.log( finder.toplevelalert.ariaLive );
+  console.debug( finder.toplevelalert.ariaLive );
   finder.toplevelalert.ariaLive = 'polite';
-  console.log( "Set ariamixin property" );
-  console.log( finder.toplevelalert.ariaLive );
+  console.debug( "Set ariamixin property" );
+  console.debug( finder.toplevelalert.ariaLive );
   
   //finder.toplevelalert.setAttribute( 'aria-live', 'polite' );  
-  //console.log( finder.toplevelalert.getAttribute( 'aria-live' ) );
+  //console.debug( finder.toplevelalert.getAttribute( 'aria-live' ) );
 
   arialib.setDialogAlertClass( 'alertList' );
   arialib.setBaseAlertElement( finder.toplevelalert );
   setInterval( updateAlerts, 1000 );
       
-  console.log( dynamicData.webSocketUri );
+  console.debug( dynamicData.webSocketUri );
   
-  finder.blobuploadtestbutton.addEventListener( 'click', () => blobUploadTest() );
+  finder.fileselection.addEventListener( 'change', () => blobUploadTest() );
+  finder.startuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
+  finder.stopuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
   
   let handler =
   {
@@ -67,6 +70,11 @@ function init()
     handleBinaryChunkUploadAck( message )
     {
       processChunkAck( message.payload );
+    },
+    
+    handleBinaryChunkUploadReq( message )
+    {
+      processChunkReq( message.payload );
     },
     
     handleAlert( message )
@@ -106,90 +114,98 @@ function updateResource()
   console.log( "Updating UI to reflect changes to resource." );
 }
 
-function blobUploadTestX()
+function blobUploadTest()
 {
-  var btm = new hugeupload.BinaryTestMessage();
-  btm.payload.a = "hello";
-  btm.payload.b = 23;
-  btm.payload.c = new Uint8Array([11,22,33,44,55,66,77,88,99]);
-  toolsocket.sendMessage( btm );
-}
-  
-async function blobUploadTest()
-{
-    console.log( "Uploading starting" );
+    console.log( "File chunk mapping starting" );
     const fileInput = document.querySelector("input[type=file]");
     if ( fileInput.files.length < 1 )
     {
         alert( "No files selected." );
         return;
     }
-
-    fileProgress.file = null;
-    fileProgress.maxChunkSize = 2 * 1024 * 1024;
-    fileProgress.chunkSize=0;
-    fileProgress.chunkNo=0;
-    fileProgress.chunkCount=0;
-    fileProgress.chunk = null;
-    fileProgress.chunkAckWait = false;
-    fileProgress.reader = new FileReader();
-    fileProgress.reader.addEventListener( 'load', (e) => sendIncomingChunk( e ) );
-
-    
-    for ( var f=0; f<fileInput.files.length; f++ )
+    if ( fileInput.files.length > 1 )
     {
-        processOneFile( fileInput.files[f] );
+        alert( "Only one file may be selected." );
+        return;
     }
 
-    console.log( "Uploading done" );
-}
+    fileProgress.action = "digest";    
+    fileProgress.file = fileInput.files[0];
+    fileProgress.chunkNo = 0;
+    fileProgress.maxChunkSize = 10 * 1024 * 1024;
 
-
-function processOneFile( file )
-{    
-    console.log( " Name of file: " + file.name );
-    console.log( "Last modified: " + file.lastModified );
-    console.log( "         Size: " + file.size );
-    console.log( "         Type: " + file.type );
-
-    fileProgress.file = file;
-    fileProgress.chunkNo=0;
-    fileProgress.chunkCount=Math.floor( file.size / fileProgress.maxChunkSize );
-    if ( (file.size % fileProgress.maxChunkSize) > 0 )
+    fileProgress.chunkCount=Math.floor( fileProgress.file.size / fileProgress.maxChunkSize );
+    // Remainder? One smaller chunk
+    if ( (fileProgress.file.size % fileProgress.maxChunkSize) > 0 )
         fileProgress.chunkCount++;
-    console.log( fileProgress );
+  
+    pendingFileMap = {};
+    pendingFileMap.name         = fileProgress.file.name;
+    pendingFileMap.lastModified = fileProgress.file.lastModified;
+    pendingFileMap.size         = fileProgress.file.size;
+    pendingFileMap.type         = fileProgress.file.type;
+    pendingFileMap.map          = [];
+
+    console.debug( fileProgress );
+    console.debug( pendingFileMap );
     startChunk();
 }
 
 function startChunk()
 {
-    const start = fileProgress.chunkNo * fileProgress.maxChunkSize;
-    const end   = ( (start + fileProgress.maxChunkSize) > fileProgress.file.size ) ? fileProgress.file.size : start + fileProgress.maxChunkSize;
-    fileProgress.chunkSize=end-start;
-    
-    console.log( "Processing chunk " + fileProgress.chunkNo + " from " + start + " to " + end );
-    
-    fileProgress.chunk = fileProgress.file.slice( start, end );
-    fileProgress.reader.readAsArrayBuffer( fileProgress.chunk );
-    fileProgress.chunkAckWait = true;
-}
+  const start = fileProgress.chunkNo * fileProgress.maxChunkSize;
+  const end   = ( (start + fileProgress.maxChunkSize) > fileProgress.file.size ) ? fileProgress.file.size : start + fileProgress.maxChunkSize;
+  fileProgress.chunkSize=end-start;
 
-async function sendIncomingChunk( e )
-{
-    console.log( e );
-    console.log( fileProgress );
-    const data = new Uint8Array( fileProgress.reader.result );  // result is an ArrayBuffer because of readAsArrayBuffer()
-    const hash = await crypto.subtle.digest( "SHA-256", data );
+  pendingFileMap.map[fileProgress.chunkNo] = {};
+  pendingFileMap.map[fileProgress.chunkNo].start = start;
+  pendingFileMap.map[fileProgress.chunkNo].end   = end;
+
+  console.debug( "Processing chunk " + fileProgress.chunkNo + " from " + start + " to " + end );
+
+  function handleHash( hash )
+  {
     const hashArray = Array.from(new Uint8Array(hash)); // convert buffer to byte array
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    console.log( "Hash = " + hashHex );
+    console.log( "Hash = " + hashHex );        
+    pendingFileMap.map[fileProgress.chunkNo].hash   = hashHex;
+    if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
+      startChunk();
+    else
+    {
+      console.debug( "File mapping complete" );
+      console.log( pendingFileMap );
+      const message = new hugeupload.FileMapMessage();
+      message.payload = pendingFileMap;
+      toolsocket.sendMessage( message );
+    }
+  }
 
-    var bcm = new hugeupload.BinaryChunkMessage();
-    bcm.payload.id = "made up id";
-    bcm.payload.chunkNo = fileProgress.chunkNo;
-    bcm.payload.chunk = data;
-    toolsocket.sendMessage( bcm );
-  
+  function chunkLoadProcess( abuffer )
+  {
+    console.debug( "Buffer slice read into abuffer", abuffer );
+
+    if ( fileProgress.action === "digest" )
+    {
+      const data = new Uint8Array( abuffer );
+      crypto.subtle.digest( "SHA-256", data ).then( (hash) => handleHash( hash ) );
+    }
+    if ( fileProgress.action === "upload" )
+    {
+      var bcm = new hugeupload.BinaryChunkMessage();
+      bcm.payload.id = "made up id";
+      bcm.payload.chunkNo = fileProgress.chunkNo;
+      bcm.payload.chunk = data;
+      console.debug( "Sending chunk message." );
+      toolsocket.sendMessage( bcm );
+    }
+  }
+
+  fileProgress.chunk = fileProgress.file.slice( start, end );
+  fileProgress.chunk.arrayBuffer().then( 
+            (abuffer) => chunkLoadProcess( abuffer ),
+            (error)   => console.log( "Buffer slice error", error )
+          );
 }
 
 function processChunkAck( message )
@@ -200,14 +216,44 @@ function processChunkAck( message )
     return;
   }
   
-  fileProgress.chunkAckWait = false;
   if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
     startChunk();
+}
+
+function processChunkReq( message )
+{  
+  console.debug( message );
+  
+  // server asked for a chunk to be uploaded
+  if ( !fileProgress.file )
+  {
+    alert( "No file selected for upload. Resuming upload not yet implemented." );
+    return;
+  }
+  
+  function chunkUpload( abuffer )
+  {
+    const data = new Uint8Array( abuffer );
+    console.debug( "Buffer slice read into abuffer", abuffer );
+    var bcm = new hugeupload.BinaryChunkMessage();
+    bcm.payload.id = "made up id";
+    bcm.payload.chunkNo = message.chunkNo;
+    bcm.payload.chunk = data;
+    console.debug( "Sending chunk message." );
+    toolsocket.sendMessage( bcm );
+  }
+  
+  console.log( "Slicing file start = " + message.start + " end = " + message.end );
+  const chunk = fileProgress.file.slice( message.start, message.end );
+  chunk.arrayBuffer().then( 
+            (abuffer) => chunkUpload( abuffer ),
+            (error)   => console.log( "Buffer slice error", error )
+          );
 }
 
 window.addEventListener( "load", function(){ init(); } );
 document.addEventListener( "DOMContentLoaded", function()
   { 
-    console.log( "DOMContentLoaded event arrived." ); 
-    console.log( finder.toplevelalert );
+    console.debug( "DOMContentLoaded event arrived." ); 
+    console.debug( finder.toplevelalert );
   } );

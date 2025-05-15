@@ -84,4 +84,15 @@ public class HuStoreCluster
     resourceStore.update( r );
   }
 
+  public Path getResourcePendingFilePath( HuResourceKey key )
+  {
+    Path r = resourceStore.getPath( key );
+    return r.getParent().resolve( "pending_" + r.getFileName() + ".bin" );
+  }
+
+  public Path getResourceFinalFilePath( HuResourceKey key )
+  {
+    Path r = resourceStore.getPath( key );
+    return r.getParent().resolve( "final_" + r.getFileName() + ".bin" );
+  }
 }

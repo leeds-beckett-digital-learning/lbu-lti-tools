@@ -19,14 +19,9 @@ package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
  *
  * @author maber01
  */
-public class HuBinaryChunkUploadReq
+public class HuBinaryChunkDownloadRequest
 {
-  int chunkNo;
-  long start;
-  long end;
-  String hash;
-  
-  int recentChunkAck = -1;
+  int chunkNo;  
 
   public int getChunkNo()
   {
@@ -36,45 +31,5 @@ public class HuBinaryChunkUploadReq
   public void setChunkNo( int chunkNo )
   {
     this.chunkNo = chunkNo;
-  }
-
-  public long getStart()
-  {
-    return start;
-  }
-
-  public void setStart( long start )
-  {
-    this.start = start;
-  }
-
-  public long getEnd()
-  {
-    return end;
-  }
-
-  public void setEnd( long end )
-  {
-    this.end = end;
-  }
-
-  public String getHash()
-  {
-    return hash;
-  }
-
-  public void setHash( String hash )
-  {
-    this.hash = hash;
-  }
-
-  public int getRecentChunkAck()
-  {
-    return recentChunkAck;
-  }
-
-  public void setRecentChunkAck( int recentChunkAck )
-  {
-    this.recentChunkAck = recentChunkAck;
   }
 }

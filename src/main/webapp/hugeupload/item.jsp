@@ -210,6 +210,11 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
         <tr><th>Left</th><td></td></tr>
       </table>
       </div>
+      <div class="block">
+        <p style="margin-top: 0.5em;"><button id="startdownloadbutton">Start Download</button>
+        <p style="margin-top: 0.5em;"><button id="savebutton">Save</button>
+      </div>
+      
       <c:if test="${support.allowedToManage}">
         <p>User allowed to manage.</p>
       </c:if>

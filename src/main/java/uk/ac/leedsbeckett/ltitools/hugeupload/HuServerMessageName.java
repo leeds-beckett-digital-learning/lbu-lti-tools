@@ -17,8 +17,9 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
-import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadReq;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadRequest;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.TestObject;
@@ -42,8 +43,9 @@ public enum HuServerMessageName implements ToolMessageName
   
   BinaryChunkUploadAck( "BinaryChunkUploadAck", HuBinaryChunkUploadAck.class ),
 
-  BinaryChunkUploadReq( "BinaryChunkUploadReq", HuBinaryChunkUploadReq.class ),
+  BinaryChunkUploadReq( "BinaryChunkUploadReq", HuBinaryChunkUploadRequest.class ),
   
+  BinaryChunkDownload( "BinaryChunkDownload",   HuBinaryChunkDownload.class ),
   /**
    * Message contains the PGA as created by the manager(s).
    */

@@ -29,7 +29,8 @@ let resource = null;
 
 let platformconfig = null;
 
-const fileProgress = new Object();
+const uploadProgress = new Object();
+const downloadProgress = new Object();
 
 let pendingFileMap = new Object();
 
@@ -54,6 +55,8 @@ function init()
   finder.fileselection.addEventListener( 'change', () => blobUploadTest() );
   finder.startuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
   finder.stopuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
+  finder.startdownloadbutton.addEventListener( 'click', () => startDownload() );
+  finder.savebutton.addEventListener( 'click', () => save() );
   
   let handler =
   {
@@ -72,9 +75,14 @@ function init()
       processChunkAck( message.payload );
     },
     
-    handleBinaryChunkUploadReq( message )
+    handleBinaryChunkUploadRequest( message )
     {
       processChunkReq( message.payload );
+    },
+    
+    handleBinaryChunkDownload( message )
+    {
+      processChunkDownload( message.payload );
     },
     
     handleAlert( message )
@@ -129,47 +137,47 @@ function blobUploadTest()
         return;
     }
 
-    fileProgress.action = "digest";    
-    fileProgress.file = fileInput.files[0];
-    fileProgress.chunkNo = 0;
-    fileProgress.maxChunkSize = 10 * 1024 * 1024;
+    uploadProgress.action = "digest";    
+    uploadProgress.file = fileInput.files[0];
+    uploadProgress.chunkNo = 0;
+    uploadProgress.maxChunkSize = 10 * 1024 * 1024;
 
-    fileProgress.chunkCount=Math.floor( fileProgress.file.size / fileProgress.maxChunkSize );
+    uploadProgress.chunkCount=Math.floor( uploadProgress.file.size / uploadProgress.maxChunkSize );
     // Remainder? One smaller chunk
-    if ( (fileProgress.file.size % fileProgress.maxChunkSize) > 0 )
-        fileProgress.chunkCount++;
+    if ( (uploadProgress.file.size % uploadProgress.maxChunkSize) > 0 )
+        uploadProgress.chunkCount++;
   
     pendingFileMap = {};
-    pendingFileMap.name         = fileProgress.file.name;
-    pendingFileMap.lastModified = fileProgress.file.lastModified;
-    pendingFileMap.size         = fileProgress.file.size;
-    pendingFileMap.type         = fileProgress.file.type;
+    pendingFileMap.name         = uploadProgress.file.name;
+    pendingFileMap.lastModified = uploadProgress.file.lastModified;
+    pendingFileMap.size         = uploadProgress.file.size;
+    pendingFileMap.type         = uploadProgress.file.type;
     pendingFileMap.map          = [];
 
-    console.debug( fileProgress );
+    console.debug( uploadProgress );
     console.debug( pendingFileMap );
     startChunk();
 }
 
 function startChunk()
 {
-  const start = fileProgress.chunkNo * fileProgress.maxChunkSize;
-  const end   = ( (start + fileProgress.maxChunkSize) > fileProgress.file.size ) ? fileProgress.file.size : start + fileProgress.maxChunkSize;
-  fileProgress.chunkSize=end-start;
+  const start = uploadProgress.chunkNo * uploadProgress.maxChunkSize;
+  const end   = ( (start + uploadProgress.maxChunkSize) > uploadProgress.file.size ) ? uploadProgress.file.size : start + uploadProgress.maxChunkSize;
+  uploadProgress.chunkSize=end-start;
 
-  pendingFileMap.map[fileProgress.chunkNo] = {};
-  pendingFileMap.map[fileProgress.chunkNo].start = start;
-  pendingFileMap.map[fileProgress.chunkNo].end   = end;
+  pendingFileMap.map[uploadProgress.chunkNo] = {};
+  pendingFileMap.map[uploadProgress.chunkNo].start = start;
+  pendingFileMap.map[uploadProgress.chunkNo].end   = end;
 
-  console.debug( "Processing chunk " + fileProgress.chunkNo + " from " + start + " to " + end );
+  console.debug( "Processing chunk " + uploadProgress.chunkNo + " from " + start + " to " + end );
 
   function handleHash( hash )
   {
     const hashArray = Array.from(new Uint8Array(hash)); // convert buffer to byte array
     const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
     console.log( "Hash = " + hashHex );        
-    pendingFileMap.map[fileProgress.chunkNo].hash   = hashHex;
-    if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
+    pendingFileMap.map[uploadProgress.chunkNo].hash   = hashHex;
+    if ( ++uploadProgress.chunkNo < uploadProgress.chunkCount )
       startChunk();
     else
     {
@@ -185,24 +193,24 @@ function startChunk()
   {
     console.debug( "Buffer slice read into abuffer", abuffer );
 
-    if ( fileProgress.action === "digest" )
+    if ( uploadProgress.action === "digest" )
     {
       const data = new Uint8Array( abuffer );
       crypto.subtle.digest( "SHA-256", data ).then( (hash) => handleHash( hash ) );
     }
-    if ( fileProgress.action === "upload" )
+    if ( uploadProgress.action === "upload" )
     {
       var bcm = new hugeupload.BinaryChunkMessage();
       bcm.payload.id = "made up id";
-      bcm.payload.chunkNo = fileProgress.chunkNo;
+      bcm.payload.chunkNo = uploadProgress.chunkNo;
       bcm.payload.chunk = data;
       console.debug( "Sending chunk message." );
       toolsocket.sendMessage( bcm );
     }
   }
 
-  fileProgress.chunk = fileProgress.file.slice( start, end );
-  fileProgress.chunk.arrayBuffer().then( 
+  uploadProgress.chunk = uploadProgress.file.slice( start, end );
+  uploadProgress.chunk.arrayBuffer().then( 
             (abuffer) => chunkLoadProcess( abuffer ),
             (error)   => console.log( "Buffer slice error", error )
           );
@@ -210,13 +218,13 @@ function startChunk()
 
 function processChunkAck( message )
 {
-  if ( message.chunkNo !== fileProgress.chunkNo )
+  if ( message.chunkNo !== uploadProgress.chunkNo )
   {
     alert( "Received mis-matched chunk no acknowledgement." );
     return;
   }
   
-  if ( ++fileProgress.chunkNo < fileProgress.chunkCount )
+  if ( ++uploadProgress.chunkNo < uploadProgress.chunkCount )
     startChunk();
 }
 
@@ -225,7 +233,7 @@ function processChunkReq( message )
   console.debug( message );
   
   // server asked for a chunk to be uploaded
-  if ( !fileProgress.file )
+  if ( !uploadProgress.file )
   {
     alert( "No file selected for upload. Resuming upload not yet implemented." );
     return;
@@ -244,13 +252,65 @@ function processChunkReq( message )
   }
   
   console.log( "Slicing file start = " + message.start + " end = " + message.end );
-  const chunk = fileProgress.file.slice( message.start, message.end );
+  const chunk = uploadProgress.file.slice( message.start, message.end );
   chunk.arrayBuffer().then( 
             (abuffer) => chunkUpload( abuffer ),
             (error)   => console.log( "Buffer slice error", error )
           );
 }
 
+async function startDownload()
+{
+  downloadProgress.opfsRoot = await navigator.storage.getDirectory();
+  // ToDo - filename must distinguish bewteen platforms/courses/resources
+  downloadProgress.fileName = "download.bin";
+  downloadProgress.fileHandle = await downloadProgress.opfsRoot.getFileHandle(downloadProgress.fileName, { create: true });
+  downloadProgress.writable = await downloadProgress.fileHandle.createWritable();
+  
+  const chunkReq = new hugeupload.BinaryChunkDownloadRequestMessage();
+  chunkReq.payload.chunkNo = 0;
+  console.debug( "Sending chunk request message." );
+  toolsocket.sendMessage( chunkReq );
+
+  
+}
+
+async function processChunkDownload( chunkDown )
+{
+  const chunkInfo = resource.fileMap.map[chunkDown.chunkNo];
+  await downloadProgress.writable.seek( chunkInfo.start );
+  await downloadProgress.writable.write( chunkDown.chunk );
+
+  if ( (chunkDown.chunkNo+1) < resource.fileMap.map.length )
+  {
+    const chunkReq = new hugeupload.BinaryChunkDownloadRequestMessage();
+    chunkReq.payload.chunkNo = chunkDown.chunkNo+1;
+    console.debug( "Sending chunk request message." );
+    toolsocket.sendMessage( chunkReq );    
+  }
+  else
+  {
+    downloadProgress.writable.close();
+    alert( "Download complete." );
+  }
+}
+
+
+async function save()
+{
+  // https://parzibyte.me/blog/en/2023/10/06/javascript-store-read-files-origin-private-file-system/
+  const fileReadHandle = await downloadProgress.opfsRoot.getFileHandle(downloadProgress.fileName, { create: false });
+  const file = await fileReadHandle.getFile();
+  const objectUrl = URL.createObjectURL(file);
+  console.debug( objectUrl );
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = "thingy.zip";
+  a.click();
+  URL.revokeObjectURL(objectUrl);  
+}
+    
+    
 window.addEventListener( "load", function(){ init(); } );
 document.addEventListener( "DOMContentLoaded", function()
   { 

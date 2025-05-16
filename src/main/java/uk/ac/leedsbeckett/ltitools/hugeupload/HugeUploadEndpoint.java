@@ -36,9 +36,11 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownload;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownloadRequest;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUpload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
-import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadReq;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadRequest;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMap;
@@ -150,7 +152,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     super.onMessage( session, text );
   }
 
-  private HuBinaryChunkUploadReq getNextChunkRequest( HugeUploadResource huResource )
+  private HuBinaryChunkUploadRequest getNextChunkRequest( HugeUploadResource huResource )
   {
     for ( int i=0; i < huResource.getUploadState().getChunkStates().size(); i++ )
     {
@@ -158,7 +160,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
       if ( !chunkState.isUploaded() )
       {
         HuFileMapChunk chunk = huResource.getFileMap().getMap().get( i );
-        HuBinaryChunkUploadReq upreq = new HuBinaryChunkUploadReq();
+        HuBinaryChunkUploadRequest upreq = new HuBinaryChunkUploadRequest();
         upreq.setChunkNo( i );
         upreq.setStart( chunk.getStart() );
         upreq.setEnd( chunk.getEnd() );
@@ -226,7 +228,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     sendToolMessage( session, tm );
     
     // Send first chunk request.
-    HuBinaryChunkUploadReq upreq = getNextChunkRequest( huResource );
+    HuBinaryChunkUploadRequest upreq = getNextChunkRequest( huResource );
     if ( upreq == null )
       return;
     
@@ -291,7 +293,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     store.updateResource( huResource );
 
     // Send another chunk request.
-    HuBinaryChunkUploadReq upreq = getNextChunkRequest( huResource );
+    HuBinaryChunkUploadRequest upreq = getNextChunkRequest( huResource );
     if ( upreq != null )
     {
       upreq.setRecentChunkAck( chunkup.getChunkNo() );
@@ -306,7 +308,47 @@ public class HugeUploadEndpoint extends ToolEndpoint
     }
   }
   
+  @EndpointMessageHandler()
+  public void handleBinaryChunkDownloadRequest( Session session, ToolMessage message, HuBinaryChunkDownloadRequest downreq ) 
+          throws IOException, HandlerAlertException
+  {
+    // Whether there is a resource for the session will depend on the facet 
+    // being used.
+    if ( !"item".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
+    if ( downreq == null )
+      throw new HandlerAlertException( "No payload in download request.", message.getId() );
+    logger.log( Level.INFO, "chunk no = {0}", downreq.getChunkNo() );
+    HuResourceKey rKey = huState.getHuResourceKey();
+    if ( rKey == null )
+      throw new HandlerAlertException( "Cannot find resource data.", message.getId() );
+
+    HugeUploadResource huResource = store.getResource( rKey, true );
+    if ( huResource == null )
+      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
+
+    HuFileMapChunk mapchunk = huResource.getFileMap().getMap().get( downreq.getChunkNo() );
+    Path pending = store.getResourcePendingFilePath( rKey );
+    HuUploadState uploadState = huResource.getUploadState();
+    if ( !uploadState.getChunkStates().get( downreq.getChunkNo() ).isUploaded() )
+      throw new HandlerAlertException( "Requested chunk has not be uploaded so cannot be downloaded.", message.getId() );
+    
+    byte[] buffer = new byte[ (int)(mapchunk.getEnd() - mapchunk.getStart()) ];
+    try ( RandomAccessFile raf = new RandomAccessFile( pending.toFile(), "r" ) )
+    {
+      raf.seek( mapchunk.getStart() );
+      raf.read( buffer );
+    }
+    
+    HuBinaryChunkDownload chunkdown = new HuBinaryChunkDownload();
+    chunkdown.setId( "er...." );
+    chunkdown.setChunkNo( downreq.getChunkNo() );
+    chunkdown.setChunk( buffer );
+    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkDownload, chunkdown );
+    sendToolMessage( session, tm );
+  }
   
+
   /**
    * Client requested the resource data.
    * 

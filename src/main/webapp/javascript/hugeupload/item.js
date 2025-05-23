@@ -16,6 +16,7 @@
 
 import finder from "../common/domutil.js";
 import arialib from "../common/aria.js";
+import sha512lib from "../common/sha512.js";
 import hugeupload from "../generated/hugeupload.js";
 
 let dynamicData = dynamicPageData;

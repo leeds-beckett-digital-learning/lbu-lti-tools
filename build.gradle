@@ -41,6 +41,11 @@ def buildWebappDynamic  = project.buildDir.toString() + '/webappdynamic'
 def buildJavascriptDir  = buildWebappDynamic + '/javascript/' + buildTimestamp
 def buildJavascriptGen  = buildJavascriptDir + '/generated'
 
+def wasmPrependJsFile = new File( project.projectDir, '/src/main/wat/prepend.js' )
+def wasmAppendJsFile  = new File( project.projectDir, '/src/main/wat/append.js'  )
+
+OperatingSystem os = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.currentOperatingSystem;
+
 /**
  * This is here because the ToolApi dependency may be a snapshot version.
  * Changing the resolution strategy means the ToolApi will be updated even
@@ -91,6 +96,33 @@ task moveJavascript( type: Copy ) {
     delete buildWebappDynamic
   }
 }
+
+task compileWatToWasm() {
+  description = 'Compile each .wat source file to .wasm build file'
+  def sourceDir = 'src/main/wat/'
+  def targetDir = 'build/wasm/'
+  def srcJsWasm = 'src/main/webapp/javascript/wasm/'
+  doLast {
+    file(targetDir).mkdirs()
+    file(srcJsWasm).mkdirs()
+    if ( os.isLinux() ) {
+      file(sourceDir).eachFile { watFile ->
+        if ( watFile.name.endsWith( '.wat' ) ) {
+          def wasmFile = new File( file(targetDir),  watFile.name.substring(0,watFile.name.lastIndexOf(".")) + ".wasm" )
+          def jsFile   = new File( file(srcJsWasm),  watFile.name.substring(0,watFile.name.lastIndexOf(".")) + ".js"   )
+          exec { commandLine 'sh', '-c', "wat2wasm $watFile -o $wasmFile" }
+          exec { commandLine 'sh', '-c', "cp $wasmPrependJsFile   $jsFile"     }
+          exec { commandLine 'sh', '-c', "base64 $wasmFile      >>$jsFile"     }
+          exec { commandLine 'sh', '-c', "cat $wasmAppendJsFile >>$jsFile"     }
+        }
+      }
+    }
+    else {
+      println "This is not Linux and the build def doesn't know how compile wat to wasm"
+    }
+  }
+}
+
 
 /**
  * Prepare the HTML files that need to point at Javascript. (After calling the

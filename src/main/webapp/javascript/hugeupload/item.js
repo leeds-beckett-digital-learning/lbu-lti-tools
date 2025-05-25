@@ -30,6 +30,7 @@ let resource = null;
 
 let platformconfig = null;
 
+const importProgress = new Object();
 const uploadProgress = new Object();
 const downloadProgress = new Object();
 
@@ -53,7 +54,7 @@ function init()
       
   console.debug( dynamicData.webSocketUri );
   
-  finder.fileselection.addEventListener( 'change', () => blobUploadTest() );
+  finder.fileselection.addEventListener( 'change', () => importFile() );
   finder.startuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
   finder.stopuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
   finder.startdownloadbutton.addEventListener( 'click', () => startDownload() );
@@ -122,6 +123,44 @@ function updateResource()
 {
   console.log( "Updating UI to reflect changes to resource." );
 }
+
+async function importFile()
+{
+  const fileInput = document.querySelector("input[type=file]");
+  if ( fileInput.files.length < 1 ) { alert( "No files selected."             ); return; }
+  if ( fileInput.files.length > 1 ) { alert( "Only one file may be selected." ); return; }
+  const digester    = new sha512lib.Sha512();
+  const inFile      = fileInput.files[0];
+  const opfsRoot    = await navigator.storage.getDirectory();
+  const outFileName = "import.bin";
+  const fileHandle  = await opfsRoot.getFileHandle( outFileName, { create: true } );
+  const writable    = await fileHandle.createWritable();
+  const maxSize     = 2*1024*1024;
+  var end;
+  var previousPercent=0;
+  const startTime = performance.now();
+  for ( var start = 0; start < inFile.size; start+=maxSize )
+  {
+    end = start + maxSize;
+    if ( end > inFile.size ) end = inFile.size;
+    const chunkBlob = await inFile.slice( start, end );
+    const chunk = await chunkBlob.bytes();
+    await writable.write( chunkBlob );
+    digester.update( chunk );
+    const percent = Math.floor( 100*(end/inFile.size) );
+    if ( percent !== previousPercent )
+    {
+      console.log( "Completed ", percent );
+      previousPercent = percent;
+    }
+  }
+  await writable.close();
+  const binhash = digester.digest();
+  console.log( binhash.toHex() );
+  const endTime = performance.now();
+  console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
+}
+
 
 function blobUploadTest()
 {

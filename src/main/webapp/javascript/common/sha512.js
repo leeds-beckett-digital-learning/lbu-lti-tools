@@ -144,7 +144,7 @@ const sha512lib = (function ()
       if ( this.resultBuf )
         return this.resultBuf;
       
-      console.assert(this.finalized === false, 'Hash instance finalized')
+      console.assert(this.finalized === false, 'Hash instance finalized');
       this.finalized = true;
       // Release the state data so another instance can use it
       freeList.push(this.pointer);
@@ -173,5 +173,3 @@ const sha512lib = (function ()
 })();
 
 export default sha512lib;
-
-

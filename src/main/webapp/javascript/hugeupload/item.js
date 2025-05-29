@@ -135,7 +135,7 @@ async function importFile()
   const outFileName = "import.bin";
   const fileHandle  = await opfsRoot.getFileHandle( outFileName, { create: true } );
   const writable    = await fileHandle.createWritable();
-  const maxSize     = 2*1024*1024;
+  const maxSize     = 10*1024*1024;
   var end;
   var previousPercent=0;
   const startTime = performance.now();
@@ -145,6 +145,9 @@ async function importFile()
     if ( end > inFile.size ) end = inFile.size;
     const chunkBlob = await inFile.slice( start, end );
     const chunk = await chunkBlob.bytes();
+    const littleHash = await crypto.subtle.digest( "SHA-1", chunk );
+    const littleHashStr = new Uint8Array(littleHash).toBase64();
+    console.log( "Chunk SHA-1 hash ", littleHashStr );
     await writable.write( chunkBlob );
     digester.update( chunk );
     const percent = Math.floor( 100*(end/inFile.size) );
@@ -156,7 +159,7 @@ async function importFile()
   }
   await writable.close();
   const binhash = digester.digest();
-  console.log( binhash.toHex() );
+  console.log( binhash.toBase64() );
   const endTime = performance.now();
   console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
 }

@@ -26,16 +26,19 @@ public class HuStoreCluster
 {
   Path basePath;
   
-  HuResourceStore resourceStore;
-  HuCourseStore courseStore;
   PlatformConfigurationStore configStore;
+  HuCourseStore courseStore;
+  HuResourceStore resourceStore;
+  HuFileMetadataStore fileStore;
   
   public HuStoreCluster( Path basePath )
   {
     this.basePath = basePath;
-    resourceStore = new HuResourceStore( basePath.resolve( "resources" ) );
-    courseStore   = new HuCourseStore( basePath.resolve( "courses" ) );
-    configStore   = new PlatformConfigurationStore( basePath.resolve( "platformconfig" ) );
+    Path p = basePath.resolve( "platforms" );
+    configStore   = new PlatformConfigurationStore( p );
+    courseStore   = new HuCourseStore( p );
+    resourceStore = new HuResourceStore( p );
+    fileStore     = new HuFileMetadataStore( p );
   }
 
   public Configuration getPlatformConfiguration( String platform, boolean create ) throws IOException
@@ -84,6 +87,16 @@ public class HuStoreCluster
     resourceStore.update( r );
   }
 
+  public HuFileMetadata getFileMetadata( HuFileMetadataKey key, boolean create )
+  {
+    return fileStore.get( key, create );
+  }
+  
+  public void updateFileMetadata( HuFileMetadata d ) throws IOException
+  {
+    fileStore.update( d );
+  }
+  
   public Path getResourcePendingFilePath( HuResourceKey key )
   {
     Path r = resourceStore.getPath( key );

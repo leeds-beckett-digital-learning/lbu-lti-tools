@@ -74,8 +74,11 @@ public class HuResourceStore extends Store<HuResourceKey,HugeUploadResource>
   @Override
   public Path getPath( HuResourceKey key )
   {
-    Path p = basepath.resolve( URLEncoder.encode( key.getPlatformId(), StandardCharsets.UTF_8 ) );
-    Path c = p.resolve( URLEncoder.encode( key.getCourseId(), StandardCharsets.UTF_8 ) );
-    return c.resolve( URLEncoder.encode( key.getToolResourceId(), StandardCharsets.UTF_8 ) );
+    return basepath.resolve( toFileName( key.getPlatformId() ) )
+                   .resolve( "courses" )
+                   .resolve( toFileName( key.getCourseId() ) )
+                   .resolve( "resources" )
+                   .resolve( toFileName( key.getToolResourceId() ) )
+                   .resolve( "resource.json" );
   }  
 }

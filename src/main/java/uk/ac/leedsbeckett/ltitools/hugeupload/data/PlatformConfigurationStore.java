@@ -63,7 +63,8 @@ public class PlatformConfigurationStore extends Store<String,ConfigurationEntry>
   @Override
   public Path getPath( String key )
   {
-    return basepath.resolve( URLEncoder.encode( key, StandardCharsets.UTF_8 ) );    
+    return basepath.resolve( toFileName( key ) )
+                   .resolve( "config.json" );    
   }
   
 }

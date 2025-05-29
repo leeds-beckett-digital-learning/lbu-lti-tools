@@ -139,7 +139,14 @@ async function importFile()
   var end;
   var previousPercent=0;
   const startTime = performance.now();
-  for ( var start = 0; start < inFile.size; start+=maxSize )
+  const startReport = {};
+  startReport.fileName = "fixedfilename";
+  startReport.replacement = false;
+  startReport.size = inFile.size;
+  const smessage = new hugeupload.FileMapStartMessage();
+  smessage.payload = startReport;
+  toolsocket.sendMessage( smessage );    
+  for ( var start = 0, i=0; start < inFile.size; start+=maxSize, i++ )
   {
     end = start + maxSize;
     if ( end > inFile.size ) end = inFile.size;
@@ -156,12 +163,28 @@ async function importFile()
       console.log( "Completed ", percent );
       previousPercent = percent;
     }
+    const progress = {};
+    progress.fileName = "fixedfilename";
+    progress.chunkNumber = i;
+    progress.chunk = {};
+    progress.chunk.start = start;
+    progress.chunk.end = end;
+    progress.chunk.hash = littleHashStr;
+    const pmessage = new hugeupload.FileMapProgressMessage();
+    pmessage.payload = progress;
+    toolsocket.sendMessage( pmessage );    
   }
   await writable.close();
   const binhash = digester.digest();
   console.log( binhash.toBase64() );
   const endTime = performance.now();
   console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
+  const completion = {};
+  completion.fileName = "fixedfilename";
+  completion.wholeFileDigest = binhash.toBase64();
+  const cmessage = new hugeupload.FileMapCompleteMessage();
+  cmessage.payload = completion;
+  toolsocket.sendMessage( cmessage );    
 }
 
 

@@ -34,6 +34,8 @@ import javax.websocket.server.ServerEndpoint;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.Configuration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuFileMetadata;
+import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuFileMetadataKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownload;
@@ -45,6 +47,9 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryTestMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuConfigurationMessage;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMap;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapChunk;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapComplete;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapProgress;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapStart;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadChunkState;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
@@ -152,14 +157,14 @@ public class HugeUploadEndpoint extends ToolEndpoint
     super.onMessage( session, text );
   }
 
-  private HuBinaryChunkUploadRequest getNextChunkRequest( HugeUploadResource huResource )
+  private HuBinaryChunkUploadRequest getNextChunkRequest( HuFileMetadata huFile )
   {
-    for ( int i=0; i < huResource.getUploadState().getChunkStates().size(); i++ )
+    for ( int i=0; i < huFile.getUploadState().getChunkStates().size(); i++ )
     {
-      HuUploadChunkState chunkState = huResource.getUploadState().getChunkStates().get( i );
+      HuUploadChunkState chunkState = huFile.getUploadState().getChunkStates().get( i );
       if ( !chunkState.isUploaded() )
       {
-        HuFileMapChunk chunk = huResource.getFileMap().getMap().get( i );
+        HuFileMapChunk chunk = huFile.getFileMap().getMap().get( i );
         HuBinaryChunkUploadRequest upreq = new HuBinaryChunkUploadRequest();
         upreq.setChunkNo( i );
         upreq.setStart( chunk.getStart() );
@@ -172,8 +177,50 @@ public class HugeUploadEndpoint extends ToolEndpoint
   }
   
   @EndpointMessageHandler()
+  public void handleFileMapStart( Session session, ToolMessage message, HuFileMapStart fileMap ) 
+          throws IOException, HandlerAlertException
+  {
+    if ( !"item".equals( huState.getToolFacetId() ) )
+      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
+    HuResourceKey rKey = huState.getHuResourceKey();
+    if ( rKey == null )
+      throw new HandlerAlertException( "Recieved message but cannot find corresponding resource data.", message.getId() );
+    HugeUploadResource huResource = store.getResource( rKey, true );
+    if ( huResource == null )
+      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
+    if ( fileMap == null )
+      throw new HandlerAlertException( "Missing message data.", message.getId() );
+    if ( fileMap.getFileName() == null )
+      throw new HandlerAlertException( "Missing file name in message data.", message.getId() );
+
+    logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isReplacement(), fileMap.getFileName() });
+    
+    HuFileMetadataKey fkey = new HuFileMetadataKey( rKey, fileMap.getFileName() );
+    HuFileMetadata fmdata = store.getFileMetadata( fkey, true );
+    HuFileMap m = new HuFileMap();
+    m.setMap( new ArrayList<>() );
+    fmdata.setFileMap( m );
+    store.updateFileMetadata( fmdata );
+  }
+  
+  @EndpointMessageHandler()
+  public void handleFileMapProgress( Session session, ToolMessage message, HuFileMapProgress fileMap ) throws IOException, HandlerAlertException
+  {
+    logger.log(Level.FINE, "Rxed chunkNumber {0} hash = {1}", new Object[ ]{fileMap.getChunkNumber(), fileMap.getChunk().getHash()});
+  }
+  
+  @EndpointMessageHandler()
+  public void handleFileMapComplete( Session session, ToolMessage message, HuFileMapComplete fileMap ) throws IOException, HandlerAlertException
+  {
+    logger.log(Level.FINE, "name = {0} digest = {1}", new Object[ ]{fileMap.getFileName(), fileMap.getWholeFileDigest() });
+  }
+  
+  @EndpointMessageHandler()
   public void handleFileMap( Session session, ToolMessage message, HuFileMap fileMap ) throws IOException, HandlerAlertException
   {
+    /*
+    
+
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"item".equals( huState.getToolFacetId() ) )
@@ -234,6 +281,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     
     tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadReq, upreq );
     sendToolMessage( session, tm );
+    */
   }
 
   @EndpointMessageHandler()
@@ -246,6 +294,9 @@ public class HugeUploadEndpoint extends ToolEndpoint
   public void handleBinaryChunk( Session session, ToolMessage message, HuBinaryChunkUpload chunkup ) 
           throws IOException, HandlerAlertException
   {
+    /*
+    
+    
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"item".equals( huState.getToolFacetId() ) )
@@ -306,12 +357,15 @@ public class HugeUploadEndpoint extends ToolEndpoint
       ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
       sendToolMessage( session, tm );
     }
+    
+    */
   }
   
   @EndpointMessageHandler()
   public void handleBinaryChunkDownloadRequest( Session session, ToolMessage message, HuBinaryChunkDownloadRequest downreq ) 
           throws IOException, HandlerAlertException
   {
+    /*
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"item".equals( huState.getToolFacetId() ) )
@@ -346,6 +400,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     chunkdown.setChunk( buffer );
     ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkDownload, chunkdown );
     sendToolMessage( session, tm );
+    */
   }
   
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Leeds Beckett University.
+ * Copyright 2025 maber01.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,56 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package uk.ac.leedsbeckett.ltitools.hugeupload.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.Serializable;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMap;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.store.Entry;
 
-
 /**
- * An object that represents the resource which the user is accessing after the
- * LTI launch.
- * 
- * @author jon
+ *
+ * @author maber01
  */
-public class HugeUploadResource implements Serializable, Entry<HuResourceKey>
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class HuFileMetadata implements Entry<HuFileMetadataKey>
 {
-  HuResourceKey key;
-    
-  public HugeUploadResource( @JsonProperty("key") HuResourceKey key )
+  HuFileMetadataKey key;
+  HuFileMap fileMap = null;
+  HuUploadState uploadState = null;
+
+  public HuFileMetadata( @JsonProperty("key") HuFileMetadataKey key )
   {
     this.key = key;
   }
-
+  
   @Override
-  public HuResourceKey getKey()
+  public HuFileMetadataKey getKey()
   {
     return key;
   }
 
   @Override
-  public void setKey( HuResourceKey key )
+  public void setKey( HuFileMetadataKey key )
   {
-    if ( this.key != null )
-      throw new IllegalArgumentException( "Not allowed to change resource key." );
     this.key = key;
   }
 
-  /**
-   * Called by the resource store when an entirely new resource is needed.
-   */
   @Override
   public void initialize()
   {
   }
 
-  @Override
-  public String toString()
+  public HuFileMap getFileMap()
   {
-    return "A huge upload resource " + key.toString();
+    return fileMap;
   }
+
+  public void setFileMap( HuFileMap fileMap )
+  {
+    this.fileMap = fileMap;
+  }
+
+  public HuUploadState getUploadState()
+  {
+    return uploadState;
+  }
+
+  public void setUploadState( HuUploadState uploadState )
+  {
+    this.uploadState = uploadState;
+  }
+  
+  
 }

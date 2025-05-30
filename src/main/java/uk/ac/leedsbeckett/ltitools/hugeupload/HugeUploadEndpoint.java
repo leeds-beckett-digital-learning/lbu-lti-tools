@@ -54,11 +54,10 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadChunkState;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
+import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.HandlerPromisesReply;
 
 /**
  * The web socket server endpoint that implements all the logic of this tool.
@@ -68,10 +67,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
  * 
  * @author maber01
  */
-@ServerEndpoint( 
-        value="/socket/hugeupload", 
-        decoders=ToolMessageDecoder.class, 
-        encoders=ToolMessageEncoder.class )
+@ServerEndpoint( value="/socket/hugeupload" )
 @EndpointJavascriptProperties(
         module="hugeupload",
         prefix="Hu",
@@ -177,21 +173,22 @@ public class HugeUploadEndpoint extends ToolEndpoint
   }
   
   @EndpointMessageHandler()
+  @HandlerPromisesReply()
   public void handleFileMapStart( Session session, ToolMessage message, HuFileMapStart fileMap ) 
           throws IOException, HandlerAlertException
   {
     if ( !"item".equals( huState.getToolFacetId() ) )
-      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message );
     HuResourceKey rKey = huState.getHuResourceKey();
     if ( rKey == null )
-      throw new HandlerAlertException( "Recieved message but cannot find corresponding resource data.", message.getId() );
+      throw new HandlerAlertException( "Recieved message but cannot find corresponding resource data.", message );
     HugeUploadResource huResource = store.getResource( rKey, true );
     if ( huResource == null )
-      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
+      throw new HandlerAlertException( "Unable to find resource data.", message );
     if ( fileMap == null )
-      throw new HandlerAlertException( "Missing message data.", message.getId() );
+      throw new HandlerAlertException( "Missing message data.", message );
     if ( fileMap.getFileName() == null )
-      throw new HandlerAlertException( "Missing file name in message data.", message.getId() );
+      throw new HandlerAlertException( "Missing file name in message data.", message );
 
     logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isReplacement(), fileMap.getFileName() });
     
@@ -287,7 +284,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   public void handleBinaryTest( Session session, ToolMessage message, HuBinaryTestMessage bin ) throws IOException, HandlerAlertException
   {
-    throw new HandlerAlertException( "BinaryTest message not supported anymore.", message.getId() );
+    throw new HandlerAlertException( "BinaryTest message not supported anymore.", message );
   }
   
   @EndpointMessageHandler()
@@ -418,15 +415,15 @@ public class HugeUploadEndpoint extends ToolEndpoint
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"item".equals( huState.getToolFacetId() ) )
-      throw new HandlerAlertException( "Recieved request for resource data on an inappropriate facet of the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for resource data on an inappropriate facet of the tool.", message );
     HuResourceKey rKey = huState.getHuResourceKey();
     if ( rKey == null )
-      throw new HandlerAlertException( "Recieved request for resource data but launch didn't provide ID for it.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for resource data but launch didn't provide ID for it.", message );
     
     // No further checks - send data about the resource.
     HugeUploadResource huResource = store.getResource( rKey, true );
     logger.log( Level.INFO, "Sending resource [{0}]", huResource.toString() );
-    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
+    ToolMessage tm = new ToolMessage( message, HuServerMessageName.Resource, huResource );
     sendToolMessage( session, tm );
   }
   
@@ -444,15 +441,15 @@ public class HugeUploadEndpoint extends ToolEndpoint
     // Whether there is a resource for the session will depend on the facet 
     // being used.
     if ( !"course".equals( huState.getToolFacetId() ) )
-      throw new HandlerAlertException( "Recieved request for course data on an inappropriate facet of the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for course data on an inappropriate facet of the tool.", message );
     HuCourseKey cKey = huState.getHuCourseKey();
     if ( cKey == null )
-      throw new HandlerAlertException( "Recieved request for course data but launch didn't provide ID for it.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for course data but launch didn't provide ID for it.", message );
     
     // No further checks - send data about the resource.
     CourseConfiguration huCourse = store.getCourseConfiguration( cKey, true );
     logger.log( Level.INFO, "Sending course config [{0}]", huCourse.toString() );
-    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Course, huCourse );
+    ToolMessage tm = new ToolMessage( message, HuServerMessageName.Course, huCourse );
     sendToolMessage( session, tm );
   }
   
@@ -463,11 +460,11 @@ public class HugeUploadEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !huState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message );
     
     logger.info( "Fetching config for platform " + platformName );
     Configuration config = tool.getPlatformConfig( platformName );
-    ToolMessage tmf = new ToolMessage( message.getId(), HuServerMessageName.Configuration, new HuConfigurationMessage( config ) );
+    ToolMessage tmf = new ToolMessage( message, HuServerMessageName.Configuration, new HuConfigurationMessage( config ) );
     sendToolMessage( session, tmf );
   }
   
@@ -476,11 +473,11 @@ public class HugeUploadEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !huState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message );
             
     Configuration config = configMessage.getConfiguration();
     if ( config == null )
-      throw new HandlerAlertException( "Null configuration was received.", message.getId() );
+      throw new HandlerAlertException( "Null configuration was received.", message );
     
     try
     {  
@@ -489,15 +486,15 @@ public class HugeUploadEndpoint extends ToolEndpoint
     catch ( Exception e )
     {
       logger.log( Level.SEVERE, "Unable to save configuration for platform " + platformName, e );
-      throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
+      throw new HandlerAlertException( "Unable to save configuration.", message );
     }
     
-    ToolMessage tmf = new ToolMessage( message.getId(), HuServerMessageName.ConfigurationSuccess, "Saved" );
+    ToolMessage tmf = new ToolMessage( message, HuServerMessageName.ConfigurationSuccess, "Saved" );
     sendToolMessage( session, tmf );
     
     // To do - send message to all users now accessing tool from the same platform
     // for now just for confirmation to current user.
-    ToolMessage tmc = new ToolMessage( message.getId(), HuServerMessageName.Configuration, new HuConfigurationMessage( config ) );
+    ToolMessage tmc = new ToolMessage( message, HuServerMessageName.Configuration, new HuConfigurationMessage( config ) );
     sendToolMessage( session, tmc );
   }
   
@@ -514,6 +511,6 @@ public class HugeUploadEndpoint extends ToolEndpoint
   @Override
   public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
   {
-    sendToolMessage( session, new ToolMessage( haex.getMessageId(), HuServerMessageName.Alert, haex.getMessage() ) );    
+    sendToolMessage( session, new ToolMessage( haex.getOriginalMessage(), HuServerMessageName.Alert, haex.getMessage() ) );    
   }
 }

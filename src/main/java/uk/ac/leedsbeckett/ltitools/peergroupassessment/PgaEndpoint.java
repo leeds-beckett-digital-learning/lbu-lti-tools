@@ -59,8 +59,6 @@ import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantData
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.inputdata.ParticipantDatum;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.Id;
 import uk.ac.leedsbeckett.ltitools.peergroupassessment.messagedata.PgaConfigurationMessage;
@@ -98,10 +96,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
  * 
  * @author maber01
  */
-@ServerEndpoint( 
-        value="/socket/peergroupassessment", 
-        decoders=ToolMessageDecoder.class, 
-        encoders=ToolMessageEncoder.class )
+@ServerEndpoint( value="/socket/peergroupassessment" )
 @EndpointJavascriptProperties(
         module="peergroupassessment",
         prefix="Pga",
@@ -241,7 +236,7 @@ public class PgaEndpoint extends ToolEndpoint
         groupnotify=true;
       }
     }
-    ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+    ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, pgaResource );
     
     if ( groupnotify )
       sendToolMessageToPlatformResourceUsers( tm );      
@@ -252,7 +247,7 @@ public class PgaEndpoint extends ToolEndpoint
     PeerGroupForm form = store.getForm( pgaResource.getFormId() );
     if ( form == null ) return;
     
-    ToolMessage tmf = new ToolMessage( message.getId(), PgaServerMessageName.Form, form );
+    ToolMessage tmf = new ToolMessage( message, PgaServerMessageName.Form, form );
     sendToolMessage( session, tmf );
   }
   
@@ -271,7 +266,7 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot set resource properties, you don't have management access here.", message.getId() );
+      throw new HandlerAlertException( "Cannot set resource properties, you don't have management access here.", message );
     PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     logger.log( Level.INFO, "State       [{0}]", p.getStage().toString() );
     logger.log( Level.INFO, "Title       [{0}]", p.getTitle() );
@@ -280,7 +275,7 @@ public class PgaEndpoint extends ToolEndpoint
     try
     {
       store.updateResource( pgaResource );
-      ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.ResourceProperties, pgaResource.getProperties() );
+      ToolMessage tm = new ToolMessage( message, PgaServerMessageName.ResourceProperties, pgaResource.getProperties() );
       sendToolMessageToPlatformResourceUsers( tm );
     }
     catch ( IOException e )
@@ -303,10 +298,10 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot set group properties, you don't have management access here.", message.getId() );    
+      throw new HandlerAlertException( "Cannot set group properties, you don't have management access here.", message );    
     PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
-      throw new HandlerAlertException( "Can only change group properties during the set-up stage.", message.getId() );
+      throw new HandlerAlertException( "Can only change group properties during the set-up stage.", message );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
     logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
     Group g = pgaResource.getGroupById( p.getId() );
@@ -319,7 +314,7 @@ public class PgaEndpoint extends ToolEndpoint
         store.updateResource( pgaResource );
         // PgaChangeGroup change = new PgaChangeGroup( g.getId(), g.getTitle() );
         // Send whole resource because the order of the groups may have changed.
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+        ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, pgaResource );
         sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
@@ -343,10 +338,10 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot delete group, you don't have management access here.", message.getId() );    
+      throw new HandlerAlertException( "Cannot delete group, you don't have management access here.", message );    
     PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
-      throw new HandlerAlertException( "Can only delete groups during the set-up stage.", message.getId() );
+      throw new HandlerAlertException( "Can only delete groups during the set-up stage.", message );
     logger.log( Level.INFO, "ID [{0}]",       p.getId() );
     logger.log( Level.INFO, "Title [{0}]",    p.getTitle() );
     Group g = pgaResource.getGroupById( p.getId() );
@@ -357,7 +352,7 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( pgaResource );
         // Send whole resource.
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+        ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, pgaResource );
         sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
@@ -380,11 +375,11 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot add a group, you don't have management access here.", message.getId() );
+      throw new HandlerAlertException( "Cannot add a group, you don't have management access here.", message );
     
     PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( !pgaResource.getStage().equals( Stage.SETUP ) )
-      throw new HandlerAlertException( "Can only add groups during the set-up stage.", message.getId() );
+      throw new HandlerAlertException( "Can only add groups during the set-up stage.", message );
     Group g = pgaResource.addGroup( "New Group" );
     if ( g != null )
     {
@@ -392,7 +387,7 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( pgaResource );
         //PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+        ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, pgaResource );
         sendToolMessageToPlatformResourceUsers( tm );
       }
       catch ( IOException e )
@@ -422,17 +417,17 @@ public class PgaEndpoint extends ToolEndpoint
     if ( pgaState.isAllowedToManage() )
     {
       if ( !pgaResource.getStage().equals( Stage.SETUP ) && !pgaResource.getStage().equals( Stage.JOIN ) )
-        throw new HandlerAlertException( "Managers can only change group membership during the 'setup' and 'joining' stages.", message.getId() );      
+        throw new HandlerAlertException( "Managers can only change group membership during the 'setup' and 'joining' stages.", message );      
     }
     else if ( pgaState.isAllowedToParticipate() )
     {
       if ( !pgaResource.getStage().equals( Stage.JOIN ) )
-        throw new HandlerAlertException( "Can only change group membership during the 'joining' stage.", message.getId() );
+        throw new HandlerAlertException( "Can only change group membership during the 'joining' stage.", message );
       if ( !m.isOnlySelf( pgaState.getPersonId() ) )
-        throw new HandlerAlertException( "You can only change your own group membership.", message.getId() );
+        throw new HandlerAlertException( "You can only change your own group membership.", message );
     }
     else
-      throw new HandlerAlertException( "Only participants and managers can change membership.", message.getId() );
+      throw new HandlerAlertException( "Only participants and managers can change membership.", message );
     
 
     logger.log( Level.INFO, "Id   [{0}]",       m.getId() );
@@ -443,7 +438,7 @@ public class PgaEndpoint extends ToolEndpoint
       logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
       
       // Tell users about the resource change.
-      ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, pgaResource );
+      ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, pgaResource );
       sendToolMessageToPlatformResourceUsers( tm );
 
       for ( String gid : affectedGids )
@@ -464,7 +459,7 @@ public class PgaEndpoint extends ToolEndpoint
         logger.log( Level.INFO, "Sending group user data for group gid [{0}]", gid );
         sendToolMessage( 
                 new AllowedToSeeGroupData( gid, pgaResource ),
-                new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+                new ToolMessage( message, PgaServerMessageName.Data, data ) );
       }      
     }
     catch ( IOException e )
@@ -492,20 +487,20 @@ public class PgaEndpoint extends ToolEndpoint
     Group myGroup = pgaResource.getGroupByMemberId( pgaState.getPersonId() );
 
     if (  gid == null )
-      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+      throw new HandlerAlertException( "No group ID was specified.", message );
     Group group = pgaResource.getGroupById( gid );
     
     if ( group == null )
-      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message );
     if ( !pgaState.isAllowedToAccess() )
-      throw new HandlerAlertException( "You don't have permission to view data here.", message.getId() );      
+      throw new HandlerAlertException( "You don't have permission to view data here.", message );      
     if ( !pgaState.isAllowedToManage() && !gid.equals( myGroup.getId() ) )
-      throw new HandlerAlertException( "You cannot view data in a group you don't belong to.", message.getId() );
+      throw new HandlerAlertException( "You cannot view data in a group you don't belong to.", message );
 
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), gid );
     PeerGroupData data = store.getData( key, true );
 
-    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+    sendToolMessage( session, new ToolMessage( message, PgaServerMessageName.Data, data ) );
   }
 
   /**
@@ -522,10 +517,10 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to look at data across all groups.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to look at data across all groups.", message );
     PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
     PgaDataList list = store.getAllData( pgaResource );
-    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.DataList, list ) );    
+    sendToolMessage( session, new ToolMessage( message, PgaServerMessageName.DataList, list ) );    
   }
   
   /**
@@ -551,16 +546,16 @@ public class PgaEndpoint extends ToolEndpoint
             new Object[ ]{ datum.getGroupId(), datum.getFieldId(), datum.getMemberId(), datum.getValue() } );
 
     if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) )
-      throw new HandlerAlertException( "Can only edit data during the 'data entry' stage.", message.getId() );
+      throw new HandlerAlertException( "Can only edit data during the 'data entry' stage.", message );
     if (  datum.getGroupId() == null )
-      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+      throw new HandlerAlertException( "No group ID was specified.", message );
     Group group = pgaResource.getGroupById( datum.getGroupId() );
     if ( group == null )
-      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message );
     if ( !pgaState.isAllowedToParticipate() )
-      throw new HandlerAlertException( "You don't have permission to change data here.", message.getId() );      
+      throw new HandlerAlertException( "You don't have permission to change data here.", message );      
     if ( !datum.getGroupId().equals( myGroup.getId() ) )
-      throw new HandlerAlertException( "You cannot change data in a group you don't belong to.", message.getId() );
+      throw new HandlerAlertException( "You cannot change data in a group you don't belong to.", message );
 
     
     Field field = form.getFields().get( datum.getFieldId() );
@@ -568,14 +563,14 @@ public class PgaEndpoint extends ToolEndpoint
     PeerGroupData data = store.getData( key, true );
 
     if ( data.isEndorsed( group, form ) )
-      throw new HandlerAlertException( "You cannot change data values after endorsements have been made.", message.getId() );    
+      throw new HandlerAlertException( "You cannot change data values after endorsements have been made.", message );    
 
     data.setParticipantDatum( datum, field );
     store.updateData( data );
     
     sendToolMessage( 
             new AllowedToSeeGroupData( datum.getGroupId(), pgaResource ),
-            new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+            new ToolMessage( message, PgaServerMessageName.Data, data ) );
   }
 
   /**
@@ -604,30 +599,30 @@ public class PgaEndpoint extends ToolEndpoint
     if ( pgaState.isAllowedToManage() )
     {
       if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) && !pgaResource.getStage().equals( Stage.RESULTS ) )
-        throw new HandlerAlertException( "Can only change endorsement overrides during the 'data entry' or 'results' stage.", message.getId() );
+        throw new HandlerAlertException( "Can only change endorsement overrides during the 'data entry' or 'results' stage.", message );
     }
     else
     {
       if ( !pgaState.isAllowedToParticipate() )
-        throw new HandlerAlertException( "You aren't a participant in this resource so you can't endorse data.", message.getId() );
+        throw new HandlerAlertException( "You aren't a participant in this resource so you can't endorse data.", message );
       if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) )
-        throw new HandlerAlertException( "Can only endorse data entry during the 'data entry' stage.", message.getId() );     
+        throw new HandlerAlertException( "Can only endorse data entry during the 'data entry' stage.", message );     
     }
 
     if (  endorse.getGroupId() == null )
-      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+      throw new HandlerAlertException( "No group ID was specified.", message );
     Group group = pgaResource.getGroupById( endorse.getGroupId() );
     if ( group == null )
-      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message );
 
     PeerGroupForm form = store.getForm( pgaResource.getFormId() );
     if ( !data.isAllDataValid( group, form ) )
-      throw new HandlerAlertException( "You can only endorse data when all fields contain valid values.", message.getId() );    
+      throw new HandlerAlertException( "You can only endorse data when all fields contain valid values.", message );    
     
     if ( endorse.isManager() )
     {
       if ( !pgaState.isAllowedToManage() )
-        throw new HandlerAlertException( "You don't have permission to override endorsements here.", message.getId() );      
+        throw new HandlerAlertException( "You don't have permission to override endorsements here.", message );      
       for ( Member m : group.getMembers() )
       {
         if ( !data.isEndorsedByParticipant( m.getLtiId() ) )
@@ -637,9 +632,9 @@ public class PgaEndpoint extends ToolEndpoint
     else
     {
       if ( !pgaState.isAllowedToParticipate() )
-        throw new HandlerAlertException( "You don't have permission to endorse data here.", message.getId() );
+        throw new HandlerAlertException( "You don't have permission to endorse data here.", message );
       if ( !endorse.getGroupId().equals( myGroup.getId() ) )
-        throw new HandlerAlertException( "You cannot endorse data in a group you don't belong to.", message.getId() );
+        throw new HandlerAlertException( "You cannot endorse data in a group you don't belong to.", message );
       if ( !pgaResource.getGroupById( endorse.getGroupId() ).isMember( pgaState.getPersonId() ) )
         return;
       data.setEndorsementDate( pgaState.getPersonId(), now, false, group );
@@ -649,7 +644,7 @@ public class PgaEndpoint extends ToolEndpoint
     
     sendToolMessage( 
             new AllowedToSeeGroupData( endorse.getGroupId(), pgaResource ),
-            new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+            new ToolMessage( message, PgaServerMessageName.Data, data ) );
   }
 
   /**
@@ -672,15 +667,15 @@ public class PgaEndpoint extends ToolEndpoint
             new Object[ ]{ id.getId() } );
     
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Cannot clear endorsements, you don't have management access here.", message.getId() );
+      throw new HandlerAlertException( "Cannot clear endorsements, you don't have management access here.", message );
     if ( !pgaResource.getStage().equals( Stage.DATAENTRY ) && !pgaResource.getStage().equals( Stage.RESULTS ) )
-      throw new HandlerAlertException( "Can only clear endorsements during the 'data entry' or 'results' stage.", message.getId() );
+      throw new HandlerAlertException( "Can only clear endorsements during the 'data entry' or 'results' stage.", message );
 
     if (  id.getId() == null )
-      throw new HandlerAlertException( "No group ID was specified.", message.getId() );
+      throw new HandlerAlertException( "No group ID was specified.", message );
     Group group = pgaResource.getGroupById( id.getId() );
     if ( group == null )
-      throw new HandlerAlertException( "Specified group ID is not in this resource.", message.getId() );
+      throw new HandlerAlertException( "Specified group ID is not in this resource.", message );
     
     PeerGroupDataKey key = new PeerGroupDataKey( pgaResource.getKey(), id.getId() );
     PeerGroupData data = store.getData( key, true );
@@ -689,7 +684,7 @@ public class PgaEndpoint extends ToolEndpoint
     
     sendToolMessage( 
             new AllowedToSeeGroupData( id.getId(), pgaResource ),
-            new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+            new ToolMessage( message, PgaServerMessageName.Data, data ) );
   }
 
   /**
@@ -705,14 +700,14 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data.", message );
     PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP && resource.getStage() != Stage.JOIN )
-      throw new HandlerAlertException( "You can only import participants in setup and join phases.", message.getId() );
+      throw new HandlerAlertException( "You can only import participants in setup and join phases.", message );
 
     if ( pgaState.getNamesRoleServiceUrl() == null )
-      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for a names/role service.", message.getId() );
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for a names/role service.", message );
 
     // Get a backchannel (which might be new or reused and which knows how
     // to authenticate/authorize itself.
@@ -722,17 +717,17 @@ public class PgaEndpoint extends ToolEndpoint
     JsonResult jresult = backchannel.getNamesRoles();
     logger.log( Level.INFO, "handleGetImport() {0}", jresult.getRawValue() );
     if ( jresult.getResult() == null )
-      throw new HandlerAlertException( "Unable to get membership data from the platform.", message.getId() );
+      throw new HandlerAlertException( "Unable to get membership data from the platform.", message );
 
     if ( !jresult.isSuccessful() )
     {
       if ( jresult.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)jresult.getResult();
-        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get membership data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message );
     }
     
     NrpsMembershipContainer membership = (NrpsMembershipContainer)jresult.getResult();    
@@ -746,7 +741,7 @@ public class PgaEndpoint extends ToolEndpoint
     }
     
     if ( members.isEmpty() )
-      throw new HandlerAlertException( "No more users to import.", message.getId() );    
+      throw new HandlerAlertException( "No more users to import.", message );    
 
     // null group id means add to the 'unattached' group
     PgaAddMembership pgaaddmem = new PgaAddMembership( null, members );
@@ -768,30 +763,30 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message );
     PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP )
-      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
+      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message );
 
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV2CourseGroupSets( pgaState.getCourseId() );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message );
     if ( !result.isSuccessful() )
     {
       if ( result.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)result.getResult();
-        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
       }
       else if ( result.getResult() instanceof RestExceptionMessage )
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
-        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message );
     }
 
     GetCourseGroupsV2Results resultsSets = (GetCourseGroupsV2Results)result.getResult();
@@ -800,21 +795,21 @@ public class PgaEndpoint extends ToolEndpoint
 
     result = bp.getV2CourseGroups( pgaState.getCourseId() );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message );
     if ( !result.isSuccessful() )
     {
       if ( result.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)result.getResult();
-        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
       }
       else if ( result.getResult() instanceof RestExceptionMessage )
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
-        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get group sets from the platform. Unknown error.", message );
     }
 
     GetCourseGroupsV2Results resultsGroups = (GetCourseGroupsV2Results)result.getResult();
@@ -829,7 +824,7 @@ public class PgaEndpoint extends ToolEndpoint
     {
       String id = set.getExternalId();
       if ( id == null )
-        throw new HandlerAlertException( "No external ID in group set results. (Perhaps because user agent lacks permissions.)", message.getId() );
+        throw new HandlerAlertException( "No external ID in group set results. (Perhaps because user agent lacks permissions.)", message );
       logger.log(Level.FINE, "Result: {0} {1} {2}", new Object[ ]{set.getId(), set.getName(), set.getGroupSetId()});
       BlackboardGroupSet bbset = new BlackboardGroupSet( set.getId(), set.getUuid(), set.getName(), new ArrayList<>() );
       bbgs.add( bbset );
@@ -842,7 +837,7 @@ public class PgaEndpoint extends ToolEndpoint
     
     sendToolMessage( 
             session,
-            new ToolMessage( message.getId(), PgaServerMessageName.BlackboardGroupSets, bbgs ) );
+            new ToolMessage( message, PgaServerMessageName.BlackboardGroupSets, bbgs ) );
   }  
 
   /**
@@ -859,11 +854,11 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to import data from blackboard.", message );
     PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
 
     if ( resource.getStage() != Stage.SETUP )
-      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message.getId() );
+      throw new HandlerAlertException( "You can only import sub-groups in setup phase.", message );
     
     logger.log(Level.FINE, "Importing group set with ID {0}", id.getId());
 
@@ -875,21 +870,21 @@ public class PgaEndpoint extends ToolEndpoint
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV2CourseGroupSetGroups( pgaState.getCourseId(), id.getId() );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem fetching group sets.", message.getId() );
+      throw new HandlerAlertException( "Technical problem fetching group sets.", message );
     if ( !result.isSuccessful() )
     {
       if ( result.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)result.getResult();
-        throw new HandlerAlertException( "Unable to get groups from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get groups from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
       }
       else if ( result.getResult() instanceof RestExceptionMessage )
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
-        throw new HandlerAlertException( "Unable to get groups from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get groups from the platform. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get groups from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get groups from the platform. Unknown error.", message );
     }
 
     GetCourseGroupsV2Results resultsGroups = (GetCourseGroupsV2Results)result.getResult();
@@ -900,21 +895,21 @@ public class PgaEndpoint extends ToolEndpoint
       plan.addGroup( g.getId(), g.getName() );
       JsonResult resultUsers = bp.getV2CourseGroupUsers( pgaState.getCourseId(), g.getId() );
       if ( resultUsers.getResult() == null )
-        throw new HandlerAlertException( "Technical problem fetching group members.", message.getId() );
+        throw new HandlerAlertException( "Technical problem fetching group members.", message );
       if ( !resultUsers.isSuccessful() )
       {
         if ( resultUsers.getResult() instanceof ServiceStatus )
         {
           ServiceStatus ss = (ServiceStatus)resultUsers.getResult();
-          throw new HandlerAlertException( "Unable to get group members from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+          throw new HandlerAlertException( "Unable to get group members from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
         }
         else if ( resultUsers.getResult() instanceof RestExceptionMessage )
         {
           RestExceptionMessage rem = (RestExceptionMessage)resultUsers.getResult();
-          throw new HandlerAlertException( "Unable to get group members from the platform. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+          throw new HandlerAlertException( "Unable to get group members from the platform. " + rem.getStatus() + " " + rem.getMessage(), message );
         }
         else
-          throw new HandlerAlertException( "Unable to get group members from the platform. Unknown error.", message.getId() );
+          throw new HandlerAlertException( "Unable to get group members from the platform. Unknown error.", message );
       }
       GetCourseGroupUsersV2Results users = (GetCourseGroupUsersV2Results)resultUsers.getResult();
       logger.log(Level.INFO, "Found {0}", users.getResults().size());
@@ -923,7 +918,7 @@ public class PgaEndpoint extends ToolEndpoint
         logger.log(Level.INFO, "User ID {0}", u.getUserId() );
         JsonResult resultU = bp.getV1Users( u.getUserId() );
         if ( resultU.getResult() == null )
-          throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
+          throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message );
         logger.info( resultU.getResult().getClass().toString() );
         if ( !resultU.isSuccessful() )
         {
@@ -931,10 +926,10 @@ public class PgaEndpoint extends ToolEndpoint
           {
             ServiceStatus ss = (ServiceStatus)resultU.getResult();
             logger.severe( "Unable to get user info from the platform. " + ss.getStatus() + " " + ss.getMessage() );
-            throw new HandlerAlertException( "Unable to get user info from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+            throw new HandlerAlertException( "Unable to get user info from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
           }
           else
-            throw new HandlerAlertException( "Unable to get user info from the platform. Unknown error.", message.getId() );
+            throw new HandlerAlertException( "Unable to get user info from the platform. Unknown error.", message );
         }
 
         UserV1 user = (UserV1)resultU.getResult();
@@ -991,7 +986,7 @@ public class PgaEndpoint extends ToolEndpoint
       {
         store.updateResource( resource );
         //PgaChangeGroup p = new PgaChangeGroup( g.getId(), g.getTitle() );
-        ToolMessage tm = new ToolMessage( message.getId(), PgaServerMessageName.Resource, resource );
+        ToolMessage tm = new ToolMessage( message, PgaServerMessageName.Resource, resource );
         sendToolMessageToPlatformResourceUsers( tm );
         
         for ( String gid : affectedGids )
@@ -1004,13 +999,13 @@ public class PgaEndpoint extends ToolEndpoint
           PeerGroupData data = store.getData( key, true );
           sendToolMessage( 
                   new AllowedToSeeGroupData( gid, resource ),
-                  new ToolMessage( message.getId(), PgaServerMessageName.Data, data ) );
+                  new ToolMessage( message, PgaServerMessageName.Data, data ) );
         }
       }
       catch ( IOException e )
       {
         logger.log(  Level.SEVERE, "Unable to store changes.", e );
-        throw new HandlerAlertException( "Import failed.", message.getId() );
+        throw new HandlerAlertException( "Import failed.", message );
       }
     }        
   }  
@@ -1029,10 +1024,10 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to export all data.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to export all data.", message );
     PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
-      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
+      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message );
 
     ScoreComputer scorer = new ScoreComputer( 
             store,
@@ -1139,7 +1134,7 @@ public class PgaEndpoint extends ToolEndpoint
       }
     }
         
-    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.Export, sb.toString() ) );
+    sendToolMessage( session, new ToolMessage( message, PgaServerMessageName.Export, sb.toString() ) );
   }
   
   @EndpointMessageHandler()
@@ -1148,9 +1143,9 @@ public class PgaEndpoint extends ToolEndpoint
   {
     logger.log(  Level.INFO, "Attempting to get line items for this resource..." );
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to fetch assessment line items.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to fetch assessment line items.", message );
     if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() == null )
-      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message.getId() );
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message );
 
     // Get a backchannel (which might be new or reused and which knows how
     // to authenticate/authorize itself.
@@ -1160,21 +1155,21 @@ public class PgaEndpoint extends ToolEndpoint
     JsonResult jresult = backchannel.getLineItems();
     logger.log( Level.INFO, jresult.getRawValue() );
     if ( jresult.getResult() == null )
-      throw new HandlerAlertException( "Unable to get line item information from the platform.", message.getId() );
+      throw new HandlerAlertException( "Unable to get line item information from the platform.", message );
 
     if ( !jresult.isSuccessful() )
     {
       if ( jresult.getResult() instanceof ServiceStatus )
       {
         ServiceStatus ss = (ServiceStatus)jresult.getResult();
-        throw new HandlerAlertException( "Unable to get line item data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to get line item data from the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get line item data from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get line item data from the platform. Unknown error.", message );
     }
     
     LineItems lineItems = (LineItems)jresult.getResult();
-    sendToolMessage( session, new ToolMessage( message.getId(), PgaServerMessageName.AssessmentLineItems, lineItems ) );
+    sendToolMessage( session, new ToolMessage( message, PgaServerMessageName.AssessmentLineItems, lineItems ) );
   }  
   
   @EndpointMessageHandler()
@@ -1183,14 +1178,14 @@ public class PgaEndpoint extends ToolEndpoint
   {
     logger.log(  Level.INFO, "Attempting to export scores to platform..." );
     if ( !pgaState.isAllowedToManage() )
-      throw new HandlerAlertException( "Only managers of a resource are allowed to export assessment results.", message.getId() );
+      throw new HandlerAlertException( "Only managers of a resource are allowed to export assessment results.", message );
     if ( pgaState.getAssessmentAndGradesServiceLineItemsUrl() == null )
-      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message.getId() );
+      throw new HandlerAlertException( "The platform that launched this tool did not provide an API web address for an assessment and grades service.", message );
     PeerGroupResource resource = store.getResource( pgaState.getPlatformResourceKey(), true );
     if ( resource.getStage() != Stage.RESULTS )
-      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message.getId() );
+      throw new HandlerAlertException( "You can only export data when the results are frozen. Try again at that stage.", message );
     if ( options == null || options.getLineItemIncluded() == null || options.getLineItemIncluded().length != 6 )
-      throw new HandlerAlertException( "Invalid export options.", message.getId() );
+      throw new HandlerAlertException( "Invalid export options.", message );
     
     PeerGroupForm form = store.getForm( resource.getFormId() );
     HashMap<String,String>    memberscore = new HashMap<>();
@@ -1198,7 +1193,7 @@ public class PgaEndpoint extends ToolEndpoint
     int progress;
 
     ToolMessage tmprog = new ToolMessage( 
-            message.getId(), 
+            message, 
             PgaServerMessageName.AssessmentScoreExportProgress, 
             new PgaScoreProgress( 1 ) );
     sendToolMessage( session, tmprog );
@@ -1222,16 +1217,16 @@ public class PgaEndpoint extends ToolEndpoint
       JsonResult jresult = backchannel.postLineItem( scorer.getLineItem( t ) );
       logger.log( Level.INFO, jresult.getRawValue() );
       if ( jresult.getResult() == null )
-        throw new HandlerAlertException( "Unable to create line item in the platform.", message.getId() );
+        throw new HandlerAlertException( "Unable to create line item in the platform.", message );
       if ( !jresult.isSuccessful() )
       {
         if ( jresult.getResult() instanceof ServiceStatus )
         {
           ServiceStatus ss = (ServiceStatus)jresult.getResult();
-          throw new HandlerAlertException( "Unable to create line item in the platform. " + ss.getStatus() + " " + ss.getMessage(), message.getId() );
+          throw new HandlerAlertException( "Unable to create line item in the platform. " + ss.getStatus() + " " + ss.getMessage(), message );
         }
         else
-          throw new HandlerAlertException( "Unable to create line item in the platform. Unknown error.", message.getId() );
+          throw new HandlerAlertException( "Unable to create line item in the platform. Unknown error.", message );
       }
       scorer.setLineItem(t, (LineItem)jresult.getResult());
       logger.log(Level.INFO, "Success, column item ID = {0}", scorer.getLineItem( t ).getId());
@@ -1246,7 +1241,7 @@ public class PgaEndpoint extends ToolEndpoint
       if ( progress > reportedprogress )
       {
         tmprog = new ToolMessage( 
-                message.getId(), 
+                message, 
                 PgaServerMessageName.AssessmentScoreExportProgress, 
                 new PgaScoreProgress( progress ) );
         sendToolMessage( session, tmprog );
@@ -1312,16 +1307,16 @@ public class PgaEndpoint extends ToolEndpoint
             JsonResult jresult = backchannel.postScores( scorer.getLineItem( t ), scoremap.get( t ) );
             logger.log( Level.INFO, jresult.getRawValue() );
             if ( jresult.getResult() == null )
-              throw new HandlerAlertException( "Unable to post score information to the platform.", message.getId() );
+              throw new HandlerAlertException( "Unable to post score information to the platform.", message );
             if ( !jresult.isSuccessful() )
-              throw new HandlerAlertException( "Unable to post score information to the platform. " + jresult.getErrorMessage(), message.getId() );                
+              throw new HandlerAlertException( "Unable to post score information to the platform. " + jresult.getErrorMessage(), message );                
           }
         }
       }
     }
     // Ensure client page knows we have completed without an exception.
     tmprog = new ToolMessage( 
-            message.getId(), 
+            message, 
             PgaServerMessageName.AssessmentScoreExportProgress, 
             new PgaScoreProgress( 100 ) );
     sendToolMessage( session, tmprog );    
@@ -1333,11 +1328,11 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message );
     
     logger.info( "Fetching config for platform " + platformName );
     Configuration config = tool.getPlatformConfig( platformName );
-    ToolMessage tmf = new ToolMessage( message.getId(), PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
+    ToolMessage tmf = new ToolMessage( message, PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
     sendToolMessage( session, tmf );
   }
   
@@ -1346,11 +1341,11 @@ public class PgaEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !pgaState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message );
             
     Configuration config = configMessage.getConfiguration();
     if ( config == null )
-      throw new HandlerAlertException( "Null configuration was received.", message.getId() );
+      throw new HandlerAlertException( "Null configuration was received.", message );
     
     try
     {  
@@ -1359,15 +1354,15 @@ public class PgaEndpoint extends ToolEndpoint
     catch ( Exception e )
     {
       logger.log( Level.SEVERE, "Unable to save configuration for platform " + platformName, e );
-      throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
+      throw new HandlerAlertException( "Unable to save configuration.", message );
     }
     
-    ToolMessage tmf = new ToolMessage( message.getId(), PgaServerMessageName.ConfigurationSuccess, "Saved" );
+    ToolMessage tmf = new ToolMessage( message, PgaServerMessageName.ConfigurationSuccess, "Saved" );
     sendToolMessage( session, tmf );
     
     // To do - send message to all users now accessing tool from the same platform
     // for now just for confirmation to current user.
-    ToolMessage tmc = new ToolMessage( message.getId(), PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
+    ToolMessage tmc = new ToolMessage( message, PgaServerMessageName.Configuration, new PgaConfigurationMessage( config ) );
     sendToolMessage( session, tmc );
   }
 
@@ -1383,6 +1378,6 @@ public class PgaEndpoint extends ToolEndpoint
   @Override
   public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
   {
-    sendToolMessage( session, new ToolMessage( haex.getMessageId(), PgaServerMessageName.Alert, haex.getMessage() ) );    
+    sendToolMessage( session, new ToolMessage( haex.getOriginalMessage(), PgaServerMessageName.Alert, haex.getMessage() ) );    
   }
 }

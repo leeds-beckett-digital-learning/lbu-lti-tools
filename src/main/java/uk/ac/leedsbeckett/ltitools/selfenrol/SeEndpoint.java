@@ -43,8 +43,6 @@ import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.GetUsersV1Resul
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.RestExceptionMessage;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.blackboard.data.UserV1;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageDecoder;
-import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessageEncoder;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
@@ -58,10 +56,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptPro
  * 
  * @author maber01
  */
-@ServerEndpoint( 
-        value="/socket/selfenrol", 
-        decoders=ToolMessageDecoder.class, 
-        encoders=ToolMessageEncoder.class )
+@ServerEndpoint( value="/socket/selfenrol" )
 @EndpointJavascriptProperties(
         module="selfenrol",
         prefix="Se",
@@ -167,7 +162,7 @@ public class SeEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !seState.isAllowedToParticipate() )
-      throw new HandlerAlertException( "You are not permitted to search here.", message.getId() );
+      throw new HandlerAlertException( "You are not permitted to search here.", message );
     
     mostRecentSearchResults.clear();
     // In case of unsuccessful search clear this:
@@ -183,7 +178,7 @@ public class SeEndpoint extends ToolEndpoint
     Pattern filter;
     
     if ( null == scope )
-      throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+      throw new HandlerAlertException( "Unknown search scope.", message );
 
     SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
     switch ( scope )
@@ -213,29 +208,29 @@ public class SeEndpoint extends ToolEndpoint
         availability = "Yes";
         break;
       default:
-        throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+        throw new HandlerAlertException( "Unknown search scope.", message );
     }
 
     if ( !validation.matcher( specification ).matches() )
-      throw new HandlerAlertException( "The search specification is not valid.", message.getId() );
+      throw new HandlerAlertException( "The search specification is not valid.", message );
     
     filter = Pattern.compile( strfilter );
     if ( filter == null )
-      throw new HandlerAlertException( "Unable to create a result filter (regular expression).", message.getId() );
+      throw new HandlerAlertException( "Unable to create a result filter (regular expression).", message );
     
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV3Courses( specification, org, availability );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem running search.", message.getId() );
+      throw new HandlerAlertException( "Technical problem running search.", message );
     if ( !result.isSuccessful() )
     {
       if ( result.getResult() instanceof RestExceptionMessage )
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
-        throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to get membership data from the platform. Unknown error.", message );
     }
     
     GetCoursesV3Results results = (GetCoursesV3Results)result.getResult();
@@ -246,7 +241,7 @@ public class SeEndpoint extends ToolEndpoint
       // We need to work with the external ID to implement filtering based on it.
       String id = c.getExternalId();
       if ( id == null )
-        throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message.getId() );
+        throw new HandlerAlertException( "No external ID in course results. (Perhaps because user agent lacks permissions.)", message );
       if ( filter.matcher( id ).matches() )
       {
         SeCourseInfo seci = new SeCourseInfo( id, c.getName(), c.getDescription(), c.getParentId() );
@@ -258,7 +253,7 @@ public class SeEndpoint extends ToolEndpoint
     // only set this on successful searches.
     mostRecentScope = scope;
 
-    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.CourseInfoList, list );
+    ToolMessage tmf = new ToolMessage( message, SeServerMessageName.CourseInfoList, list );
     sendToolMessage( session, tmf );
   }
 
@@ -280,7 +275,7 @@ public class SeEndpoint extends ToolEndpoint
     mostRecentName = "";
     
     if ( !seState.isAllowedToParticipate() )
-      throw new HandlerAlertException( "You are not permitted to search here.", message.getId() );
+      throw new HandlerAlertException( "You are not permitted to search here.", message );
     
     mostRecentEmail = search.getEmail();
     // SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
@@ -289,16 +284,16 @@ public class SeEndpoint extends ToolEndpoint
     BlackboardBackchannel bp = (BlackboardBackchannel)getBackchannel( bbbckey );
     JsonResult result = bp.getV1UsersByEmail( mostRecentEmail );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem running search.", message.getId() );
+      throw new HandlerAlertException( "Technical problem running search.", message );
     if ( !result.isSuccessful() )
     {
       if ( result.getResult() instanceof RestExceptionMessage )
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
-        throw new HandlerAlertException( "Unable to find users with email. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+        throw new HandlerAlertException( "Unable to find users with email. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to users by email from the platform. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to users by email from the platform. Unknown error.", message );
     }
     
     GetUsersV1Results results = (GetUsersV1Results)result.getResult();
@@ -317,7 +312,7 @@ public class SeEndpoint extends ToolEndpoint
       }
     }
     
-    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.UserInfo, mostRecentName );
+    ToolMessage tmf = new ToolMessage( message, SeServerMessageName.UserInfo, mostRecentName );
     sendToolMessage( session, tmf );
   }
 
@@ -328,15 +323,15 @@ public class SeEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !seState.isAllowedToParticipate() )
-      throw new HandlerAlertException( "You are not permitted to enrol here.", message.getId() );
+      throw new HandlerAlertException( "You are not permitted to enrol here.", message );
     
     String id = request.getCourseId();
     
     if ( StringUtils.isEmpty( id ) )
-      throw new HandlerAlertException( "No course ID was received.", message.getId() );
+      throw new HandlerAlertException( "No course ID was received.", message );
 
     if ( !this.mostRecentSearchResults.containsKey( id ) )
-      throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message.getId() );
+      throw new HandlerAlertException( "Specified course ID was not found in the most recent search results.", message );
     SeCourseInfo seci = this.mostRecentSearchResults.get( id );
     
     SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
@@ -366,7 +361,7 @@ public class SeEndpoint extends ToolEndpoint
         emailbody="";
         break;
       default:
-        throw new HandlerAlertException( "Unknown search scope.", message.getId() );
+        throw new HandlerAlertException( "Unknown search scope.", message );
     }
 
     if ( authneeded )
@@ -379,24 +374,24 @@ public class SeEndpoint extends ToolEndpoint
           break;
         }
       if ( !found )
-        throw new HandlerAlertException( "Unknown authorisation type.", message.getId() );
+        throw new HandlerAlertException( "Unknown authorisation type.", message );
       if ( "directorpermit".equals( request.getAuthType() ) || 
              "leaderpermit".equals( request.getAuthType() ) )
       {
         authnotself=true;
         if ( request.getAuthName() == null || request.getAuthName().trim().length() == 0 )
-          throw new HandlerAlertException( "Name of authorising person missing.", message.getId() );
+          throw new HandlerAlertException( "Name of authorising person missing.", message );
         if ( request.getAuthEmail() == null || request.getAuthEmail().trim().length() == 0 )
-          throw new HandlerAlertException( "Email of authorising person missing.", message.getId() );
+          throw new HandlerAlertException( "Email of authorising person missing.", message );
         if ( !mostRecentName.equals( request.getAuthName() ) )
-          throw new HandlerAlertException( "Name of authorising person doesn't match previous user search.", message.getId() );
+          throw new HandlerAlertException( "Name of authorising person doesn't match previous user search.", message );
         if ( !mostRecentEmail.equals( request.getAuthEmail() ) )
-          throw new HandlerAlertException( "Email of authorising person doesn't match previous user search.", message.getId() );
+          throw new HandlerAlertException( "Email of authorising person doesn't match previous user search.", message );
         String[] parts = request.getAuthEmail().trim().split( "@" );
         if ( parts.length != 2 )
-          throw new HandlerAlertException( "Email seems invalid.", message.getId() );
+          throw new HandlerAlertException( "Email seems invalid.", message );
         if ( !"leedsbeckett.ac.uk".equals( parts[1] ) )
-          throw new HandlerAlertException( "Email domain is not \"leedsbeckett.ac.uk\"", message.getId() );
+          throw new HandlerAlertException( "Email domain is not \"leedsbeckett.ac.uk\"", message );
       }
     }
     
@@ -412,7 +407,7 @@ public class SeEndpoint extends ToolEndpoint
             "uuid:" + seState.getPersonId(), 
             cmi );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem attempting to enrol.", message.getId() );
+      throw new HandlerAlertException( "Technical problem attempting to enrol.", message );
     logger.info( result.getResult().getClass().toString() );
     if ( !result.isSuccessful() )
     {
@@ -420,12 +415,12 @@ public class SeEndpoint extends ToolEndpoint
       {
         RestExceptionMessage rem = (RestExceptionMessage)result.getResult();
         if ( "409".equals( rem.getStatus() ) )
-          throw new HandlerAlertException( "You are already enrolled on the course. ", message.getId() );        
+          throw new HandlerAlertException( "You are already enrolled on the course. ", message );        
         else
-          throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message.getId() );
+          throw new HandlerAlertException( "Unable to enrol user. " + rem.getStatus() + " " + rem.getMessage(), message );
       }
       else
-        throw new HandlerAlertException( "Unable to enrol user. Unknown error.", message.getId() );
+        throw new HandlerAlertException( "Unable to enrol user. Unknown error.", message );
     }
     
     // Success so tell client
@@ -434,7 +429,7 @@ public class SeEndpoint extends ToolEndpoint
     if ( seci.getParentId() != null )
       messagetouser = "You were enrolled on a merged module/community AND its parent. Only the parent will appear on your personal list.";
     ToolMessage tmf = new ToolMessage( 
-            message.getId(), 
+            message, 
             SeServerMessageName.EnrolSuccess, 
             new SeEnrolSuccess( memb.getId(), messagetouser ) );
     sendToolMessage( session, tmf );
@@ -445,7 +440,7 @@ public class SeEndpoint extends ToolEndpoint
     // Now send an email...
     result = bp.getV1Users( "uuid:" + seState.getPersonId() );
     if ( result.getResult() == null )
-      throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message.getId() );
+      throw new HandlerAlertException( "Technical problem attempting to find user contact details.", message );
     logger.info( result.getResult().getClass().toString() );
     if ( !result.isSuccessful() )
     {
@@ -511,11 +506,11 @@ public class SeEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !seState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request for configuration from user who is not allowed to configure the tool.", message );
     
     logger.info( "Fetching config for platform " + platformName );
     SelfEnrolConfiguration config = tool.getPlatformConfig( platformName );
-    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
+    ToolMessage tmf = new ToolMessage( message, SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
     sendToolMessage( session, tmf );
   }
   
@@ -524,11 +519,11 @@ public class SeEndpoint extends ToolEndpoint
           throws IOException, HandlerAlertException
   {
     if ( !seState.isAllowedToConfigure() )
-      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message.getId() );
+      throw new HandlerAlertException( "Recieved request to save new configuration from user who is not allowed to configure the tool.", message );
             
     SelfEnrolConfiguration config = configMessage.getConfiguration();
     if ( config == null )
-      throw new HandlerAlertException( "Null configuration was received.", message.getId() );
+      throw new HandlerAlertException( "Null configuration was received.", message );
     
     try
     {  
@@ -537,15 +532,15 @@ public class SeEndpoint extends ToolEndpoint
     catch ( Exception e )
     {
       logger.log( Level.SEVERE, "Unable to save configuration for platform " + platformName, e );
-      throw new HandlerAlertException( "Unable to save configuration.", message.getId() );
+      throw new HandlerAlertException( "Unable to save configuration.", message );
     }
     
-    ToolMessage tmf = new ToolMessage( message.getId(), SeServerMessageName.ConfigurationSuccess, "Saved" );
+    ToolMessage tmf = new ToolMessage( message, SeServerMessageName.ConfigurationSuccess, "Saved" );
     sendToolMessage( session, tmf );
     
     // To do - send message to all users now accessing tool from the same platform
     // for now just for confirmation to current user.
-    ToolMessage tmc = new ToolMessage( message.getId(), SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
+    ToolMessage tmc = new ToolMessage( message, SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
     sendToolMessage( session, tmc );
   }
   
@@ -560,6 +555,6 @@ public class SeEndpoint extends ToolEndpoint
   @Override
   public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
   {
-    sendToolMessage( session, new ToolMessage( haex.getMessageId(), SeServerMessageName.Alert, haex.getMessage() ) );    
+    sendToolMessage( session, new ToolMessage( haex.getOriginalMessage(), SeServerMessageName.Alert, haex.getMessage() ) );    
   }
 }

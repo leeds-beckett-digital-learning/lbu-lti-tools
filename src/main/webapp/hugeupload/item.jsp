@@ -172,6 +172,17 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
   <body>
     <div id="dialogdiv" class="dialogs">
             
+      <div role="dialog" id="isduplicatedialog" aria-labelledby="isdupicatelabel" aria-modal="true" class="hidden">
+        <h3 id="isdupicatelabel" class="dialog_label">Is Import a Duplicate?</h3>
+        <p>Is the selected file intended to be a duplicate of the file that
+          was selected previously?</p>
+        <div class="dialog_form_actions">    
+          <button id="isDuplicateYesButton" value="Yes">Yes</button>
+          <button id="isDuplicateNoButton" value="No">No</button>
+          <button id="isDuplicateCancelButton" value="Cancel">Cancel</button>
+        </div>
+      </div>
+      
       <div role="dialog" id="debugdialog" aria-labelledby="debugdialogLabel" aria-modal="true" class="hidden">
         <h3 id="debugdialogLabel">Debug Information</h3>
         <div class="dialog_form_actions"><button id="debugdialogCloseButtonTop" value="Close">Close</button></div>

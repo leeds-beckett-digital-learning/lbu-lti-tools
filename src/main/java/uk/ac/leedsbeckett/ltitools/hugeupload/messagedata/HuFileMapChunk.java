@@ -75,4 +75,10 @@ public class HuFileMapChunk
     h = 67 * h + Objects.hashCode( this.hash );
     return h;
   }
+  
+  @Override
+  public String toString()
+  {
+    return "{" + start + " " + end + " " + hash + "}";
+  }
 }

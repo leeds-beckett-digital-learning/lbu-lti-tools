@@ -542,19 +542,5 @@ public class SeEndpoint extends ToolEndpoint
     // for now just for confirmation to current user.
     ToolMessage tmc = new ToolMessage( message, SeServerMessageName.Configuration, new SeConfigurationMessage( config ) );
     sendToolMessage( session, tmc );
-  }
-  
-  /**
-   * This gets called when a handler throws a HandlerAlertException and decides
-   * how to alert the user.
-   * 
-   * @param session The web socket session.
-   * @param haex The exception that was thrown.
-   * @throws IOException If the attempt to alert the user fails.
-   */
-  @Override
-  public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
-  {
-    sendToolMessage( session, new ToolMessage( haex.getOriginalMessage(), SeServerMessageName.Alert, haex.getMessage() ) );    
-  }
+  }  
 }

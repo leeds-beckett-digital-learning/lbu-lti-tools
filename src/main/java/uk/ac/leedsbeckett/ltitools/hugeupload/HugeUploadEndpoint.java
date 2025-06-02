@@ -56,6 +56,7 @@ import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointMessageHandler;
 import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException;
+import uk.ac.leedsbeckett.ltitoolset.websocket.HandlerException;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.EndpointJavascriptProperties;
 import uk.ac.leedsbeckett.ltitoolset.websocket.annotations.HandlerPromisesReply;
 
@@ -199,20 +200,21 @@ public class HugeUploadEndpoint extends ToolEndpoint
   @EndpointMessageHandler()
   @HandlerPromisesReply()
   public void handleFileMapStart( Session session, ToolMessage message, HuFileMapStart fileMap ) 
-          throws IOException, HandlerAlertException
+          throws IOException, HandlerException
   {
     if ( fileMap == null || fileMap.getFileName() == null )
-      throw new HandlerAlertException( "Invalid payload in message.", message );
+      throw new HandlerException( "Invalid payload in message.", message );
     ItemData d = new ItemData( message, fileMap.getFileName() );
 
     logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isDuplicate(), fileMap.getFileName() });
 
     if ( fileMap.isDuplicate() && d.fmdata.getFileMap() == null )
-      throw new HandlerAlertException( "Duplicate was indicated but there is no existing map.", message );
+      throw new HandlerException( "Duplicate was indicated but there is no existing map.", message );
     
     HuFileMap newMap = new HuFileMap();
     // Initialise a new map
     newMap.setMap( new ArrayList<>() );
+    newMap.setDuplicate( fileMap.isDuplicate() );
     d.fmdata.setNewFileMap( newMap );
     store.updateFileMetadata( d.fmdata );
     sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
@@ -220,10 +222,11 @@ public class HugeUploadEndpoint extends ToolEndpoint
   
   @EndpointMessageHandler()
   @HandlerPromisesReply()
-  public void handleFileMapProgress( Session session, ToolMessage message, HuFileMapProgress fileMap ) throws IOException, HandlerAlertException
+  public void handleFileMapProgress( Session session, ToolMessage message, HuFileMapProgress fileMap )
+          throws IOException, HandlerException
   {
     if ( fileMap == null || fileMap.getFileName() == null )
-      throw new HandlerAlertException( "Invalid payload in message.", message );
+      throw new HandlerException( "Invalid payload in message.", message );
     ItemData d = new ItemData( message, fileMap.getFileName() );
     logger.log(Level.FINE, "Rxed chunkNumber {0} hash = {1}", new Object[ ]{fileMap.getChunkNumber(), fileMap.getChunk().getHash()});
     
@@ -231,10 +234,13 @@ public class HugeUploadEndpoint extends ToolEndpoint
     HuFileMapChunk newchunk = fileMap.getChunk();
     if ( newmap.isDuplicate() )
     {
+      logger.log( Level.FINE, "Checking that this chunk matches previously mapped one." );
       HuFileMap oldmap = d.fmdata.getFileMap();
-      HuFileMapChunk chunk = oldmap.getMap().get( fileMap.getChunkNumber() );
-      if ( chunk != null && !chunk.equals( newchunk ) )
-        throw new HandlerAlertException( "The selected file does not match the previously mapped file.", message );
+      HuFileMapChunk oldchunk = oldmap.getMap().get( fileMap.getChunkNumber() );
+      logger.log(Level.FINE, "Old chunk.{0}", oldchunk);
+      logger.log(Level.FINE, "New chunk.{0}", newchunk);
+      if ( oldchunk != null && !oldchunk.equals( newchunk ) )
+        throw new HandlerException( "The selected file does not match the previously mapped file.", message );
     }
     
     while ( newmap.getMap().size() <= fileMap.getChunkNumber() )
@@ -246,10 +252,11 @@ public class HugeUploadEndpoint extends ToolEndpoint
   
   @EndpointMessageHandler()
   @HandlerPromisesReply()
-  public void handleFileMapComplete( Session session, ToolMessage message, HuFileMapComplete fileMap ) throws IOException, HandlerAlertException
+  public void handleFileMapComplete( Session session, ToolMessage message, HuFileMapComplete fileMap )
+          throws IOException, HandlerException
   {
     if ( fileMap == null || fileMap.getFileName() == null )
-      throw new HandlerAlertException( "Invalid payload in message.", message );
+      throw new HandlerException( "Invalid payload in message.", message );
     ItemData d = new ItemData( message, fileMap.getFileName() );
     logger.log(Level.FINE, "name = {0} digest = {1}", new Object[ ]{fileMap.getFileName(), fileMap.getWholeFileDigest() });
     HuFileMap newmap = d.fmdata.getNewFileMap();
@@ -555,19 +562,4 @@ public class HugeUploadEndpoint extends ToolEndpoint
     sendToolMessage( session, tmc );
   }
   
-  
-  
-  /**
-   * This gets called when a handler throws a HandlerAlertException and decides
-   * how to alert the user.
-   * 
-   * @param session The web socket session.
-   * @param haex The exception that was thrown.
-   * @throws IOException If the attempt to alert the user fails.
-   */
-  @Override
-  public void processHandlerAlert( Session session, HandlerAlertException haex ) throws IOException
-  {
-    sendToolMessage( session, new ToolMessage( haex.getOriginalMessage(), HuServerMessageName.Alert, haex.getMessage() ) );    
-  }
 }

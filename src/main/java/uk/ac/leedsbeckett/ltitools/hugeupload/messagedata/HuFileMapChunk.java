@@ -15,6 +15,8 @@
  */
 package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
 
+import java.util.Objects;
+
 /**
  *
  * @author maber01
@@ -55,4 +57,22 @@ public class HuFileMapChunk
     this.hash = hash;
   }
   
+  @Override
+  public boolean equals( Object other )
+  {
+    if ( other == null ) return false;
+    if ( !(other instanceof HuFileMapChunk) ) return false;
+    HuFileMapChunk otherchunk = (HuFileMapChunk)other;
+    return end == otherchunk.end && start == otherchunk.start && hash.equals( otherchunk.hash );
+  }
+
+  @Override
+  public int hashCode()
+  {
+    int h = 5;
+    h = 67 * h + (int) ( this.start ^ ( this.start >>> 32 ) );
+    h = 67 * h + (int) ( this.end ^ ( this.end >>> 32 ) );
+    h = 67 * h + Objects.hashCode( this.hash );
+    return h;
+  }
 }

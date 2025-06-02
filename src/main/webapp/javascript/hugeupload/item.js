@@ -139,13 +139,16 @@ async function importFile()
   var end;
   var previousPercent=0;
   const startTime = performance.now();
+  
   const startReport = {};
   startReport.fileName = "fixedfilename";
-  startReport.replacement = false;
+  startReport.duplicate = false;
   startReport.size = inFile.size;
   const smessage = new hugeupload.FileMapStartMessage();
   smessage.payload = startReport;
-  toolsocket.sendMessage( smessage );    
+  var reply = await toolsocket.sendMessageAndGetReply( smessage );    
+  console.log( reply );
+  
   for ( var start = 0, i=0; start < inFile.size; start+=maxSize, i++ )
   {
     end = start + maxSize;
@@ -172,7 +175,7 @@ async function importFile()
     progress.chunk.hash = littleHashStr;
     const pmessage = new hugeupload.FileMapProgressMessage();
     pmessage.payload = progress;
-    toolsocket.sendMessage( pmessage );    
+    reply = await toolsocket.sendMessageAndGetReply( pmessage );    
   }
   await writable.close();
   const binhash = digester.digest();
@@ -184,7 +187,7 @@ async function importFile()
   completion.wholeFileDigest = binhash.toBase64();
   const cmessage = new hugeupload.FileMapCompleteMessage();
   cmessage.payload = completion;
-  toolsocket.sendMessage( cmessage );    
+  reply = await toolsocket.sendMessageAndGetReply( cmessage );    
 }
 
 

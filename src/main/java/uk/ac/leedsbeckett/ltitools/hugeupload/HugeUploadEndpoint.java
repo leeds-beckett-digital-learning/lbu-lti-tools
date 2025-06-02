@@ -172,44 +172,101 @@ public class HugeUploadEndpoint extends ToolEndpoint
     return null;
   }
   
+  class ItemData
+  {
+    HuResourceKey rKey;
+    HugeUploadResource huResource;
+    HuFileMetadataKey fkey;
+    HuFileMetadata fmdata;
+    public ItemData( ToolMessage message, String fileName ) throws HandlerAlertException
+    {
+      if ( !"item".equals( huState.getToolFacetId() ) )
+        throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message );
+      rKey = huState.getHuResourceKey();
+      if ( rKey == null )
+        throw new HandlerAlertException( "Recieved message but cannot find corresponding resource data.", message );
+      huResource = store.getResource( rKey, true );
+      if ( huResource == null )
+        throw new HandlerAlertException( "Unable to find resource data.", message );
+      if ( fileName != null )
+      {
+        fkey = new HuFileMetadataKey( rKey, fileName );
+        fmdata = store.getFileMetadata( fkey, true );
+      }
+    }
+  }
+  
   @EndpointMessageHandler()
   @HandlerPromisesReply()
   public void handleFileMapStart( Session session, ToolMessage message, HuFileMapStart fileMap ) 
           throws IOException, HandlerAlertException
   {
-    if ( !"item".equals( huState.getToolFacetId() ) )
-      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message );
-    HuResourceKey rKey = huState.getHuResourceKey();
-    if ( rKey == null )
-      throw new HandlerAlertException( "Recieved message but cannot find corresponding resource data.", message );
-    HugeUploadResource huResource = store.getResource( rKey, true );
-    if ( huResource == null )
-      throw new HandlerAlertException( "Unable to find resource data.", message );
-    if ( fileMap == null )
-      throw new HandlerAlertException( "Missing message data.", message );
-    if ( fileMap.getFileName() == null )
-      throw new HandlerAlertException( "Missing file name in message data.", message );
+    if ( fileMap == null || fileMap.getFileName() == null )
+      throw new HandlerAlertException( "Invalid payload in message.", message );
+    ItemData d = new ItemData( message, fileMap.getFileName() );
 
-    logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isReplacement(), fileMap.getFileName() });
+    logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isDuplicate(), fileMap.getFileName() });
+
+    if ( fileMap.isDuplicate() && d.fmdata.getFileMap() == null )
+      throw new HandlerAlertException( "Duplicate was indicated but there is no existing map.", message );
     
-    HuFileMetadataKey fkey = new HuFileMetadataKey( rKey, fileMap.getFileName() );
-    HuFileMetadata fmdata = store.getFileMetadata( fkey, true );
-    HuFileMap m = new HuFileMap();
-    m.setMap( new ArrayList<>() );
-    fmdata.setFileMap( m );
-    store.updateFileMetadata( fmdata );
+    HuFileMap newMap = new HuFileMap();
+    // Initialise a new map
+    newMap.setMap( new ArrayList<>() );
+    d.fmdata.setNewFileMap( newMap );
+    store.updateFileMetadata( d.fmdata );
+    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
   }
   
   @EndpointMessageHandler()
+  @HandlerPromisesReply()
   public void handleFileMapProgress( Session session, ToolMessage message, HuFileMapProgress fileMap ) throws IOException, HandlerAlertException
   {
+    if ( fileMap == null || fileMap.getFileName() == null )
+      throw new HandlerAlertException( "Invalid payload in message.", message );
+    ItemData d = new ItemData( message, fileMap.getFileName() );
     logger.log(Level.FINE, "Rxed chunkNumber {0} hash = {1}", new Object[ ]{fileMap.getChunkNumber(), fileMap.getChunk().getHash()});
+    
+    HuFileMap newmap = d.fmdata.getNewFileMap();
+    HuFileMapChunk newchunk = fileMap.getChunk();
+    if ( newmap.isDuplicate() )
+    {
+      HuFileMap oldmap = d.fmdata.getFileMap();
+      HuFileMapChunk chunk = oldmap.getMap().get( fileMap.getChunkNumber() );
+      if ( chunk != null && !chunk.equals( newchunk ) )
+        throw new HandlerAlertException( "The selected file does not match the previously mapped file.", message );
+    }
+    
+    while ( newmap.getMap().size() <= fileMap.getChunkNumber() )
+      newmap.getMap().add( null );
+    newmap.getMap().set( fileMap.getChunkNumber(), newchunk );
+    store.updateFileMetadata( d.fmdata );    
+    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
   }
   
   @EndpointMessageHandler()
+  @HandlerPromisesReply()
   public void handleFileMapComplete( Session session, ToolMessage message, HuFileMapComplete fileMap ) throws IOException, HandlerAlertException
   {
+    if ( fileMap == null || fileMap.getFileName() == null )
+      throw new HandlerAlertException( "Invalid payload in message.", message );
+    ItemData d = new ItemData( message, fileMap.getFileName() );
     logger.log(Level.FINE, "name = {0} digest = {1}", new Object[ ]{fileMap.getFileName(), fileMap.getWholeFileDigest() });
+    HuFileMap newmap = d.fmdata.getNewFileMap();
+    
+    // Check the map is now complete and record the whole file digest.
+    if ( newmap.isDuplicate() )
+    {
+      HuFileMap oldmap = d.fmdata.getFileMap();
+      if ( !oldmap.getSha512digest().equals( fileMap.getWholeFileDigest() ) )
+        throw new HandlerAlertException( "The selected file does not match the previously mapped file.", message );
+    }
+
+    newmap.setSha512digest( fileMap.getWholeFileDigest() );
+    d.fmdata.setFileMap( newmap );
+    d.fmdata.setNewFileMap( null );
+    store.updateFileMetadata( d.fmdata );    
+    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
   }
   
   @EndpointMessageHandler()

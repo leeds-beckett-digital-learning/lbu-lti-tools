@@ -23,12 +23,32 @@ import java.util.ArrayList;
  */
 public class HuFileMap
 {
+  boolean duplicate;
   String name;
   long lastModified;
   long size;
   String type;
   ArrayList<HuFileMapChunk> map;
+  String sha512digest;
 
+  /**
+   * A duplicate is the file map of a file which is being
+   * imported into the browser private file store and which
+   * is supposed to be identical to a file that was previously
+   * mapped.
+   * 
+   * @return 
+   */
+  public boolean isDuplicate()
+  {
+    return duplicate;
+  }
+
+  public void setDuplicate( boolean duplicate )
+  {
+    this.duplicate = duplicate;
+  }
+  
   public String getName()
   {
     return name;
@@ -78,5 +98,14 @@ public class HuFileMap
   {
     this.map = map;
   }
-  
+
+  public String getSha512digest()
+  {
+    return sha512digest;
+  }
+
+  public void setSha512digest( String sha512digest )
+  {
+    this.sha512digest = sha512digest;
+  }
 }

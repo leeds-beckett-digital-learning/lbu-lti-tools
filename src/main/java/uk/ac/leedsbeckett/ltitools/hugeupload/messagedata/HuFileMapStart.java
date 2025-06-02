@@ -24,17 +24,17 @@ package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
 public class HuFileMapStart
 {
   String fileName;
-  boolean replacement;
+  boolean duplicate;
   long size;
 
-  public boolean isReplacement()
+  public boolean isDuplicate()
   {
-    return replacement;
+    return duplicate;
   }
 
-  public void setReplacement( boolean replacement )
+  public void setDuplicate( boolean duplicate )
   {
-    this.replacement = replacement;
+    this.duplicate = duplicate;
   }
 
   public long getSize()

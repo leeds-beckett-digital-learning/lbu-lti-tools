@@ -37,6 +37,8 @@ public enum HuServerMessageName implements ToolMessageName
   /**
    * Message contains a simple alert message for the user.
    */
+  Acknowledge(          "Acknowledge",          null ),
+  
   Alert(                "Alert",                String.class ),
   
   BinaryTest(           "BinaryTest",           HuBinaryTestMessage.class ),

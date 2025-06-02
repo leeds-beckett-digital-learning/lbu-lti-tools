@@ -30,6 +30,7 @@ public class HuFileMetadata implements Entry<HuFileMetadataKey>
 {
   HuFileMetadataKey key;
   HuFileMap fileMap = null;
+  HuFileMap newFileMap = null;
   HuUploadState uploadState = null;
 
   public HuFileMetadata( @JsonProperty("key") HuFileMetadataKey key )
@@ -64,6 +65,16 @@ public class HuFileMetadata implements Entry<HuFileMetadataKey>
     this.fileMap = fileMap;
   }
 
+  public HuFileMap getNewFileMap()
+  {
+    return newFileMap;
+  }
+
+  public void setNewFileMap( HuFileMap newFileMap )
+  {
+    this.newFileMap = newFileMap;
+  }
+  
   public HuUploadState getUploadState()
   {
     return uploadState;

@@ -17,10 +17,13 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuStoreCluster;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -34,6 +37,7 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
+import org.apache.commons.codec.digest.DigestUtils;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.Configuration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuCourseKey;
@@ -56,7 +60,6 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapProgress;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapStart;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileUploadProgress;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileUploadStart;
-import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadChunkState;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolMessage;
@@ -177,24 +180,6 @@ public class HugeUploadEndpoint extends ToolEndpoint
     }
   }
   
-  private HuBinaryChunkUploadRequest getNextChunkRequest( HuFileMetadata huFile )
-  {
-    for ( int i=0; i < huFile.getUploadState().getChunkStates().size(); i++ )
-    {
-      HuUploadChunkState chunkState = huFile.getUploadState().getChunkStates().get( i );
-      if ( !chunkState.isUploaded() )
-      {
-        HuFileMapChunk chunk = huFile.getFileMap().getMap().get( i );
-        HuBinaryChunkUploadRequest upreq = new HuBinaryChunkUploadRequest();
-        upreq.setChunkNo( i );
-        upreq.setStart( chunk.getStart() );
-        upreq.setEnd( chunk.getEnd() );
-        upreq.setHash( chunk.getHash() );
-        return upreq;
-      }
-    }   
-    return null;
-  }
   
   class ItemData
   {
@@ -295,7 +280,6 @@ public class HugeUploadEndpoint extends ToolEndpoint
     newmap.setSha512digest( fileMap.getWholeFileDigest() );
     d.fmdata.setFileMap( newmap );
     d.fmdata.setNewFileMap( null );
-    d.fmdata.setUploadState( new HuUploadState( newmap.getMap().size() ) );
     store.updateFileMetadata( d.fmdata );    
     sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
   }
@@ -314,16 +298,21 @@ public class HugeUploadEndpoint extends ToolEndpoint
     HuUploadState upstate = d.fmdata.getUploadState();
     if ( upstate == null )
     {
-      upstate = new HuUploadState( d.fmdata.getFileMap().getMap().size() );
+      upstate = new HuUploadState();
       d.fmdata.setUploadState( upstate );
       store.updateFileMetadata( d.fmdata );
     }
     
+    // Delete existing upload.
+    Path path = store.getFilePath( d.fkey, upStart.getFileName() );    
+    if ( Files.exists( path ) )
+      Files.delete( path );
+    
     if ( upstate.isFullyUploaded() )
       throw new HandlerException( "Already fully uploaded.", message );
     
-    for ( int i=0; i < upstate.getChunkStates().size(); i++ )
-      if ( !upstate.getChunkStates().get( i ).isUploaded() )
+    for ( int i=0; i < d.fmdata.getFileMap().getMap().size(); i++ )
+      if ( !upstate.isChunkUploaded( i ) )
       {
         HuFileMapChunk chunk = d.fmdata.getFileMap().getMap().get( i );
         sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
@@ -355,31 +344,55 @@ public class HugeUploadEndpoint extends ToolEndpoint
     Path path = store.getFilePath( d.fkey, upProgress.getFileName() );    
     try ( RandomAccessFile raf = new RandomAccessFile( path.toFile(), "rw" ) )
     {
+      logger.log(Level.FINE, "Seeking to {0}", chunkMap.getStart());
+      logger.log(Level.FINE, "Buffer length {0}", upProgress.getData().length);
       raf.seek( chunkMap.getStart() );
       raf.write( upProgress.getData() );
     }
     
     HuUploadState upstate = d.fmdata.getUploadState();
-    upstate.getChunkStates().get( upProgress.getChunkNumber() ).setUploaded( true );
+    upstate.setUploadedChunkCount( upProgress.getChunkNumber() + 1 );
+    // Save this now even though we might save again later
+    if ( upstate.getUploadedChunkCount() == d.fmdata.getFileMap().getMap().size() )
+      upstate.setFullyUploaded( true );
     store.updateFileMetadata( d.fmdata );
     
-    for ( int i=0; i < upstate.getChunkStates().size(); i++ )
-      if ( !upstate.getChunkStates().get( i ).isUploaded() )
-      {
-        HuFileMapChunk chunk = d.fmdata.getFileMap().getMap().get( i );
-        sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
-                new AcknowledgeUpload( false, i, chunk.getStart(), chunk.getEnd() ) ) );    
-        return;
-      }
 
-    upstate.setFullyUploaded( true );
-    store.updateFileMetadata( d.fmdata );
-    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
-            new AcknowledgeUpload( true, null, null, null ) ) );
-    
-    // Now trigger background computation of whole file digest and let the client know.
-    // ...
-    
+    if ( upstate.isFullyUploaded() )
+    {
+      String strDigest=null;
+      // Now compute the whole file hash.
+      try ( InputStream is = Files.newInputStream( path ) )
+      {
+        long t1 = System.currentTimeMillis();
+        strDigest = DigestUtils.sha512Hex( is );
+        long t2 = System.currentTimeMillis();
+        logger.log( Level.FINE, "Time taken to compute file digest: {0}ms", t2-t1 );
+      }
+      catch ( Exception e )
+      {
+        logger.log( Level.SEVERE, "Unable to compute digest.", e );
+        throw new HandlerException( "Unable to compute digest.", message );
+      }
+      logger.log( Level.FINE, "File digest from client   : {0}", d.fmdata.getFileMap().getSha512digest() );
+      logger.log( Level.FINE, "File digest just computed : {0}", strDigest );
+      if ( !d.fmdata.getFileMap().getSha512digest().equals( strDigest ) )
+        throw new HandlerException( "The uploaded file's fingerprint doesn't match the file that was mapped before uploading.", message );
+
+      // No more chunks needed, upload is complete
+      upstate.setWholeFileFingerprintValidated( true );
+      store.updateFileMetadata( d.fmdata );
+      sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+              new AcknowledgeUpload( true, null, null, null ) ) );    
+    }
+    else
+    {
+      // tell client about the next chunk that ought to be uploaded
+      HuFileMapChunk chunk = d.fmdata.getFileMap().getMap().get( upstate.getUploadedChunkCount() );
+      sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+              new AcknowledgeUpload( false, upstate.getUploadedChunkCount(), chunk.getStart(), chunk.getEnd() ) ) );    
+    }
+
   }
     
   @EndpointMessageHandler()

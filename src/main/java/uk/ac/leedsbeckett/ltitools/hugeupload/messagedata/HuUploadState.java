@@ -16,7 +16,6 @@
 package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.ArrayList;
 
 /**
  *
@@ -24,19 +23,12 @@ import java.util.ArrayList;
  */
 public class HuUploadState
 {
-  boolean fullyUploaded;
-  ArrayList<HuUploadChunkState> chunkStates;
+  boolean fullyUploaded = false;
+  boolean wholeFileFingerprintValidated = false;
+  int uploadedChunkCount = 0;
 
   public HuUploadState() {}
 
-  @JsonIgnore
-  public HuUploadState( int size )
-  {
-    chunkStates = new ArrayList<>();
-    for ( int i=0; i<size; i++ )
-      chunkStates.add( new HuUploadChunkState() );
-  }
-  
   public boolean isFullyUploaded()
   {
     return fullyUploaded;
@@ -47,13 +39,29 @@ public class HuUploadState
     this.fullyUploaded = fullyUploaded;
   }
 
-  public ArrayList<HuUploadChunkState> getChunkStates()
+  public boolean isWholeFileFingerprintValidated()
   {
-    return chunkStates;
+    return wholeFileFingerprintValidated;
   }
 
-  public void setChunkStates( ArrayList<HuUploadChunkState> chunkStates )
+  public void setWholeFileFingerprintValidated( boolean wholeFileFingerprintValidated )
   {
-    this.chunkStates = chunkStates;
+    this.wholeFileFingerprintValidated = wholeFileFingerprintValidated;
   }
+
+  public int getUploadedChunkCount()
+  {
+    return uploadedChunkCount;
+  }
+
+  public void setUploadedChunkCount( int uploadedChunkCount )
+  {
+    this.uploadedChunkCount = uploadedChunkCount;
+  }
+
+
+  public boolean isChunkUploaded( int chunkNo )
+  {
+    return chunkNo < uploadedChunkCount;
+  }  
 }

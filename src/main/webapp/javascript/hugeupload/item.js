@@ -219,10 +219,10 @@ async function importFileInChunks( duplicate )
   }
   await writable.close();
   const binhash = digester.digest();
-  console.log( binhash.toBase64() );
+  console.log( binhash.toHex() );
   const completion = {};
   completion.fileName = "fixedfilename";
-  completion.wholeFileDigest = binhash.toBase64();
+  completion.wholeFileDigest = binhash.toHex();
   const cmessage = new hugeupload.FileMapCompleteMessage();
   cmessage.payload = completion;
   reply = await toolsocket.sendMessageAndGetReply( cmessage );    

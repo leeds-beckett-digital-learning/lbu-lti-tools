@@ -202,6 +202,7 @@ const dynamicPageData = ${support.dynamicPageDataAsJSON};
       <p style="margin-top: 0.5em;">
         <label for="fileselection" class="buttonLabel">Select File</label>
         <input id="fileselection" style="display:none;" type="file"/>
+        <button id="stopimportbutton">Stop</button>
       </p>
       <table id="filetable">
         <tr><th>Name</th><td id="filename"></td></tr>

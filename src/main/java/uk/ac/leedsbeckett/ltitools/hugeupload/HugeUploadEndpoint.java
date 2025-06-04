@@ -21,8 +21,11 @@ import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.websocket.OnClose;
@@ -38,6 +41,7 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuFileMetadata;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuFileMetadataKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HuResourceKey;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.AcknowledgeUpload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownloadRequest;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUpload;
@@ -50,6 +54,8 @@ import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapChunk;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapComplete;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapProgress;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileMapStart;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileUploadProgress;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuFileUploadStart;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadChunkState;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuUploadState;
 import uk.ac.leedsbeckett.ltitoolset.websocket.ToolEndpoint;
@@ -154,6 +160,23 @@ public class HugeUploadEndpoint extends ToolEndpoint
     super.onMessage( session, text );
   }
 
+  
+  private boolean validateSha1( byte[] data, String checkSum )
+  {
+    try
+    {
+      MessageDigest md = MessageDigest.getInstance("SHA-1");
+      md.update( data );
+      byte[] digest = md.digest();
+      return checkSum.equals( Base64.getEncoder().encodeToString( digest ) );
+    }
+    catch ( NoSuchAlgorithmException ex )
+    {
+      Logger.getLogger( HugeUploadEndpoint.class.getName() ).log( Level.SEVERE, null, ex );
+      return false;
+    }
+  }
+  
   private HuBinaryChunkUploadRequest getNextChunkRequest( HuFileMetadata huFile )
   {
     for ( int i=0; i < huFile.getUploadState().getChunkStates().size(); i++ )
@@ -261,7 +284,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     logger.log(Level.FINE, "name = {0} digest = {1}", new Object[ ]{fileMap.getFileName(), fileMap.getWholeFileDigest() });
     HuFileMap newmap = d.fmdata.getNewFileMap();
     
-    // Check the map is now complete and record the whole file digest.
+    // Check the whole file digest against previous import.
     if ( newmap.isDuplicate() )
     {
       HuFileMap oldmap = d.fmdata.getFileMap();
@@ -272,85 +295,93 @@ public class HugeUploadEndpoint extends ToolEndpoint
     newmap.setSha512digest( fileMap.getWholeFileDigest() );
     d.fmdata.setFileMap( newmap );
     d.fmdata.setNewFileMap( null );
+    d.fmdata.setUploadState( new HuUploadState( newmap.getMap().size() ) );
     store.updateFileMetadata( d.fmdata );    
     sendToolMessage( session, new ToolMessage( message, HuServerMessageName.Acknowledge ) );
   }
   
   @EndpointMessageHandler()
-  public void handleFileMap( Session session, ToolMessage message, HuFileMap fileMap ) throws IOException, HandlerAlertException
+  @HandlerPromisesReply()
+  public void handleFileUploadStart( Session session, ToolMessage message, HuFileUploadStart upStart ) 
+          throws IOException, HandlerException
   {
-    /*
+    if ( upStart == null || upStart.getFileName() == null )
+      throw new HandlerException( "Invalid payload in message.", message );
+    ItemData d = new ItemData( message, upStart.getFileName() );
+
+    logger.log(Level.FINE, "Starting upload {0} name = {1}", new Object[ ]{upStart.getFileName() });
     
-
-    // Whether there is a resource for the session will depend on the facet 
-    // being used.
-    if ( !"item".equals( huState.getToolFacetId() ) )
-      throw new HandlerAlertException( "Recieved message on an inappropriate facet of the tool.", message.getId() );
-
-    HuResourceKey rKey = huState.getHuResourceKey();
-    if ( rKey == null )
-      throw new HandlerAlertException( "Recieved request to set file map but cannot find resource data.", message.getId() );
-    
-    // No further checks - send data about the resource.
-    HugeUploadResource huResource = store.getResource( rKey, true );
-    if ( huResource == null )
-      throw new HandlerAlertException( "Unable to find resource data.", message.getId() );
-
-    logger.log(Level.INFO, "name    = {0}", fileMap.getName() );
-    logger.log(Level.INFO, "size    = {0}", fileMap.getSize() );
-    logger.log(Level.INFO, "type    = {0}", fileMap.getType() );
-    logger.log(Level.INFO, "lastmod = {0}", fileMap.getLastModified() );
-    int i=0;
-    for ( HuFileMapChunk chunk :  fileMap.getMap() )
+    HuUploadState upstate = d.fmdata.getUploadState();
+    if ( upstate == null )
     {
-      logger.log( 
-              Level.INFO, 
-              "    chunk {0} = {1} {2} {3}", 
-              new Object[ ]{i++, chunk.getStart(), chunk.getEnd(), chunk.getHash()}
-      );
+      upstate = new HuUploadState( d.fmdata.getFileMap().getMap().size() );
+      d.fmdata.setUploadState( upstate );
+      store.updateFileMetadata( d.fmdata );
     }
     
+    if ( upstate.isFullyUploaded() )
+      throw new HandlerException( "Already fully uploaded.", message );
     
-    // ToDo see if the map is indentical to the current one
-    // and if so simply resume request chunk uploads
-
-    // validity checking
+    for ( int i=0; i < upstate.getChunkStates().size(); i++ )
+      if ( !upstate.getChunkStates().get( i ).isUploaded() )
+      {
+        HuFileMapChunk chunk = d.fmdata.getFileMap().getMap().get( i );
+        sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+                new AcknowledgeUpload( false, i, chunk.getStart(), chunk.getEnd() ) ) );    
+        return;
+      }
     
-    Path pending = store.getResourcePendingFilePath( rKey );
-    if ( pending.toFile().exists() )
-      pending.toFile().delete();
-    
-    // Set the new file map.
-    huResource.setFileMap( fileMap );
-    // Create and set a new upload state.
-    HuUploadState upstate = new HuUploadState();
-    upstate.setFullyUploaded( false );
-    ArrayList<HuUploadChunkState> chunklist = new ArrayList<>();
-    for ( i=0; i < fileMap.getMap().size(); i++ )
-      chunklist.add( new HuUploadChunkState() );
-    upstate.setChunkStates( chunklist );
-    huResource.setUploadState( upstate );
-    store.updateResource( huResource );
-    // Tell the client that the fileMap has been accepted.
-    ToolMessage tm = new ToolMessage( message.getId(), HuServerMessageName.Resource, huResource );
-    sendToolMessage( session, tm );
-    
-    // Send first chunk request.
-    HuBinaryChunkUploadRequest upreq = getNextChunkRequest( huResource );
-    if ( upreq == null )
-      return;
-    
-    tm = new ToolMessage( message.getId(), HuServerMessageName.BinaryChunkUploadReq, upreq );
-    sendToolMessage( session, tm );
-    */
-  }
-
-  @EndpointMessageHandler()
-  public void handleBinaryTest( Session session, ToolMessage message, HuBinaryTestMessage bin ) throws IOException, HandlerAlertException
-  {
-    throw new HandlerAlertException( "BinaryTest message not supported anymore.", message );
-  }
+    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+            new AcknowledgeUpload( true, null, null, null ) ) );    
+  }  
   
+  @EndpointMessageHandler()
+  @HandlerPromisesReply()
+  public void handleFileUploadProgress( Session session, ToolMessage message, HuFileUploadProgress upProgress )
+          throws IOException, HandlerException
+  {
+    if ( upProgress == null || upProgress.getFileName() == null )
+      throw new HandlerException( "Invalid payload in message.", message );
+    ItemData d = new ItemData( message, upProgress.getFileName() );
+    logger.log(Level.FINE, "Rxed chunkNumber {0} filename = {1}", new Object[ ]{upProgress.getChunkNumber(), upProgress.getFileName()});
+  
+    // Right data? Matches map?
+    HuFileMapChunk chunkMap = d.fmdata.getFileMap().getMap().get( upProgress.getChunkNumber() );
+    if ( !this.validateSha1( upProgress.getData(), chunkMap.getHash() ) )
+      throw new HandlerException( "Checksum of this chunk doesn't match the imported file.", message );
+    logger.log( Level.FINE, "Chunk passed checksum test." );
+    
+    // Save the data
+    Path path = store.getFilePath( d.fkey, upProgress.getFileName() );    
+    try ( RandomAccessFile raf = new RandomAccessFile( path.toFile(), "rw" ) )
+    {
+      raf.seek( chunkMap.getStart() );
+      raf.write( upProgress.getData() );
+    }
+    
+    HuUploadState upstate = d.fmdata.getUploadState();
+    upstate.getChunkStates().get( upProgress.getChunkNumber() ).setUploaded( true );
+    store.updateFileMetadata( d.fmdata );
+    
+    for ( int i=0; i < upstate.getChunkStates().size(); i++ )
+      if ( !upstate.getChunkStates().get( i ).isUploaded() )
+      {
+        HuFileMapChunk chunk = d.fmdata.getFileMap().getMap().get( i );
+        sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+                new AcknowledgeUpload( false, i, chunk.getStart(), chunk.getEnd() ) ) );    
+        return;
+      }
+
+    upstate.setFullyUploaded( true );
+    store.updateFileMetadata( d.fmdata );
+    sendToolMessage( session, new ToolMessage( message, HuServerMessageName.AcknowledgeUpload, 
+            new AcknowledgeUpload( true, null, null, null ) ) );
+    
+    // Now trigger background computation of whole file digest and let the client know.
+    // ...
+    
+  }
+    
   @EndpointMessageHandler()
   public void handleBinaryChunk( Session session, ToolMessage message, HuBinaryChunkUpload chunkup ) 
           throws IOException, HandlerAlertException

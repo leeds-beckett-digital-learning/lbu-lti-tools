@@ -15,45 +15,42 @@
  */
 package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.ArrayList;
-
 /**
  *
  * @author maber01
  */
-public class HuUploadState
+public class AcknowledgeUpload
 {
-  boolean fullyUploaded;
-  ArrayList<HuUploadChunkState> chunkStates;
+  final boolean complete;
+  final Integer nextChunk;
+  final Long start;
+  final Long end;
 
-  public HuUploadState() {}
-
-  @JsonIgnore
-  public HuUploadState( int size )
+  public AcknowledgeUpload( boolean complete, Integer nextChunk, Long start, Long end )
   {
-    chunkStates = new ArrayList<>();
-    for ( int i=0; i<size; i++ )
-      chunkStates.add( new HuUploadChunkState() );
+    this.complete = complete;
+    this.nextChunk = nextChunk;
+    this.start = start;
+    this.end = end;
   }
   
-  public boolean isFullyUploaded()
+  public boolean isComplete()
   {
-    return fullyUploaded;
+    return complete;
   }
 
-  public void setFullyUploaded( boolean fullyUploaded )
+  public Integer getNextChunk()
   {
-    this.fullyUploaded = fullyUploaded;
+    return nextChunk;
   }
 
-  public ArrayList<HuUploadChunkState> getChunkStates()
+  public Long getStart()
   {
-    return chunkStates;
+    return start;
   }
 
-  public void setChunkStates( ArrayList<HuUploadChunkState> chunkStates )
+  public Long getEnd()
   {
-    this.chunkStates = chunkStates;
+    return end;
   }
 }

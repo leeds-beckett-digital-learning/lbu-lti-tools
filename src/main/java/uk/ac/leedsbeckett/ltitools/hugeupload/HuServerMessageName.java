@@ -17,6 +17,7 @@ package uk.ac.leedsbeckett.ltitools.hugeupload;
 
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.CourseConfiguration;
 import uk.ac.leedsbeckett.ltitools.hugeupload.data.HugeUploadResource;
+import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.AcknowledgeUpload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkDownload;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadAck;
 import uk.ac.leedsbeckett.ltitools.hugeupload.messagedata.HuBinaryChunkUploadRequest;
@@ -38,6 +39,8 @@ public enum HuServerMessageName implements ToolMessageName
    * Message contains a simple alert message for the user.
    */
   Acknowledge(          "Acknowledge",          null ),
+  
+  AcknowledgeUpload(    "AcknowledgeUpload",    AcknowledgeUpload.class ),
   
   Alert(                "Alert",                String.class ),
   

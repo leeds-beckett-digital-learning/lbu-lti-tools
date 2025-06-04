@@ -15,45 +15,45 @@
  */
 package uk.ac.leedsbeckett.ltitools.hugeupload.messagedata;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.ArrayList;
-
 /**
- *
+ * Client informs server about progress in mapping a file ahead
+ * of attempting to upload it.
+ * 
  * @author maber01
  */
-public class HuUploadState
+public class HuFileUploadProgress
 {
-  boolean fullyUploaded;
-  ArrayList<HuUploadChunkState> chunkStates;
+  String fileName;
+  int chunkNumber;
+  byte[] data;
 
-  public HuUploadState() {}
-
-  @JsonIgnore
-  public HuUploadState( int size )
+  public String getFileName()
   {
-    chunkStates = new ArrayList<>();
-    for ( int i=0; i<size; i++ )
-      chunkStates.add( new HuUploadChunkState() );
-  }
-  
-  public boolean isFullyUploaded()
-  {
-    return fullyUploaded;
+    return fileName;
   }
 
-  public void setFullyUploaded( boolean fullyUploaded )
+  public void setFileName( String fileName )
   {
-    this.fullyUploaded = fullyUploaded;
+    this.fileName = fileName;
   }
 
-  public ArrayList<HuUploadChunkState> getChunkStates()
+  public int getChunkNumber()
   {
-    return chunkStates;
+    return chunkNumber;
   }
 
-  public void setChunkStates( ArrayList<HuUploadChunkState> chunkStates )
+  public void setChunkNumber( int chunkNumber )
   {
-    this.chunkStates = chunkStates;
+    this.chunkNumber = chunkNumber;
+  }
+
+  public byte[] getData()
+  {
+    return data;
+  }
+
+  public void setData( byte[] data )
+  {
+    this.data = data;
   }
 }

@@ -30,7 +30,9 @@ let resource = null;
 
 let platformconfig = null;
 
-const importProgress = new Object();
+let currentAction = null;
+let stopCurrentAction = false;
+
 const uploadProgress = new Object();
 const downloadProgress = new Object();
 
@@ -58,9 +60,11 @@ function init()
   finder.isDuplicateYesButton.addEventListener(    'click', () => { arialib.closeDialog( finder.isduplicatedialog ); importFile( true ); } );
   finder.isDuplicateNoButton.addEventListener(     'click', () => { arialib.closeDialog( finder.isduplicatedialog ); importFile( false ); } );
   finder.isDuplicateCancelButton.addEventListener( 'click', () => { arialib.closeDialog( finder.isduplicatedialog ); } );
+  finder.stopuploadbutton.addEventListener( 'click', () => this.stopCurrentAction = true );
   
-  finder.startuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
-  finder.stopuploadbutton.addEventListener( 'click', () => alert( 'Not implemented yet' ) );
+  finder.startuploadbutton.addEventListener( 'click', () => uploadFile() );
+  finder.stopuploadbutton.addEventListener( 'click', () => this.stopCurrentAction = true );
+  
   finder.startdownloadbutton.addEventListener( 'click', () => startDownload() );
   finder.savebutton.addEventListener( 'click', () => save() );
   
@@ -133,79 +137,168 @@ function importDialog()
   
 }
 
-async function importFile( duplicate )
+function importFile( duplicate )
 {
+  const startTime = performance.now();
   try
   {
-    const fileInput = document.querySelector("input[type=file]");
-    if ( fileInput.files.length < 1 ) { alert( "No files selected."             ); return; }
-    if ( fileInput.files.length > 1 ) { alert( "Only one file may be selected." ); return; }
-    const digester    = new sha512lib.Sha512();
-    const inFile      = fileInput.files[0];
-    const opfsRoot    = await navigator.storage.getDirectory();
-    const outFileName = "import.bin";
-    const fileHandle  = await opfsRoot.getFileHandle( outFileName, { create: true } );
-    const writable    = await fileHandle.createWritable();
-    const maxSize     = 10*1024*1024;
-    var end;
-    var previousPercent=0;
-    const startTime = performance.now();
-
-    const startReport = {};
-    startReport.fileName = "fixedfilename";
-    startReport.duplicate = duplicate;
-    startReport.size = inFile.size;
-    const smessage = new hugeupload.FileMapStartMessage();
-    smessage.payload = startReport;
-    var reply = await toolsocket.sendMessageAndGetReply( smessage );    
-    console.log( reply );
-
-    for ( var start = 0, i=0; start < inFile.size; start+=maxSize, i++ )
-    {
-      end = start + maxSize;
-      if ( end > inFile.size ) end = inFile.size;
-      const chunkBlob = await inFile.slice( start, end );
-      const chunk = await chunkBlob.bytes();
-      const littleHash = await crypto.subtle.digest( "SHA-1", chunk );
-      const littleHashStr = new Uint8Array(littleHash).toBase64();
-      console.log( "Chunk SHA-1 hash ", littleHashStr );
-      await writable.write( chunkBlob );
-      digester.update( chunk );
-      const percent = Math.floor( 100*(end/inFile.size) );
-      if ( percent !== previousPercent )
-      {
-        console.log( "Completed ", percent );
-        previousPercent = percent;
-      }
-      const progress = {};
-      progress.fileName = "fixedfilename";
-      progress.chunkNumber = i;
-      progress.chunk = {};
-      progress.chunk.start = start;
-      progress.chunk.end = end;
-      progress.chunk.hash = littleHashStr;
-      const pmessage = new hugeupload.FileMapProgressMessage();
-      pmessage.payload = progress;
-      reply = await toolsocket.sendMessageAndGetReply( pmessage );    
-    }
-    await writable.close();
-    const binhash = digester.digest();
-    console.log( binhash.toBase64() );
-    const endTime = performance.now();
-    console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
-    const completion = {};
-    completion.fileName = "fixedfilename";
-    completion.wholeFileDigest = binhash.toBase64();
-    const cmessage = new hugeupload.FileMapCompleteMessage();
-    cmessage.payload = completion;
-    reply = await toolsocket.sendMessageAndGetReply( cmessage );    
+    stopCurrentAction = false;
+    currentAction = "import";
+    importFileInChunks( duplicate );
   }
   catch ( error )
   {
     console.log( error );
-    alert( "The selected file was rejected. Did you select the right one?" );
+    alert( "The file import process failed. " + error );
+  }
+  finally
+  {
+    currentAction = null;
+    const endTime = performance.now();
+    console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
   }
 }
+
+async function importFileInChunks( duplicate )
+{
+  const fileInput = document.querySelector("input[type=file]");
+  if ( fileInput.files.length < 1 ) { alert( "No files selected."             ); return; }
+  if ( fileInput.files.length > 1 ) { alert( "Only one file may be selected." ); return; }
+  const digester    = new sha512lib.Sha512();
+  const inFile      = fileInput.files[0];
+  const opfsRoot    = await navigator.storage.getDirectory();
+  const outFileName = "import.bin";
+  const fileHandle  = await opfsRoot.getFileHandle( outFileName, { create: true } );
+  const writable    = await fileHandle.createWritable();
+  const maxSize     = 10*1024*1024;
+  var end;
+  var previousPercent=0;
+
+  if ( stopCurrentAction )
+    return;
+
+  const startReport = {};
+  startReport.fileName = "fixedfilename";
+  startReport.duplicate = duplicate;
+  startReport.size = inFile.size;
+  const smessage = new hugeupload.FileMapStartMessage();
+  smessage.payload = startReport;
+  var reply = await toolsocket.sendMessageAndGetReply( smessage );    
+  console.log( reply );
+  if ( stopCurrentAction )
+    return;
+  for ( var start = 0, i=0; start < inFile.size; start+=maxSize, i++ )
+  {
+    end = start + maxSize;
+    if ( end > inFile.size ) end = inFile.size;
+    const chunkBlob = await inFile.slice( start, end );
+    const chunk = await chunkBlob.bytes();
+    const littleHash = await crypto.subtle.digest( "SHA-1", chunk );
+    const littleHashStr = new Uint8Array(littleHash).toBase64();
+    console.log( "Chunk SHA-1 hash ", littleHashStr );
+    await writable.write( chunkBlob );
+    digester.update( chunk );
+    const percent = Math.floor( 100*(end/inFile.size) );
+    if ( percent !== previousPercent )
+    {
+      console.log( "Completed ", percent );
+      previousPercent = percent;
+    }
+    const progress = {};
+    progress.fileName = "fixedfilename";
+    progress.chunkNumber = i;
+    progress.chunk = {};
+    progress.chunk.start = start;
+    progress.chunk.end = end;
+    progress.chunk.hash = littleHashStr;
+    const pmessage = new hugeupload.FileMapProgressMessage();
+    pmessage.payload = progress;
+    reply = await toolsocket.sendMessageAndGetReply( pmessage );    
+    if ( stopCurrentAction )
+      return;
+  }
+  await writable.close();
+  const binhash = digester.digest();
+  console.log( binhash.toBase64() );
+  const completion = {};
+  completion.fileName = "fixedfilename";
+  completion.wholeFileDigest = binhash.toBase64();
+  const cmessage = new hugeupload.FileMapCompleteMessage();
+  cmessage.payload = completion;
+  reply = await toolsocket.sendMessageAndGetReply( cmessage );    
+}
+
+
+
+function uploadFile()
+{
+  const startTime = performance.now();
+  try
+  {
+    stopCurrentAction = false;
+    currentAction = "upload";
+    uploadFileInChunks();
+  }
+  catch ( error )
+  {
+    console.log( error );
+    alert( "The file import process failed. " + error );
+  }
+  finally
+  {
+    currentAction = null;
+    const endTime = performance.now();
+    console.log( "Time taken = ", (endTime-startTime)/1000, "s" );
+  }
+}
+
+async function uploadFileInChunks()
+{
+  const opfsRoot    = await navigator.storage.getDirectory();
+  const inFileName  = "import.bin";
+  const fileHandle  = await opfsRoot.getFileHandle( inFileName, { create: false } );
+  const inFile      = await fileHandle.getFile();
+  const maxSize     = 10*1024*1024;
+  var previousPercent=0;
+
+  if ( stopCurrentAction )
+    return;
+
+  const startReport = {};
+  startReport.fileName = "fixedfilename";
+  const smessage = new hugeupload.FileUploadStartMessage();
+  smessage.payload = startReport;
+  var reply = await toolsocket.sendMessageAndGetReply( smessage );
+  console.log( reply );
+
+  if ( stopCurrentAction )
+    return;
+  
+  while ( !reply.payload.complete )
+  {
+    const start = reply.payload.start;
+    const end   = reply.payload.end;
+    const chunkBlob = await inFile.slice( start, end );
+    const chunk = await chunkBlob.bytes();
+    const percent = Math.floor( 100*(end/inFile.size) );
+    if ( percent !== previousPercent )
+    {
+      console.log( "Completed ", percent );
+      previousPercent = percent;
+    }
+    const progress = {};
+    progress.fileName = "fixedfilename";
+    progress.chunkNumber = reply.payload.nextChunk;
+    progress.data = chunk;
+    const pmessage = new hugeupload.FileUploadProgressMessage();
+    pmessage.payload = progress;
+    reply = await toolsocket.sendMessageAndGetReply( pmessage );    
+    if ( stopCurrentAction )
+      return;
+  }
+}
+
+
 
 
 function blobUploadTest()

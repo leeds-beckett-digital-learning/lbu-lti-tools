@@ -97,6 +97,13 @@ public class HuStoreCluster
     fileStore.update( d );
   }
   
+  public Path getFilePath( HuFileMetadataKey key, String filename )
+  {
+    Path meta = fileStore.getPath( key );
+    if ( meta == null ) return null;
+    return meta.getParent().resolve( fileStore.toFileName( filename ) );
+  }
+  
   public Path getResourcePendingFilePath( HuResourceKey key )
   {
     Path r = resourceStore.getPath( key );

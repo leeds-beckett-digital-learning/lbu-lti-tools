@@ -137,14 +137,14 @@ function importDialog()
   
 }
 
-function importFile( duplicate )
+async function importFile( duplicate )
 {
   const startTime = performance.now();
   try
   {
     stopCurrentAction = false;
     currentAction = "import";
-    importFileInChunks( duplicate );
+    await importFileInChunks( duplicate );
   }
   catch ( error )
   {

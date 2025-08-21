@@ -216,8 +216,13 @@ public class HugeUploadEndpoint extends ToolEndpoint
 
     logger.log(Level.FINE, "Rxed replacement? {0} name = {1}", new Object[ ]{fileMap.isDuplicate(), fileMap.getFileName() });
 
-    if ( fileMap.isDuplicate() && d.fmdata.getFileMap() == null )
-      throw new HandlerException( "Duplicate was indicated but there is no existing map.", message );
+    if ( fileMap.isDuplicate() )
+    {
+      if ( d.fmdata.getFileMap() == null )
+        throw new HandlerAlertException( "Duplicate was indicated but there is no existing map.", message );
+    }
+    else
+      d.fmdata.setUploadState( null );
     
     HuFileMap newMap = new HuFileMap();
     // Initialise a new map
@@ -248,7 +253,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
       logger.log(Level.FINE, "Old chunk.{0}", oldchunk);
       logger.log(Level.FINE, "New chunk.{0}", newchunk);
       if ( oldchunk != null && !oldchunk.equals( newchunk ) )
-        throw new HandlerException( "The selected file does not match the previously mapped file.", message );
+        throw new HandlerAlertException( "The selected file does not match the previously mapped file.", message );
     }
     
     while ( newmap.getMap().size() <= fileMap.getChunkNumber() )
@@ -309,7 +314,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
       Files.delete( path );
     
     if ( upstate.isFullyUploaded() )
-      throw new HandlerException( "Already fully uploaded.", message );
+      throw new HandlerAlertException( "Already fully uploaded.", message );
     
     for ( int i=0; i < d.fmdata.getFileMap().getMap().size(); i++ )
       if ( !upstate.isChunkUploaded( i ) )
@@ -337,7 +342,7 @@ public class HugeUploadEndpoint extends ToolEndpoint
     // Right data? Matches map?
     HuFileMapChunk chunkMap = d.fmdata.getFileMap().getMap().get( upProgress.getChunkNumber() );
     if ( !this.validateSha1( upProgress.getData(), chunkMap.getHash() ) )
-      throw new HandlerException( "Checksum of this chunk doesn't match the imported file.", message );
+      throw new HandlerAlertException( "Checksum of this chunk doesn't match the imported file.", message );
     logger.log( Level.FINE, "Chunk passed checksum test." );
     
     // Save the data
@@ -372,12 +377,12 @@ public class HugeUploadEndpoint extends ToolEndpoint
       catch ( Exception e )
       {
         logger.log( Level.SEVERE, "Unable to compute digest.", e );
-        throw new HandlerException( "Unable to compute digest.", message );
+        throw new HandlerAlertException( "Unable to compute digest.", message );
       }
       logger.log( Level.FINE, "File digest from client   : {0}", d.fmdata.getFileMap().getSha512digest() );
       logger.log( Level.FINE, "File digest just computed : {0}", strDigest );
       if ( !d.fmdata.getFileMap().getSha512digest().equals( strDigest ) )
-        throw new HandlerException( "The uploaded file's fingerprint doesn't match the file that was mapped before uploading.", message );
+        throw new HandlerAlertException( "The uploaded file's fingerprint doesn't match the file that was mapped before uploading.", message );
 
       // No more chunks needed, upload is complete
       upstate.setWholeFileFingerprintValidated( true );

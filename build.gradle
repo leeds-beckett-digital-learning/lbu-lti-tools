@@ -209,6 +209,9 @@ dependencies {
     implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti-toolapi:0.2.0.SNAPSHOT' )
     { changing = true }
   
+    implementation( 'io.github.leeds-beckett-digital-learning:jesharepoint:0.1.0.SNAPSHOT' )
+    { changing = true }
+
     providedCompile 'javax.servlet:javax.servlet-api:4.0.0'
     providedCompile 'javax.websocket:javax.websocket-api:1.1'
     implementation 'commons-io:commons-io:2.16.1'

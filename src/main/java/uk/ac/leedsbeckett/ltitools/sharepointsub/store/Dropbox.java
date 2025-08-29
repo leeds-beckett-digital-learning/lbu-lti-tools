@@ -15,6 +15,7 @@
  */
 package uk.ac.leedsbeckett.ltitools.sharepointsub.store;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
 
@@ -54,5 +55,12 @@ public class Dropbox
   public HashMap<String, Deadline> getStudentDeadlineMap()
   {
     return studentDeadlineMap;
+  }
+  
+  @JsonIgnore
+  public Deadline getPersonalDeadline( String studentEmail )
+  {
+    Deadline d = studentDeadlineMap.get( studentEmail );
+    return (d==null)?defaultDeadline:d;
   }
 }

@@ -87,6 +87,11 @@ public class CourseSettings implements Entry<PlatformCourseKey>
     zid = ( this.timezone == null ) ? null : ZoneId.of( timezone );
   }
 
+  public ZoneId getZoneId()
+  {
+    return zid;
+  }  
+  
   public HashMap<String, Dropbox> getDropboxMap()
   {
     return dropboxMap;

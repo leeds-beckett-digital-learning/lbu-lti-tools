@@ -18,10 +18,14 @@ package uk.ac.leedsbeckett.ltitools.sharepointsub.tasks;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import uk.ac.leedsbeckett.jesharepoint.AccessRoleEnum;
 import uk.ac.leedsbeckett.jesharepoint.Sharepoint;
+import uk.ac.leedsbeckett.jesharepoint.odata.containers.EntityCollection;
+import uk.ac.leedsbeckett.jesharepoint.sptypes.SpFolder;
 import uk.ac.leedsbeckett.jesharepoint.sptypes.SpGroup;
 import uk.ac.leedsbeckett.jesharepoint.sptypes.SpUser;
 import uk.ac.leedsbeckett.ltitools.sharepointsub.bbdata.ModuleData;
@@ -30,6 +34,8 @@ import uk.ac.leedsbeckett.ltitools.sharepointsub.bbdata.PlatformData;
 import uk.ac.leedsbeckett.ltitools.sharepointsub.bbdata.SitePerson;
 import uk.ac.leedsbeckett.ltitools.sharepointsub.store.Configuration;
 import uk.ac.leedsbeckett.ltitools.sharepointsub.store.CourseSettings;
+import uk.ac.leedsbeckett.ltitools.sharepointsub.store.Deadline;
+import uk.ac.leedsbeckett.ltitools.sharepointsub.store.Dropbox;
 import uk.ac.leedsbeckett.ltitools.sharepointsub.store.StoreCluster;
 import uk.ac.leedsbeckett.ltitoolset.ToolCoordinator;
 import uk.ac.leedsbeckett.ltitoolset.backchannel.BackchannelOwner;
@@ -72,6 +78,7 @@ public class ScanAllTask implements Runnable, BackchannelOwner
   @Override
   public void run()
   {
+    long start = System.currentTimeMillis();
     logger.info( "Scan all task running." );
     for ( String platformid : store.getAllPlatformKeys() )
     {
@@ -104,14 +111,19 @@ public class ScanAllTask implements Runnable, BackchannelOwner
         bb.removeOwner( this );        
       }
     }
-    logger.info( "Scan all task complete." );
+    long end = System.currentTimeMillis();
+    logger.info( "Scan all task complete after " + (end-start) + "ms" );
   }
   
   private void processPlatform( BlackboardBackchannel bb, String platformid )
   {
     PlatformData pd = loadPlatform( bb, platformid ); 
     if ( pd == null ) return;
+    
+    // Now do stuff in sharepoint
     processSiteMembersGroup( pd );
+    for ( ModuleData md : pd.modules )
+      processModule( pd, md ); 
     
     logger.info( "Platform persons: " );
     for ( SitePerson sp : pd.sitepersonmapbyemail.values() )
@@ -171,6 +183,7 @@ public class ScanAllTask implements Runnable, BackchannelOwner
     
     logger.info( course.getCourseId() );
     ModuleData md = new ModuleData();
+    md.courseSettings = courseSettings;
     md.modulename = course.getCourseId();
     pd.modules.add( md );
         
@@ -210,7 +223,7 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       if ( resultU.getResult() != null )
       {
         UserV1 bbuser = (UserV1)resultU.getResult();
-        String email = bbuser.getContact().getEmail();
+        String email = bbuser.getContact().getEmail().toLowerCase();
         logger.info( "            email = " + email );
         sp.setEmail( email );
         if ( !pd.sitepersonmapbyemail.containsKey( email ) )
@@ -248,5 +261,129 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       logger.log( Level.SEVERE, null, ex );
     }
   }
+
+  public void processModule( PlatformData pd, ModuleData md )
+  {
+    try
+    {
+      String modulefolderurl = "/sites/HugeFileSubmission/Shared Documents/modules/" + md.modulename;
+      md.folder = pd.sp.getOrCreateFolder( modulefolderurl );
+      logger.info( "Found module folder " + md.folder.ServerRelativeUrl );
+      
+      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", md.folder ); 
+      if ( Boolean.FALSE.equals( hasUnique ) )
+        pd.sp.setFolderUniqueRoleAssignments( md.folder, true );
+      
+      processModuleGroups( pd, md );
+
+      logger.info( "Set access on module folder " + md.folder.ServerRelativeUrl );
+      pd.sp.setFolderRoleAssignments( md.folder, md.groups[0].Id, AccessRoleEnum.VIEW);
+      pd.sp.setFolderRoleAssignments( md.folder, md.groups[1].Id, AccessRoleEnum.VIEW);
+
+      for ( Dropbox dropbox : md.courseSettings.getDropboxMap().values() )
+        processDropBox( pd, md, dropbox );
+    }
+    catch ( IOException | URISyntaxException ex )
+    {
+      logger.log( Level.SEVERE, null, ex );
+    }
+  }
+
+  public void processModuleGroups( PlatformData pd, ModuleData md )
+  {
+    try
+    {
+      String[] roles = { "Students", "Markers" };
+      for ( int i=0; i<roles.length; i++ )
+      {
+        HashSet<String> wantedSet = new HashSet<>();
+        for ( ModulePerson person : md.persons )
+          if ( (i==0 && person.isStudent() ) || (i==1 && person.isMarker() ) )
+            wantedSet.add( person.getEmail() );
+        
+        String groupName = pd.sharepointSettings.getModuleGroupPrefix() + md.modulename + " " + roles[i];
+        md.groups[i] = pd.sp.getOrCreateGroup( groupName );
+        logger.info( "Working on group " + md.groups[i].Title );
+        
+        EntityCollection<SpUser> users = pd.sp.getGroupMembers( md.groups[i] );
+        HashSet<String> currentSet = new HashSet<>();
+        for ( SpUser u : users.getEntities() )
+          currentSet.add( u.UserPrincipalName );
+
+        HashSet<String> toAddSet = new HashSet<>( wantedSet );
+        toAddSet.removeAll( currentSet );
+
+        // Removing users from groups not implemented (yet).
+        //HashSet<String> toRemoveSet = new HashSet<>( currentSet );
+        //toRemoveSet.removeAll( wantedSet );        
+        for ( String email : toAddSet )
+          pd.sp.createGroupUser( md.groups[i], email );
+      }
+    }
+    catch ( IOException | URISyntaxException ex )
+    {
+      logger.log( Level.SEVERE, null, ex );
+    }
+  }
+  
+  public void processDropBox( PlatformData pd, ModuleData md, Dropbox dropbox )
+  {
+    try
+    {
+      String dropboxfolderurl = md.folder.ServerRelativeUrl + "/" + dropbox.getName();
+      SpFolder folder = pd.sp.getOrCreateFolder( dropboxfolderurl );
+      logger.info( "Found dropbox " + folder.ServerRelativeUrl );
+      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", folder );
+      if ( Boolean.TRUE.equals( hasUnique ) )
+        pd.sp.setFolderUniqueRoleAssignments( folder, false );
+      for ( ModulePerson person : md.persons )
+        if ( person.isStudent() )
+          processStudentFolder( pd, md, dropbox, folder, person );
+    }
+    catch ( IOException | URISyntaxException ex )
+    {
+      logger.log( Level.SEVERE, null, ex );
+    }
+  }
+
+  public void processStudentFolder( PlatformData pd, ModuleData md, Dropbox dropbox, SpFolder parentFolder, ModulePerson person )
+  {
+    try
+    {
+      SitePerson sitePerson = pd.sitepersonmapbyemail.get( person.getEmail() );
+      if ( sitePerson == null )
+      {
+        logger.warning( "Unable to find sharepoint person for email " + person.getEmail() );
+        return;
+      }
+      if ( sitePerson.getUser() == null )
+      {
+        logger.warning( "Sharepoint person has no SpUser object for email " + person.getEmail() );
+        return;
+      }
+      String studentfolderurl = parentFolder.ServerRelativeUrl + "/" + person.getName();
+      SpFolder folder = pd.sp.getOrCreateFolder( studentfolderurl );
+      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", folder );
+      if ( Boolean.FALSE.equals( hasUnique ) )
+        pd.sp.setFolderUniqueRoleAssignments( folder, true );
+      logger.info( "Set unique access on student folder " + folder.ServerRelativeUrl );
+      // Access level based on deadline.
+      Deadline personalDeadline = dropbox.getPersonalDeadline( person.getEmail() );
+      logger.info( "person " + person.getEmail() + " with deadline " + personalDeadline.toString() );
+      long lDeadline = personalDeadline.toEpochMilli( md.courseSettings.getZoneId() );
+      long now = System.currentTimeMillis();
+      AccessRoleEnum access = (now < lDeadline) ? AccessRoleEnum.EDIT : AccessRoleEnum.VIEW;
+      
+      pd.sp.setFolderRoleAssignments( folder, sitePerson.getUser().Id, access );
+      logger.info( "Added student to access on student folder " + folder.ServerRelativeUrl );
+      pd.sp.setFolderRoleAssignments( folder, md.groups[1].Id, AccessRoleEnum.VIEW );
+      logger.info( "Added markers to access on student folder " + folder.ServerRelativeUrl );
+    }
+    catch ( IOException | URISyntaxException ex )
+    {
+      logger.log( Level.SEVERE, null, ex );
+    }
+  }
+
   
 }

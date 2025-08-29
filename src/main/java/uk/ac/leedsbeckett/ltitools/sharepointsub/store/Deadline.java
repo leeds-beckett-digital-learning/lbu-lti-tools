@@ -61,4 +61,24 @@ public class Deadline
   {
     return hour;
   }
+  
+  public String toString()
+  {
+    StringBuilder b = new StringBuilder();
+    b.append( year );
+    b.append( " " );
+    b.append( month );
+    b.append( " " );
+    b.append( day );
+    b.append( " " );
+    b.append( hour );
+    b.append( " " );
+    return b.toString();
+  }
+  
+  public long toEpochMilli( ZoneId zid )
+  {
+    ZonedDateTime zdt = ZonedDateTime.of( year, month, day, hour, 0, 0, 0, zid );
+    return zdt.toInstant().toEpochMilli();
+  }
 }

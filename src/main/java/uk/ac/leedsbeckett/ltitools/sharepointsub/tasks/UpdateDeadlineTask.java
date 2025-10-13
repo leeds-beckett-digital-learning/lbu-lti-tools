@@ -52,17 +52,19 @@ import uk.ac.leedsbeckett.ltitoolset.resources.PlatformCourseKey;
  *
  * @author maber01
  */
-public class ScanAllTask implements Runnable, BackchannelOwner
+public class UpdateDeadlineTask implements Runnable, BackchannelOwner
 {
-  static final Logger logger = Logger.getLogger( ScanAllTask.class.getName() );
+  static final Logger logger = Logger.getLogger(UpdateDeadlineTask.class.getName() );
 
   ToolCoordinator toolCoordinator;
   StoreCluster store;
-
-  public ScanAllTask( ToolCoordinator toolCoordinator, StoreCluster store )
+  long updatingDeadline;
+  
+  public UpdateDeadlineTask( ToolCoordinator toolCoordinator, StoreCluster store, long updatingDeadline )
   {
     this.toolCoordinator = toolCoordinator;
     this.store = store;
+    this.updatingDeadline = updatingDeadline;
   }
   
   private static String getPlatformHost( String platform )
@@ -108,7 +110,7 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       }
       catch ( IOException ex )
       {
-        Logger.getLogger( ScanAllTask.class.getName() ).log( Level.SEVERE, null, ex );
+        Logger.getLogger(UpdateDeadlineTask.class.getName() ).log( Level.SEVERE, null, ex );
       }
       finally
       {
@@ -125,7 +127,6 @@ public class ScanAllTask implements Runnable, BackchannelOwner
     if ( pd == null ) return;
     
     // Now do stuff in sharepoint
-    processSiteMembersGroup( pd );
     for ( ModuleData md : pd.modules )
       processModule( pd, md ); 
   }
@@ -149,21 +150,9 @@ public class ScanAllTask implements Runnable, BackchannelOwner
         csList.add( cs );
     }
 
-    logger.log(Level.INFO, "Deadlines =========================================== " );      
-    // How many distinct deadlines are there and which dropboxes use them?
-    for ( Long deadline : pd.deadlineUsageMap.keySet() )
-    {
-      logger.log(Level.INFO, "Deadline: " + deadline );      
-      DeadlineUsage du = pd.deadlineUsageMap.get( deadline );
-      for ( CourseDropboxNames cdn : du.getAll() )
-        logger.log(Level.INFO, "  Course: {0} Dropbox: {1}", new Object[ ]{cdn.getCourseName(), cdn.getDropboxName()});
-    }
-    logger.log(Level.INFO, "===================================================== " );      
-    
     // Now load additional data from Blackboard using backchannel
     for ( CourseSettings cs : csList )
       loadPlatformCourse( bb, pd, cs );
-    loadEmailAddresses( bb, pd );
     
     return pd;
   }
@@ -179,14 +168,26 @@ public class ScanAllTask implements Runnable, BackchannelOwner
     {
       logger.log(Level.INFO, "Checking " + key.getCourseId() + "  " + d.getName() );
       logger.log(Level.INFO, "Default deadline " + d.getDefaultDeadline().toString() );
-      pd.addDeadlineUse( d.getDefaultDeadline().toEpochMilli( zid ), key.getCourseId(), d.getName() );
+      long dl = d.getDefaultDeadline().toEpochMilli( zid );
+      if ( this.updatingDeadline == dl )
+      {
+        pd.addDeadlineUse( dl, key.getCourseId(), d.getName() );
+        return courseSettings;
+      }
+      
       for ( Deadline deadline : d.getStudentDeadlineMap().values() )
       {
         logger.log(Level.INFO, "Student deadline " + deadline.toString() );
-        pd.addDeadlineUse( deadline.toEpochMilli( zid ), key.getCourseId(), d.getName() );
+        dl = deadline.toEpochMilli( zid );
+        if ( this.updatingDeadline == dl )
+        {
+          pd.addDeadlineUse( dl, key.getCourseId(), d.getName() );
+          return courseSettings;
+        }
       }
     }
-    return courseSettings;
+    // This course is not of interest
+    return null;
   }
   
   private void loadPlatformCourse( BlackboardBackchannel bb, PlatformData pd, CourseSettings courseSettings )
@@ -232,55 +233,6 @@ public class ScanAllTask implements Runnable, BackchannelOwner
     }
   }  
   
-  private void loadEmailAddresses( BlackboardBackchannel bb, PlatformData pd )
-  {
-    logger.info( "    Fetching all the email addresses:" );
-    for ( SitePerson sp : pd.sitepersonmapbybbid.values() )
-    {
-      logger.info( "        User ID = " + sp.getBbId() );
-      JsonResult resultU = bb.getV1Users( sp.getBbId() );
-      if ( resultU.getResult() != null )
-      {
-        UserV1 bbuser = (UserV1)resultU.getResult();
-        String email = bbuser.getContact().getEmail().toLowerCase();
-        logger.info( "            email = " + email );
-        sp.setEmail( email );
-        if ( !pd.sitepersonmapbyemail.containsKey( email ) )
-          pd.sitepersonmapbyemail.put( email, sp );
-      }
-    }
-    for ( ModuleData md : pd.modules )
-      for ( ModulePerson mp : md.persons )
-        mp.setEmail( pd.sitepersonmapbybbid.get( mp.getBbId() ).getEmail() );
-  }  
-  
-  public void processSiteMembersGroup( PlatformData pd )
-  {
-    try
-    {
-      SpGroup siteMembersGroup = pd.sp.getGroupWithUsers( pd.sharepointSettings.getMembersGroupName() );
-      if ( siteMembersGroup.Users.isDeferred() )
-      {
-        return;
-      }
-      for ( int i=0; i<siteMembersGroup.Users.size(); i++ )
-      {
-        SpUser u = siteMembersGroup.Users.getEntity( i );
-        logger.info( "Found " + u.Email );
-        if ( pd.sitepersonmapbyemail.containsKey( u.UserPrincipalName ) )
-          pd.sitepersonmapbyemail.get( u.UserPrincipalName ).setUser( u );
-      }
-      
-      for ( SitePerson person : pd.sitepersonmapbyemail.values() )
-        if ( person.getUser() == null )
-          person.setUser( pd.sp.createGroupUser( siteMembersGroup, person.getEmail() ) );
-    }
-    catch ( IOException | URISyntaxException ex )
-    {
-      logger.log( Level.SEVERE, null, ex );
-    }
-  }
-
   public void processModule( PlatformData pd, ModuleData md )
   {
     try
@@ -288,17 +240,6 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       String modulefolderurl = "/sites/HugeFileSubmission/Shared Documents/modules/" + md.modulename;
       md.folder = pd.sp.getOrCreateFolder( modulefolderurl );
       logger.info( "Found module folder " + md.folder.ServerRelativeUrl );
-      
-      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", md.folder ); 
-      if ( Boolean.FALSE.equals( hasUnique ) )
-        pd.sp.setFolderUniqueRoleAssignments( md.folder, true );
-      
-      processModuleGroups( pd, md );
-
-      logger.info( "Set access on module folder " + md.folder.ServerRelativeUrl );
-      pd.sp.setFolderRoleAssignments( md.folder, md.groups[0].Id, AccessRoleEnum.VIEW);
-      pd.sp.setFolderRoleAssignments( md.folder, md.groups[1].Id, AccessRoleEnum.VIEW);
-
       for ( Dropbox dropbox : md.courseSettings.getDropboxMap().values() )
         processDropBox( pd, md, dropbox );
     }
@@ -308,43 +249,6 @@ public class ScanAllTask implements Runnable, BackchannelOwner
     }
   }
 
-  public void processModuleGroups( PlatformData pd, ModuleData md )
-  {
-    try
-    {
-      String[] roles = { "Students", "Markers" };
-      for ( int i=0; i<roles.length; i++ )
-      {
-        HashSet<String> wantedSet = new HashSet<>();
-        for ( ModulePerson person : md.persons )
-          if ( (i==0 && person.isStudent() ) || (i==1 && person.isMarker() ) )
-            wantedSet.add( person.getEmail() );
-        
-        String groupName = pd.sharepointSettings.getModuleGroupPrefix() + md.modulename + " " + roles[i];
-        md.groups[i] = pd.sp.getOrCreateGroup( groupName );
-        logger.info( "Working on group " + md.groups[i].Title );
-        
-        EntityCollection<SpUser> users = pd.sp.getGroupMembers( md.groups[i] );
-        HashSet<String> currentSet = new HashSet<>();
-        for ( SpUser u : users.getEntities() )
-          currentSet.add( u.UserPrincipalName );
-
-        HashSet<String> toAddSet = new HashSet<>( wantedSet );
-        toAddSet.removeAll( currentSet );
-
-        // Removing users from groups not implemented (yet).
-        //HashSet<String> toRemoveSet = new HashSet<>( currentSet );
-        //toRemoveSet.removeAll( wantedSet );        
-        for ( String email : toAddSet )
-          pd.sp.createGroupUser( md.groups[i], email );
-      }
-    }
-    catch ( IOException | URISyntaxException ex )
-    {
-      logger.log( Level.SEVERE, null, ex );
-    }
-  }
-  
   public void processDropBox( PlatformData pd, ModuleData md, Dropbox dropbox )
   {
     try
@@ -352,12 +256,12 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       String dropboxfolderurl = md.folder.ServerRelativeUrl + "/" + dropbox.getName();
       SpFolder folder = pd.sp.getOrCreateFolder( dropboxfolderurl );
       logger.info( "Found dropbox " + folder.ServerRelativeUrl );
-      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", folder );
-      if ( Boolean.TRUE.equals( hasUnique ) )
-        pd.sp.setFolderUniqueRoleAssignments( folder, false );
       for ( ModulePerson person : md.persons )
-        if ( person.isStudent() )
+      {
+        long pdead = dropbox.getPersonalDeadline( person.getEmail() ).toEpochMilli( md.courseSettings.getZoneId() );
+        if ( person.isStudent() && this.updatingDeadline == pdead )
           processStudentFolder( pd, md, dropbox, folder, person );
+      }
     }
     catch ( IOException | URISyntaxException ex )
     {
@@ -382,21 +286,12 @@ public class ScanAllTask implements Runnable, BackchannelOwner
       }
       String studentfolderurl = parentFolder.ServerRelativeUrl + "/" + person.getName();
       SpFolder folder = pd.sp.getOrCreateFolder( studentfolderurl );
-      Boolean hasUnique = pd.sp.getFolderItemBooleanProperty( "HasUniqueRoleAssignments", folder );
-      if ( Boolean.FALSE.equals( hasUnique ) )
-        pd.sp.setFolderUniqueRoleAssignments( folder, true );
-      logger.info( "Set unique access on student folder " + folder.ServerRelativeUrl );
-      // Access level based on deadline.
-      Deadline personalDeadline = dropbox.getPersonalDeadline( person.getEmail() );
-      logger.info( "person " + person.getEmail() + " with deadline " + personalDeadline.toString() );
-      long lDeadline = personalDeadline.toEpochMilli( md.courseSettings.getZoneId() );
-      long now = System.currentTimeMillis();
-      AccessRoleEnum access = (now < lDeadline) ? AccessRoleEnum.EDIT : AccessRoleEnum.VIEW;
+      
+      logger.info( "person " + person.getEmail() + " deadline passed." );
+      AccessRoleEnum access = AccessRoleEnum.VIEW;
       
       pd.sp.setFolderRoleAssignments( folder, sitePerson.getUser().Id, access );
-      logger.info( "Added student to access on student folder " + folder.ServerRelativeUrl );
-      pd.sp.setFolderRoleAssignments( folder, md.groups[1].Id, AccessRoleEnum.VIEW );
-      logger.info( "Added markers to access on student folder " + folder.ServerRelativeUrl );
+      logger.info( "Changed student access on student folder " + folder.ServerRelativeUrl );
     }
     catch ( IOException | URISyntaxException ex )
     {

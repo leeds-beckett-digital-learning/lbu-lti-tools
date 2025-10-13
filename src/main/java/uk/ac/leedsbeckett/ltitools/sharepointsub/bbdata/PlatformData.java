@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import uk.ac.leedsbeckett.jesharepoint.Sharepoint;
 import uk.ac.leedsbeckett.jesharepoint.SharepointSettings;
+import uk.ac.leedsbeckett.ltitools.sharepointsub.store.Deadline;
+import uk.ac.leedsbeckett.ltitools.sharepointsub.store.DeadlineUsage;
 
 /**
  *
@@ -31,4 +33,18 @@ public class PlatformData
   public HashMap<String,SitePerson> sitepersonmapbyemail = new HashMap<>();
   public SharepointSettings sharepointSettings;
   public Sharepoint sp;
+  
+  public HashMap<Long,DeadlineUsage> deadlineUsageMap = new HashMap<>();
+    
+  public void addDeadlineUse( Long deadline, String course, String dropbox )
+  {
+    CourseDropboxNames cdn = new CourseDropboxNames( course, dropbox );
+    DeadlineUsage du = deadlineUsageMap.get( deadline );
+    if ( du == null )
+    {
+      du = new DeadlineUsage();
+      deadlineUsageMap.put( deadline, du );
+    }
+    du.add( cdn );
+  }
 }

@@ -66,13 +66,12 @@ public class Deadline
   {
     StringBuilder b = new StringBuilder();
     b.append( year );
-    b.append( " " );
+    b.append( "-" );
     b.append( month );
-    b.append( " " );
+    b.append( "-" );
     b.append( day );
-    b.append( " " );
+    b.append( "-" );
     b.append( hour );
-    b.append( " " );
     return b.toString();
   }
   
@@ -80,5 +79,20 @@ public class Deadline
   {
     ZonedDateTime zdt = ZonedDateTime.of( year, month, day, hour, 0, 0, 0, zid );
     return zdt.toInstant().toEpochMilli();
+  }
+
+  @Override
+  public int hashCode()
+  {
+    return (year * 365 + month) ^ (day*24 + hour);
+  }
+
+  @Override
+  public boolean equals( Object obj )
+  {
+    if ( obj == null ) return false;
+    if ( !(obj instanceof Deadline) ) return false;
+    Deadline other = (Deadline) obj;
+    return this.year == other.year && this.month == other.month && this.day == other.day && this.hour == other.hour;
   }
 }

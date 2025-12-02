@@ -126,6 +126,14 @@ function init()
   {
     open()
     {
+      toolsocket.sendMessage( new peergroupassessment.GetFormMessage() );
+    },
+    
+    handleForm( message )
+    {
+      formuptodate = false;
+      form = message.payload;
+      console.log( form );
       toolsocket.sendMessage( new peergroupassessment.GetResourceMessage() );
     },
     
@@ -161,14 +169,6 @@ function init()
         if ( dynamicData.allowedToManage )
           toolsocket.sendMessage( new peergroupassessment.GetAllDataMessage() );
       }
-    },
-    
-    handleForm( message )
-    {
-      formuptodate = false;
-      form = message.payload;
-      console.log( form );
-      updateForm();      
     },
     
     handleData( message )
@@ -694,7 +694,7 @@ function updateForm()
   finder.dataentrytablebody.innerHTML = "";
   finder.dataentrytablebody.append( row );
 
-  for ( let i=0; i<form.fieldIds.length; i++ )
+  for ( let i=0; form && form.fieldIds && i<form.fieldIds.length; i++ )
   {
     let fieldid = form.fieldIds[i];
     let field = form.fields[fieldid];
@@ -781,7 +781,7 @@ function updateFormData()
           data.status !== "NOTENDORSED";
   
   
-  for ( let i=0; i<form.fieldIds.length; i++ )
+  for ( let i=0; form && form.fieldIds && i<form.fieldIds.length; i++ )
   {
     let fieldid = form.fieldIds[i];
     let field = form.fields[fieldid];
@@ -874,7 +874,7 @@ function updateOverviewDataGroup( d )
     
     let complete=true;
     let total = 0;
-    for ( let i=0; i<form.fieldIds.length; i++ )
+    for ( let i=0; form && form.fieldIds && i<form.fieldIds.length; i++ )
     {
       let fieldid = form.fieldIds[i];
       let datum = memberdata.participantData[fieldid];

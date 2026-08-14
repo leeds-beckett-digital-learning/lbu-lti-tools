@@ -219,7 +219,7 @@ dependencies {
     implementation 'org.apache.commons:commons-text:1.12.0'
     // implementation 'org.apache.httpcomponents.core5:httpcore5:5.1.2'
     implementation 'javax.cache:cache-api:1.1.1'
-    implementation 'org.ehcache:ehcache:3.10.8'
+    implementation 'org.ehcache:ehcache:3.10.9'
     // For logging from ehcache
     implementation 'ch.qos.logback:logback-classic:1.2.13'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.2'

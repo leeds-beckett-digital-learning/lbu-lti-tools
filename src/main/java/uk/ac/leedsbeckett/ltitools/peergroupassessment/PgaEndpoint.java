@@ -252,6 +252,28 @@ public class PgaEndpoint extends ToolEndpoint
   }
   
   /**
+   * Client requested the template form.
+   * 
+   * @param session The session this endpoint belongs to.
+   * @param message The incoming message from the client end.
+   * @throws IOException Indicates failure to process. 
+   * @throws uk.ac.leedsbeckett.ltitoolset.websocket.HandlerAlertException 
+   */
+  @EndpointMessageHandler()
+  public void handleGetForm( Session session, ToolMessage message ) throws IOException, HandlerAlertException
+  {
+    PeerGroupResource pgaResource = store.getResource( pgaState.getPlatformResourceKey(), true );
+    logger.log( Level.INFO, "Sending resource [{0}]", pgaResource.getTitle() );
+    if ( pgaResource.getFormId() == null )
+      throw new HandlerAlertException( "Resource has no template form.", message );
+    PeerGroupForm form = store.getForm( pgaResource.getFormId() );
+    if ( form == null )
+      throw new HandlerAlertException( "Unable to load template form.", message );  
+    ToolMessage tmf = new ToolMessage( message, PgaServerMessageName.Form, form );
+    sendToolMessage( session, tmf );
+  } 
+  
+  /**
    * The client wants to set the basic properties of the peer group assessment
    * resource.
    * 

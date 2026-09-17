@@ -197,7 +197,7 @@ repositories {
 dependencies {
     // There are two dependencies from leedsbeckett - the basic LTI library
     // and the toolapi library.
-    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti:0.1.7.SNAPSHOT' )
+    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti:0.1.8.SNAPSHOT' )
     { changing = true }
     
     // If using a snapshot of toolapi, set changing to true otherwise set it to 
@@ -206,7 +206,7 @@ dependencies {
     // from local maven repository every time. For
     // non-snapshot versions, the build will be speeded up by fetching
     // the library from remote repo. only if an official new version is referenced.
-    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti-toolapi:0.2.0.SNAPSHOT' )
+    implementation( 'io.github.leeds-beckett-digital-learning:lbu-lti-toolapi:0.3.0.SNAPSHOT' )
     { changing = true }
   
     implementation( 'io.github.leeds-beckett-digital-learning:jesharepoint:0.1.0.SNAPSHOT' )

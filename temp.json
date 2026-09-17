@@ -1,0 +1,98 @@
+{
+  "id": "https://my.leedsbeckett.ac.uk/learn/api/v1/lti/external/namesandroles/_163939_1",
+  "context": {
+    "id": "52a6664cfd444f06a5e0040f11ad01f1",
+    "label": "sp_maber01_04",
+    "title": "Jon Maber Sandbox Ultra Module - "
+  },
+  "members": [{
+      "status": "Active",
+      "name": "Leeds Beckett Digital Learning (JM)_PreviewUser",
+      "given_name": "Leeds Beckett",
+      "family_name": "Digital Learning (JM)_PreviewUser",
+      "middle_name": "",
+      "email": "j.r.maber@leedsbeckett.ac.uk",
+      "user_id": "1bd0de9a0ac741909ce9d2433af2540e",
+      "lis_person_sourcedid": "maber01admin_previewuser",
+      "roles": ["http://purl.imsglobal.org/vocab/lis/v2/membership#Learner", 
+        "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student", 
+          "http://purl.imsglobal.org/vocab/lti/system/person#TestUser"],
+      "message": [
+        {
+          "https://purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/custom": {},
+          "https: //purl.imsglobal.org/spec/lti/claim/ext":
+          {
+            "ext_lms": "bb-4000.21.0 - rel.29 + 98ad5c0"
+          }
+        }]
+    }, {
+      "status": "Active",
+      "name": "Donna Easton",
+      "given_name": "Donna",
+      "family_name": "Easton",
+      "middle_name": "",
+      "email": "D.Casey7486@student.leedsbeckett.ac.uk",
+      "user_id": "809897dd74a1429f9bf3fea4b6fde4ec",
+      "lis_person_sourcedid": "X117632",
+      "roles": ["http: //purl.imsglobal.org/vocab/lis/v2/membership#Learner", "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student"],
+      "message": [{
+          "https: //purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/custom": {},
+          "https://purl.imsglobal.org/spec/lti/claim/ext": {
+            "ext_lms": "bb-4000.21.0 - rel.29 + 98ad5c0"
+          }
+        }]
+    }, {
+      "status": "Active",
+      "name": "Jon Maber",
+      "given_name": "Jon",
+      "family_name": "Maber",
+      "middle_name": "",
+      "email": "J.R.Maber@leedsbeckett.ac.uk",
+      "user_id": "a80357eba38d4ca793923b514f570ede",
+      "lis_person_sourcedid": "507135",
+      "roles": ["http: //purl.imsglobal.org/vocab/lis/v2/membership#Instructor", "http://purl.imsglobal.org/vocab/lis/v2/system/person#Administrator", "http://purl.imsglobal.org/vocab/lis/v2/membership#Administrator", "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Staff"],
+      "message": [{
+          "https: //purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/custom": {},
+          "https://purl.imsglobal.org/spec/lti/claim/ext": {
+            "ext_lms": "bb-4000.21.0 - rel.29 + 98ad5c0"
+          }
+        }]
+    }, {
+      "status": "Active",
+      "name": "Jon Maber",
+      "given_name": "Jon",
+      "family_name": "Maber",
+      "middle_name": "",
+      "email": "jon@jonmaber.co.uk",
+      "user_id": "afecb54dd7c84c579decbcd46bc9395a",
+      "lis_person_sourcedid": "X507135",
+      "roles": ["http: //purl.imsglobal.org/vocab/lis/v2/membership#Learner", "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student"],
+      "message": [{
+          "https: //purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/custom": {},
+          "https://purl.imsglobal.org/spec/lti/claim/ext": {
+            "ext_lms": "bb-4000.21.0 - rel.29 + 98ad5c0"
+          }
+        }]
+    }, {
+      "status": "Active",
+      "name": "Jon Maber_PreviewUser",
+      "given_name": "Jon",
+      "family_name": "Maber_PreviewUser",
+      "middle_name": "",
+      "email": "jon@jonmaber.co.uk",
+      "user_id": "74346c272f0f4dd69d22556ac96c2c27",
+      "lis_person_sourcedid": "maber01_previewuser",
+      "roles": ["http: //purl.imsglobal.org/vocab/lis/v2/membership#Learner", "http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student", "http://purl.imsglobal.org/vocab/lti/system/person#TestUser"],
+      "message": [{
+          "https: //purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/custom": {},
+          "https://purl.imsglobal.org/spec/lti/claim/ext": {
+            "ext_lms": "bb-4000.21.0 - rel.29 + 98ad5c0"
+          }
+        }]
+    }]
+}
